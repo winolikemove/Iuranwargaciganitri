@@ -55,11 +55,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Check if user has a valid token on mount
   useEffect(() => {
+    let mounted = true;
+    
     const initAuth = async () => {
       const token = TokenManager.get();
       
       if (!token) {
-        setIsLoading(false);
+        if (mounted) setIsLoading(false);
         return;
       }
 
@@ -67,15 +69,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Fetch user data
         const userResult = await api.getMe();
         
+        if (!mounted) return;
+        
         if (userResult.ok && userResult.data) {
           setUser(userResult.data);
           
           // Fetch permissions
           const permResult = await api.getMyPermissions();
-          if (permResult.ok && permResult.data) {
-            setPermissions(permResult.data);
-          } else {
-            setPermissions(defaultPermissions);
+          if (mounted) {
+            if (permResult.ok && permResult.data) {
+              setPermissions(permResult.data);
+            } else {
+              setPermissions(defaultPermissions);
+            }
           }
         } else {
           // Token invalid, clear
@@ -85,15 +91,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (error) {
         console.error('Auth init error:', error);
-        TokenManager.remove();
-        setUser(null);
-        setPermissions(null);
+        if (mounted) {
+          TokenManager.remove();
+          setUser(null);
+          setPermissions(null);
+        }
       } finally {
-        setIsLoading(false);
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
     };
 
     initAuth();
+    
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const login = useCallback(async (data: LoginRequest): Promise<ApiResponse<AuthResponse>> => {

@@ -7,6 +7,9 @@ const API_URL = process.env.NEXT_PUBLIC_GAS_API_URL || '';
 const DEFAULT_TIMEOUT = 30000; // 30 seconds
 const CACHE_PREFIX = 'warga_cache_';
 
+// Demo mode - set to true if API URL is not configured or invalid
+const DEMO_MODE = !API_URL || API_URL.includes('YOUR_SCRIPT_ID');
+
 // Cache entry interface
 interface CacheEntry<T> {
   data: T;
@@ -16,6 +19,205 @@ interface CacheEntry<T> {
 
 // In-memory cache for client-side
 const memoryCache = new Map<string, CacheEntry<unknown>>();
+
+// Demo data for testing without backend
+const DEMO_DATA = {
+  settings: {
+    siteName: 'Pradha Ciganitri',
+    siteDescription: 'Sistem Manajemen Warga Modern',
+    logoUrl: '',
+    monthlyFee: 150000,
+    enableRegistration: true,
+    enablePaymentSubmission: true,
+    enableAgenda: true,
+    enableGallery: true,
+    enableInformation: true,
+    enablePublicFinance: true,
+    enableReviews: true,
+    incomeCategories: ['Iuran', 'Sumbangan', 'Kegiatan', 'Lainnya'],
+    expenseCategories: ['Kebersihan', 'Keamanan', 'Pemeliharaan', 'Kegiatan', 'Lainnya'],
+    informationCategories: ['Pengumuman', 'Kegiatan', 'Peringatan', 'Lainnya'],
+  } as AppSettings,
+  
+  publicFinance: {
+    saldoAkhir: 2000000,
+    totalPemasukanBulanIni: 4500000,
+    totalPengeluaranBulanIni: 2500000,
+    periodLabel: 'April 2026',
+    lastUpdated: new Date().toISOString(),
+  } as PublicFinanceSummary,
+  
+  agendas: [
+    {
+      id: '1',
+      title: 'Kerja Bakti Bulanan',
+      description: 'Kerja bakti bersih-bersih lingkungan komplek',
+      location: 'Area Komplek Pradha Ciganitri',
+      startDate: '2026-04-12',
+      startTime: '07:00',
+      endDate: '2026-04-12',
+      endTime: '10:00',
+      status: 'upcoming',
+      targetBlok: 'all',
+      createdBy: 'admin',
+      createdAt: '2026-04-01T10:00:00Z',
+      updatedAt: '2026-04-01T10:00:00Z',
+    },
+    {
+      id: '2',
+      title: 'Rapat Bulanan Warga',
+      description: 'Rapat koordinasi bulanan warga komplek',
+      location: 'Aula Pradha Ciganitri',
+      startDate: '2026-04-20',
+      startTime: '19:00',
+      endDate: '2026-04-20',
+      endTime: '21:00',
+      status: 'upcoming',
+      targetBlok: 'all',
+      createdBy: 'admin',
+      createdAt: '2026-04-02T10:00:00Z',
+      updatedAt: '2026-04-02T10:00:00Z',
+    },
+  ] as Agenda[],
+  
+  informations: [
+    {
+      id: '1',
+      title: 'Pembayaran Iuran Bulan April',
+      content: 'Diharapkan kepada seluruh warga untuk segera melakukan pembayaran iuran bulan April paling lambat tanggal 15 April 2026.',
+      category: 'Pengumuman',
+      isPinned: true,
+      targetBlok: 'all',
+      createdBy: 'admin',
+      createdAt: '2026-04-01T08:00:00Z',
+      updatedAt: '2026-04-01T08:00:00Z',
+    },
+    {
+      id: '2',
+      title: 'Perbaikan Jalan Utama',
+      content: 'Akan dilakukan perbaikan jalan utama komplek pada tanggal 10-12 April 2026. Mohon pengertiannya.',
+      category: 'Pengumuman',
+      isPinned: false,
+      targetBlok: 'all',
+      createdBy: 'admin',
+      createdAt: '2026-04-03T09:00:00Z',
+      updatedAt: '2026-04-03T09:00:00Z',
+    },
+  ] as Information[],
+  
+  galleries: [
+    {
+      id: '1',
+      title: 'Kerja Bakti Maret 2026',
+      description: 'Dokumentasi kegiatan kerja bakti bulan Maret',
+      imageUrl: 'https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=800',
+      thumbnailUrl: 'https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=400',
+      uploadedBy: 'admin',
+      createdAt: '2026-03-15T10:00:00Z',
+    },
+    {
+      id: '2',
+      title: 'Rapat Warga Q1 2026',
+      description: 'Rapat koordinasi warga kuartal pertama',
+      imageUrl: 'https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=800',
+      thumbnailUrl: 'https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=400',
+      uploadedBy: 'admin',
+      createdAt: '2026-03-20T19:00:00Z',
+    },
+  ] as Gallery[],
+  
+  reviews: [
+    {
+      id: '1',
+      userId: 'user1',
+      userName: 'Budi Santoso',
+      userBlok: 'A1',
+      rating: 5,
+      comment: 'Komplek yang sangat nyaman dan terawat. Pengurus sangat aktif dan responsif.',
+      status: 'approved',
+      createdAt: '2026-03-25T15:00:00Z',
+    },
+    {
+      id: '2',
+      userId: 'user2',
+      userName: 'Siti Rahayu',
+      userBlok: 'B2',
+      rating: 4,
+      comment: 'Lingkungan yang asri dan aman. Cocok untuk keluarga.',
+      status: 'approved',
+      createdAt: '2026-03-28T10:00:00Z',
+    },
+  ] as Review[],
+  
+  pengurus: [
+    {
+      id: 'admin1',
+      nama: 'Ahmad Hidayat',
+      email: 'ahmad@pradha.id',
+      nik: '3201010101010001',
+      blok: 'A1',
+      nomorRumah: '1',
+      telepon: '08123456789',
+      role: 'ADMIN',
+      status: 'ACTIVE',
+      photoUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200',
+    },
+    {
+      id: 'pengurus1',
+      nama: 'Dewi Lestari',
+      email: 'dewi@pradha.id',
+      nik: '3201010101010002',
+      blok: 'B3',
+      nomorRumah: '3',
+      telepon: '08123456790',
+      role: 'ADMIN',
+      status: 'ACTIVE',
+      photoUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200',
+    },
+  ] as SafeUser[],
+  
+  demoUser: {
+    id: 'demo-user',
+    nama: 'Demo User',
+    email: 'demo@pradha.id',
+    nik: '3201010101010003',
+    blok: 'C5',
+    nomorRumah: '5',
+    telepon: '081234567899',
+    role: 'ADMIN',
+    status: 'ACTIVE',
+    photoUrl: null,
+  } as SafeUser,
+  
+  demoPermissions: {
+    canViewAllUsers: true,
+    canViewOwnBlokUsers: true,
+    canApproveUsers: true,
+    canRejectUsers: true,
+    canChangeUserRole: true,
+    canBlockUsers: true,
+    canViewFinance: true,
+    canCreateTransaction: true,
+    canEditTransaction: true,
+    canDeleteTransaction: true,
+    canSubmitPayment: true,
+    canApprovePayment: true,
+    canRejectPayment: true,
+    canViewAllPayments: true,
+    canCreateAgenda: true,
+    canEditAgenda: true,
+    canDeleteAgenda: true,
+    canCreateInformation: true,
+    canEditInformation: true,
+    canDeleteInformation: true,
+    canUploadGallery: true,
+    canDeleteGallery: true,
+    canApproveReviews: true,
+    canDeleteReviews: true,
+    canManageSettings: true,
+    canManageRoles: true,
+  } as Permissions,
+};
 
 // Cache manager
 const CacheManager = {
@@ -178,14 +380,19 @@ const TokenManager = {
   },
 };
 
+// Simulate network delay for demo mode
+const simulateDelay = (ms: number = 500) => new Promise(resolve => setTimeout(resolve, ms));
+
 // Main API client
 class ApiClient {
   private baseUrl: string;
   private defaultTimeout: number;
+  private demoMode: boolean;
   
   constructor(baseUrl: string, defaultTimeout: number = DEFAULT_TIMEOUT) {
     this.baseUrl = baseUrl;
     this.defaultTimeout = defaultTimeout;
+    this.demoMode = DEMO_MODE;
   }
   
   // Core request method
@@ -214,6 +421,11 @@ class ApiClient {
       if (cached) {
         return cached;
       }
+    }
+    
+    // Handle demo mode
+    if (this.demoMode) {
+      return this.handleDemoRequest<T>(action, payload, requireAuth, useCache, cacheKey, cacheTTL);
     }
     
     // Get token if required
@@ -268,6 +480,274 @@ class ApiClient {
       
       return { ok: false, error: 'Terjadi kesalahan jaringan' };
     }
+  }
+  
+  // Handle demo mode requests
+  private async handleDemoRequest<T>(
+    action: string,
+    payload: Record<string, unknown>,
+    requireAuth: boolean,
+    useCache: boolean,
+    cacheKey: string | undefined,
+    cacheTTL: number
+  ): Promise<ApiResponse<T>> {
+    await simulateDelay(300);
+    
+    // Check auth for protected routes
+    if (requireAuth && !TokenManager.get()) {
+      return { ok: false, error: 'Tidak terautentikasi' };
+    }
+    
+    let result: ApiResponse<T>;
+    
+    // Handle different actions
+    switch (action) {
+      // Auth
+      case 'auth.login':
+        if (payload.email && payload.password) {
+          TokenManager.set('demo-token-' + Date.now());
+          result = { 
+            ok: true, 
+            data: { 
+              user: DEMO_DATA.demoUser, 
+              token: 'demo-token-' + Date.now() 
+            } as T 
+          };
+        } else {
+          result = { ok: false, error: 'Email dan password diperlukan' };
+        }
+        break;
+        
+      case 'auth.register':
+        result = { ok: true, data: { message: 'Registrasi berhasil, menunggu persetujuan' } as T };
+        break;
+        
+      case 'auth.me':
+        result = { ok: true, data: DEMO_DATA.demoUser as T };
+        break;
+        
+      case 'auth.changePassword':
+        result = { ok: true, data: { message: 'Password berhasil diubah' } as T };
+        break;
+        
+      case 'role.permissions':
+        result = { ok: true, data: DEMO_DATA.demoPermissions as T };
+        break;
+        
+      // Public
+      case 'settings.public':
+        result = { ok: true, data: DEMO_DATA.settings as T };
+        break;
+        
+      case 'finance.publicSummary':
+        result = { ok: true, data: DEMO_DATA.publicFinance as T };
+        break;
+        
+      case 'agenda.publicList':
+        result = { ok: true, data: DEMO_DATA.agendas as T };
+        break;
+        
+      case 'info.publicList':
+        result = { ok: true, data: DEMO_DATA.informations as T };
+        break;
+        
+      case 'gallery.publicList':
+        result = { ok: true, data: DEMO_DATA.galleries as T };
+        break;
+        
+      case 'review.publicList':
+        result = { ok: true, data: DEMO_DATA.reviews as T };
+        break;
+        
+      case 'pengurus.publicList':
+        result = { ok: true, data: DEMO_DATA.pengurus as T };
+        break;
+        
+      // Settings
+      case 'settings.all':
+        result = { ok: true, data: DEMO_DATA.settings as T };
+        break;
+        
+      case 'settings.update':
+        result = { ok: true, data: { message: 'Pengaturan berhasil disimpan' } as T };
+        break;
+        
+      // Finance
+      case 'finance.summary':
+        result = { 
+          ok: true, 
+          data: {
+            ...DEMO_DATA.publicFinance,
+            transactions: [],
+            monthlyBreakdown: [],
+          } as T 
+        };
+        break;
+        
+      case 'finance.transactions':
+        result = { ok: true, data: [] as T };
+        break;
+        
+      case 'finance.create':
+        result = { ok: true, data: { message: 'Transaksi berhasil dibuat', id: 'txn-' + Date.now() } as T };
+        break;
+        
+      // Users
+      case 'user.list':
+        result = { ok: true, data: [...DEMO_DATA.pengurus, DEMO_DATA.demoUser] as T };
+        break;
+        
+      case 'user.pending':
+        result = { ok: true, data: [] as T };
+        break;
+        
+      case 'user.approve':
+        result = { ok: true, data: { message: 'Pengguna berhasil disetujui' } as T };
+        break;
+        
+      case 'user.reject':
+        result = { ok: true, data: { message: 'Pengguna ditolak' } as T };
+        break;
+        
+      case 'user.updateRole':
+        result = { ok: true, data: { message: 'Role berhasil diubah' } as T };
+        break;
+        
+      case 'user.block':
+        result = { ok: true, data: { message: 'Pengguna diblokir' } as T };
+        break;
+        
+      // Agenda
+      case 'agenda.list':
+        result = { ok: true, data: DEMO_DATA.agendas as T };
+        break;
+        
+      case 'agenda.create':
+        result = { ok: true, data: { message: 'Agenda berhasil dibuat', id: 'agenda-' + Date.now() } as T };
+        break;
+        
+      case 'agenda.update':
+        result = { ok: true, data: { message: 'Agenda berhasil diperbarui' } as T };
+        break;
+        
+      case 'agenda.delete':
+        result = { ok: true, data: { message: 'Agenda berhasil dihapus' } as T };
+        break;
+        
+      // Information
+      case 'info.list':
+        result = { ok: true, data: DEMO_DATA.informations as T };
+        break;
+        
+      case 'info.create':
+        result = { ok: true, data: { message: 'Informasi berhasil dibuat', id: 'info-' + Date.now() } as T };
+        break;
+        
+      case 'info.update':
+        result = { ok: true, data: { message: 'Informasi berhasil diperbarui' } as T };
+        break;
+        
+      case 'info.delete':
+        result = { ok: true, data: { message: 'Informasi berhasil dihapus' } as T };
+        break;
+        
+      // Gallery
+      case 'gallery.list':
+        result = { ok: true, data: DEMO_DATA.galleries as T };
+        break;
+        
+      case 'gallery.upload':
+        result = { ok: true, data: { message: 'Gambar berhasil diunggah', id: 'gallery-' + Date.now() } as T };
+        break;
+        
+      case 'gallery.delete':
+        result = { ok: true, data: { message: 'Gambar berhasil dihapus' } as T };
+        break;
+        
+      // Reviews
+      case 'review.myReview':
+        result = { ok: true, data: null as T };
+        break;
+        
+      case 'review.pending':
+        result = { ok: true, data: [] as T };
+        break;
+        
+      case 'review.all':
+        result = { ok: true, data: DEMO_DATA.reviews as T };
+        break;
+        
+      case 'review.submit':
+        result = { ok: true, data: { message: 'Review berhasil dikirim', id: 'review-' + Date.now() } as T };
+        break;
+        
+      case 'review.approve':
+        result = { ok: true, data: { message: 'Review berhasil disetujui' } as T };
+        break;
+        
+      case 'review.delete':
+        result = { ok: true, data: { message: 'Review berhasil dihapus' } as T };
+        break;
+        
+      // Payments
+      case 'payment.myPayments':
+        result = { ok: true, data: [] as T };
+        break;
+        
+      case 'payment.pending':
+        result = { ok: true, data: [] as T };
+        break;
+        
+      case 'payment.all':
+        result = { ok: true, data: [] as T };
+        break;
+        
+      case 'payment.submit':
+        result = { ok: true, data: { message: 'Pembayaran berhasil dikirim', id: 'payment-' + Date.now() } as T };
+        break;
+        
+      case 'payment.approve':
+        result = { ok: true, data: { message: 'Pembayaran berhasil disetujui' } as T };
+        break;
+        
+      case 'payment.reject':
+        result = { ok: true, data: { message: 'Pembayaran ditolak' } as T };
+        break;
+        
+      case 'payment.paidPeriods':
+        result = { ok: true, data: [] as T };
+        break;
+        
+      case 'payment.unpaidUsers':
+        result = { ok: true, data: [] as T };
+        break;
+        
+      // Permissions
+      case 'role.allPermissions':
+        result = { 
+          ok: true, 
+          data: {
+            admin: DEMO_DATA.demoPermissions,
+            pengurus: { ...DEMO_DATA.demoPermissions, canManageSettings: false, canManageRoles: false },
+            warga: { ...DEMO_DATA.demoPermissions, canViewAllUsers: false, canViewFinance: false, canCreateTransaction: false, canEditTransaction: false, canDeleteTransaction: false, canApprovePayment: false, canRejectPayment: false, canViewAllPayments: false, canCreateAgenda: false, canEditAgenda: false, canDeleteAgenda: false, canCreateInformation: false, canEditInformation: false, canDeleteInformation: false, canDeleteGallery: false, canApproveReviews: false, canDeleteReviews: false, canManageSettings: false, canManageRoles: false },
+          } as T 
+        };
+        break;
+        
+      case 'role.updatePermissions':
+        result = { ok: true, data: { message: 'Permission berhasil diperbarui' } as T };
+        break;
+        
+      default:
+        result = { ok: false, error: `Unknown action: ${action}` };
+    }
+    
+    // Cache successful response
+    if (useCache && cacheKey && result.ok) {
+      CacheManager.set(cacheKey, result, cacheTTL);
+    }
+    
+    return result;
   }
   
   // ==================== AUTH API ====================

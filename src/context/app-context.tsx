@@ -29,7 +29,7 @@ const defaultSettings: AppSettings = {
   siteName: 'Pradha Ciganitri',
   siteDescription: 'Sistem Manajemen Warga',
   logoUrl: '',
-  monthlyFee: 0,
+  monthlyFee: 150000,
   enableRegistration: true,
   enablePaymentSubmission: true,
   enableAgenda: true,
@@ -56,12 +56,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // Load initial public data
   useEffect(() => {
+    let mounted = true;
+    
     const loadPublicData = async () => {
+      if (!mounted) return;
       setIsLoading(true);
       
       try {
-        // Load all public data in parallel
-        const [settingsRes, financeRes, agendasRes, infosRes, galleriesRes, reviewsRes, pengurusRes] = await Promise.all([
+        // Load all public data in parallel with error handling for each
+        const results = await Promise.allSettled([
           api.getPublicSettings(),
           api.getPublicFinanceSummary(),
           api.getPublicAgenda(10),
@@ -71,44 +74,62 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           api.getPublicPengurus(),
         ]);
         
-        if (settingsRes.ok && settingsRes.data) {
-          setSettings(settingsRes.data);
+        if (!mounted) return;
+        
+        // Process settings
+        if (results[0].status === 'fulfilled' && results[0].value.ok && results[0].value.data) {
+          setSettings(results[0].value.data);
         } else {
           setSettings(defaultSettings);
         }
         
-        if (financeRes.ok && financeRes.data) {
-          setFinance(financeRes.data);
+        // Process finance
+        if (results[1].status === 'fulfilled' && results[1].value.ok && results[1].value.data) {
+          setFinance(results[1].value.data);
         }
         
-        if (agendasRes.ok && agendasRes.data) {
-          setAgendas(agendasRes.data);
+        // Process agendas
+        if (results[2].status === 'fulfilled' && results[2].value.ok && results[2].value.data) {
+          setAgendas(results[2].value.data);
         }
         
-        if (infosRes.ok && infosRes.data) {
-          setInformations(infosRes.data);
+        // Process informations
+        if (results[3].status === 'fulfilled' && results[3].value.ok && results[3].value.data) {
+          setInformations(results[3].value.data);
         }
         
-        if (galleriesRes.ok && galleriesRes.data) {
-          setGalleries(galleriesRes.data);
+        // Process galleries
+        if (results[4].status === 'fulfilled' && results[4].value.ok && results[4].value.data) {
+          setGalleries(results[4].value.data);
         }
         
-        if (reviewsRes.ok && reviewsRes.data) {
-          setReviews(reviewsRes.data);
+        // Process reviews
+        if (results[5].status === 'fulfilled' && results[5].value.ok && results[5].value.data) {
+          setReviews(results[5].value.data);
         }
         
-        if (pengurusRes.ok && pengurusRes.data) {
-          setPengurus(pengurusRes.data);
+        // Process pengurus
+        if (results[6].status === 'fulfilled' && results[6].value.ok && results[6].value.data) {
+          setPengurus(results[6].value.data);
         }
+        
       } catch (error) {
         console.error('Failed to load public data:', error);
-        setSettings(defaultSettings);
+        if (mounted) {
+          setSettings(defaultSettings);
+        }
       } finally {
-        setIsLoading(false);
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
     };
     
     loadPublicData();
+    
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const refreshSettings = useCallback(async () => {
