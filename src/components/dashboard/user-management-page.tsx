@@ -54,8 +54,8 @@ export function UserManagementPage() {
   const [activeTab, setActiveTab] = useState('all');
   
   // Filters
-  const [filterBlok, setFilterBlok] = useState<string>('');
-  const [filterStatus, setFilterStatus] = useState<string>('');
+  const [filterBlok, setFilterBlok] = useState<string>('ALL');
+  const [filterStatus, setFilterStatus] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
@@ -73,8 +73,8 @@ export function UserManagementPage() {
         }
       } else {
         const res = await api.getUsers({
-          blok: filterBlok || undefined,
-          status: filterStatus || undefined,
+          blok: filterBlok !== 'ALL' ? filterBlok : undefined,
+          status: filterStatus !== 'ALL' ? filterStatus : undefined,
         });
         if (res.ok && res.data) {
           setUsers(res.data);
@@ -307,7 +307,7 @@ export function UserManagementPage() {
                       <SelectValue placeholder="Semua Blok" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Semua Blok</SelectItem>
+                      <SelectItem value="ALL">Semua Blok</SelectItem>
                       <SelectItem value="A">Blok A</SelectItem>
                       <SelectItem value="B">Blok B</SelectItem>
                     </SelectContent>
@@ -319,7 +319,7 @@ export function UserManagementPage() {
                     <SelectValue placeholder="Semua Status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Semua Status</SelectItem>
+                    <SelectItem value="ALL">Semua Status</SelectItem>
                     <SelectItem value="ACTIVE">Aktif</SelectItem>
                     <SelectItem value="PENDING">Pending</SelectItem>
                     <SelectItem value="BLOCKED">Diblokir</SelectItem>

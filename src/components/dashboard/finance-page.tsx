@@ -60,8 +60,8 @@ export function FinancePage() {
   
   // Filters
   const [filterYear, setFilterYear] = useState(new Date().getFullYear().toString());
-  const [filterMonth, setFilterMonth] = useState<string>('');
-  const [filterType, setFilterType] = useState<string>('');
+  const [filterMonth, setFilterMonth] = useState<string>('ALL');
+  const [filterType, setFilterType] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   
   // Dialog
@@ -76,7 +76,7 @@ export function FinancePage() {
   });
 
   const months = [
-    { value: '', label: 'Semua Bulan' },
+    { value: 'ALL', label: 'Semua Bulan' },
     { value: '1', label: 'Januari' },
     { value: '2', label: 'Februari' },
     { value: '3', label: 'Maret' },
@@ -103,7 +103,7 @@ export function FinancePage() {
       // Load summary
       const summaryRes = await api.getFinanceSummary(
         parseInt(filterYear),
-        filterMonth ? parseInt(filterMonth) : undefined
+        filterMonth !== 'ALL' ? parseInt(filterMonth) : undefined
       );
       if (summaryRes.ok && summaryRes.data) {
         setSummary(summaryRes.data);
@@ -112,8 +112,8 @@ export function FinancePage() {
       // Load transactions
       const transRes = await api.getTransactions({
         year: parseInt(filterYear),
-        month: filterMonth ? parseInt(filterMonth) : undefined,
-        type: filterType || undefined,
+        month: filterMonth !== 'ALL' ? parseInt(filterMonth) : undefined,
+        type: filterType !== 'ALL' ? filterType : undefined,
         limit: 100,
       });
       if (transRes.ok && transRes.data) {
@@ -390,7 +390,7 @@ export function FinancePage() {
                 <SelectValue placeholder="Semua Tipe" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Semua Tipe</SelectItem>
+                <SelectItem value="ALL">Semua Tipe</SelectItem>
                 <SelectItem value="INCOME">Pemasukan</SelectItem>
                 <SelectItem value="EXPENSE">Pengeluaran</SelectItem>
               </SelectContent>
