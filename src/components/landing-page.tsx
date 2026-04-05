@@ -33,8 +33,9 @@ import {
   X,
   Camera,
   User,
+  CalendarDays,
 } from 'lucide-react';
-import type { Gallery } from '@/types';
+import type { Gallery, Agenda } from '@/types';
 
 interface LandingPageProps {
   onLoginClick: () => void;
@@ -53,6 +54,7 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
   } = useApp();
 
   const [selectedImage, setSelectedImage] = useState<Gallery | null>(null);
+  const [selectedAgenda, setSelectedAgenda] = useState<Agenda | null>(null);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -416,7 +418,11 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                     'bg-[#d9e6dd] text-[#003527]'
                   ];
                   return (
-                    <div key={agenda.id} className="flex gap-6 group">
+                    <div 
+                      key={agenda.id} 
+                      className="flex gap-6 group cursor-pointer"
+                      onClick={() => setSelectedAgenda(agenda)}
+                    >
                       <div className="flex flex-col items-center">
                         <div className={`w-12 h-12 rounded-full ${bgColors[index % 3]} flex items-center justify-center font-bold text-sm`}>
                           {formatDate(agenda.startDate)}
@@ -425,7 +431,7 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                           <div className="w-0.5 h-full bg-[#bfc9c3]/30 mt-4"></div>
                         )}
                       </div>
-                      <div className="pb-6">
+                      <div className="pb-6 flex-1">
                         <h4 className="text-lg font-bold mb-2 group-hover:text-[#003527] transition-colors">
                           {agenda.title}
                         </h4>
@@ -449,7 +455,114 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
               </div>
             </div>
           </section>
-        )}
+        )
+        }
+
+        {/* Agenda Detail Modal */}
+        <Dialog open={!!selectedAgenda} onOpenChange={() => setSelectedAgenda(null)}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 bg-white border-0">
+            {selectedAgenda && (
+              <div className="relative">
+                {/* Close button */}
+                <button
+                  onClick={() => setSelectedAgenda(null)}
+                  className="absolute top-4 right-4 z-50 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+                
+                {/* Header with status */}
+                <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 p-6 text-white">
+                  <div className="flex items-center justify-between">
+                    <DialogTitle className="text-xl font-bold">{selectedAgenda.title}</DialogTitle>
+                    <Badge className={
+                      selectedAgenda.status === 'UPCOMING' ? 'bg-blue-500' :
+                      selectedAgenda.status === 'ONGOING' ? 'bg-green-500' :
+                      selectedAgenda.status === 'COMPLETED' ? 'bg-gray-500' :
+                      'bg-red-500'
+                    }>
+                      {selectedAgenda.status === 'UPCOMING' ? 'Akan Datang' :
+                       selectedAgenda.status === 'ONGOING' ? 'Berlangsung' :
+                       selectedAgenda.status === 'COMPLETED' ? 'Selesai' : 'Dibatalkan'}
+                    </Badge>
+                  </div>
+                  <Badge variant="outline" className="mt-2 bg-white/20 text-white border-white/30">
+                    {selectedAgenda.targetBlok === 'ALL' ? 'Semua Blok' : `Blok ${selectedAgenda.targetBlok}`}
+                  </Badge>
+                </div>
+                
+                {/* Details Section */}
+                <div className="p-6 space-y-4">
+                  {/* Meta Info Grid */}
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {/* Start Date */}
+                    <div className="flex items-center gap-2">
+                      <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
+                        <Calendar className="h-5 w-5 text-emerald-600" />
+                      </div>
+                      <div>
+                        <p className="text-gray-500 text-xs">Tanggal</p>
+                        <p className="font-medium text-sm">{formatFullDate(selectedAgenda.startDate)}</p>
+                      </div>
+                    </div>
+                    
+                    {/* Time */}
+                    {(selectedAgenda.startTime || selectedAgenda.endTime) && (
+                      <div className="flex items-center gap-2">
+                        <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
+                          <Clock className="h-5 w-5 text-amber-600" />
+                        </div>
+                        <div>
+                          <p className="text-gray-500 text-xs">Waktu</p>
+                          <p className="font-medium text-sm">
+                            {selectedAgenda.startTime || '-'}
+                            {selectedAgenda.endTime && ` - ${selectedAgenda.endTime}`}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Location */}
+                    {selectedAgenda.location && (
+                      <div className="flex items-center gap-2">
+                        <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
+                          <MapPin className="h-5 w-5 text-purple-600" />
+                        </div>
+                        <div>
+                          <p className="text-gray-500 text-xs">Lokasi</p>
+                          <p className="font-medium text-sm">{selectedAgenda.location}</p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Created By */}
+                    {selectedAgenda.createdBy && (
+                      <div className="flex items-center gap-2">
+                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                          <User className="h-5 w-5 text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="text-gray-500 text-xs">Dibuat oleh</p>
+                          <p className="font-medium text-sm">{selectedAgenda.createdBy}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Description */}
+                  {selectedAgenda.description && (
+                    <div className="pt-4 border-t">
+                      <h4 className="font-medium mb-2">Deskripsi</h4>
+                      <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">
+                        {selectedAgenda.description}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
 
         {/* Testimonials */}
         {settings?.enableReviews && reviews.length > 0 && (

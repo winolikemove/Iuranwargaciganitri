@@ -51,10 +51,21 @@ export function InformationPage() {
   const [informations, setInformations] = useState<Information[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedInfo, setSelectedInfo] = useState<Information | null>(null);
   
   const [formData, setFormData] = useState({
+    title: '',
+    content: '',
+    category: 'UMUM',
+    isPinned: false,
+    targetBlok: 'ALL',
+    expiredAt: '',
+  });
+
+  const [editFormData, setEditFormData] = useState({
+    id: '',
     title: '',
     content: '',
     category: 'UMUM',
@@ -115,6 +126,56 @@ export function InformationPage() {
     }
   };
 
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    try {
+      const result = await api.updateInfo(editFormData.id, {
+        title: editFormData.title,
+        content: editFormData.content,
+        category: editFormData.category,
+        isPinned: editFormData.isPinned,
+        targetBlok: editFormData.targetBlok,
+        expiredAt: editFormData.expiredAt || undefined,
+      });
+      
+      if (result.ok) {
+        setShowEditDialog(false);
+        setSelectedInfo(null);
+        loadData();
+      }
+    } catch (err) {
+      console.error('Failed to update info:', err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const resetFormData = () => {
+    setFormData({
+      title: '',
+      content: '',
+      category: 'UMUM',
+      isPinned: false,
+      targetBlok: 'ALL',
+      expiredAt: '',
+    });
+  };
+
+  const openEditDialog = (info: Information) => {
+    setEditFormData({
+      id: info.id,
+      title: info.title,
+      content: info.content,
+      category: info.category,
+      isPinned: info.isPinned,
+      targetBlok: info.targetBlok || 'ALL',
+      expiredAt: info.expiredAt || '',
+    });
+    setShowEditDialog(true);
+  };
+
   const formatDate = (dateStr: string) => {
     try {
       return new Date(dateStr).toLocaleDateString('id-ID', {
@@ -152,6 +213,7 @@ export function InformationPage() {
     if (confirm('Yakin ingin menghapus informasi ini?')) {
       const result = await api.deleteInfo(id);
       if (result.ok) {
+        setSelectedInfo(null);
         loadData();
       }
     }
@@ -181,7 +243,10 @@ export function InformationPage() {
           <p className="text-muted-foreground">Kelola pengumuman dan berita warga</p>
         </div>
         {permissions?.canCreateInformation && (
-          <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+          <Dialog open={showAddDialog} onOpenChange={(open) => {
+            setShowAddDialog(open);
+            if (!open) resetFormData();
+          }}>
             <DialogTrigger asChild>
               <Button>
                 <Plus className="h-4 w-4 mr-2" />
@@ -330,7 +395,11 @@ export function InformationPage() {
                               <Pin className="h-4 w-4" />
                             )}
                           </Button>
-                          <Button size="sm" variant="ghost">
+                          <Button 
+                            size="sm" 
+                            variant="ghost"
+                            onClick={() => openEditDialog(info)}
+                          >
                             <Edit className="h-4 w-4" />
                           </Button>
                         </>
@@ -369,7 +438,7 @@ export function InformationPage() {
       )}
 
       {/* Detail Information Modal */}
-      <Dialog open={!!selectedInfo} onOpenChange={() => setSelectedInfo(null)}>
+      <Dialog open={!!selectedInfo && !showEditDialog} onOpenChange={() => setSelectedInfo(null)}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           {selectedInfo && (
             <>
@@ -483,6 +552,16 @@ export function InformationPage() {
                       </>
                     )}
                   </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      openEditDialog(selectedInfo);
+                    }}
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit
+                  </Button>
                   {permissions?.canDeleteInformation && (
                     <Button
                       variant="destructive"
@@ -500,6 +579,114 @@ export function InformationPage() {
               )}
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Information Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Informasi</DialogTitle>
+            <DialogDescription>Ubah detail informasi</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleEditSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label>Judul</Label>
+              <Input
+                value={editFormData.title}
+                onChange={(e) => setEditFormData({ ...editFormData, title: e.target.value })}
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Isi</Label>
+              <Textarea
+                value={editFormData.content}
+                onChange={(e) => setEditFormData({ ...editFormData, content: e.target.value })}
+                rows={4}
+                required
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Kategori</Label>
+                <Select
+                  value={editFormData.category}
+                  onValueChange={(value) => setEditFormData({ ...editFormData, category: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Target</Label>
+                <Select
+                  value={editFormData.targetBlok}
+                  onValueChange={(value) => setEditFormData({ ...editFormData, targetBlok: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">Semua Blok</SelectItem>
+                    {settings?.bloks?.map((blok) => (
+                      <SelectItem key={blok} value={blok}>Blok {blok}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Kadaluarsa (Opsional)</Label>
+              <Input
+                type="date"
+                value={editFormData.expiredAt}
+                onChange={(e) => setEditFormData({ ...editFormData, expiredAt: e.target.value })}
+              />
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="isPinned"
+                checked={editFormData.isPinned}
+                onChange={(e) => setEditFormData({ ...editFormData, isPinned: e.target.checked })}
+                className="rounded border-gray-300"
+              />
+              <Label htmlFor="isPinned" className="font-normal">Sematkan informasi ini</Label>
+            </div>
+            
+            <div className="flex gap-2">
+              <Button 
+                type="button" 
+                variant="outline" 
+                className="flex-1"
+                onClick={() => setShowEditDialog(false)}
+              >
+                Batal
+              </Button>
+              <Button type="submit" className="flex-1" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Menyimpan...
+                  </>
+                ) : (
+                  'Simpan'
+                )}
+              </Button>
+            </div>
+          </form>
         </DialogContent>
       </Dialog>
     </div>
