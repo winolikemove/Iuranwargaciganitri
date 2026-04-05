@@ -35,7 +35,7 @@ import {
   User,
   CalendarDays,
 } from 'lucide-react';
-import type { Gallery, Agenda } from '@/types';
+import type { Gallery, Agenda, PengurusWithJabatan } from '@/types';
 
 interface LandingPageProps {
   onLoginClick: () => void;
@@ -51,6 +51,7 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
     reviews,
     pengurus,
     users,
+    strukturOrganisasi,
   } = useApp();
 
   const [selectedImage, setSelectedImage] = useState<Gallery | null>(null);
@@ -726,7 +727,11 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
         </Dialog>
 
         {/* Pengurus Section */}
-        {pengurus.length > 0 && (
+        {(strukturOrganisasi && (
+          strukturOrganisasi.blokA.pengurus.length > 0 || 
+          strukturOrganisasi.blokB.pengurus.length > 0 || 
+          strukturOrganisasi.bersama.pengurus.length > 0
+        )) && (
           <section id="warga" className="py-16 px-6 md:px-12 bg-[#eaf7ee]">
             <div className="max-w-screen-2xl mx-auto">
               <div className="text-center mb-12">
@@ -742,20 +747,19 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                     Blok A
                   </h3>
                   <div className="space-y-3">
-                    {pengurus.filter(p => p.blok === 'A').map((p) => {
-                      const jabatanLabel = (p as SafeUser & { jabatanLabel?: string }).jabatanLabel || getRoleBadge(p.role).label;
-                      return (
-                        <div key={p.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-emerald-50 transition-colors">
-                          <Avatar className="h-12 w-12">
-                            <AvatarImage src={p.photoUrl || undefined} alt={p.nama} />
-                            <AvatarFallback className="bg-emerald-500 text-white">
-                              {p.nama.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-semibold text-sm truncate">{p.nama}</h4>
-                            <p className="text-xs text-emerald-600">{jabatanLabel}</p>
-                          </div>
+                    {strukturOrganisasi?.blokA?.pengurus?.sort((a, b) => a.order - b.order).map((p) => (
+                      <div key={p.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-emerald-50 transition-colors">
+                        <Avatar className="h-12 w-12">
+                          <AvatarImage src={p.photoUrl || undefined} alt={p.nama} />
+                          <AvatarFallback className="bg-emerald-500 text-white">
+                            {p.nama.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-sm truncate">{p.nama}</h4>
+                          <p className="text-xs text-emerald-600">{p.jabatanLabel}</p>
+                        </div>
+                        {p.telepon && (
                           <a
                             href={getWhatsAppLink(p.telepon)}
                             target="_blank"
@@ -764,9 +768,14 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                           >
                             <MessageCircle className="h-4 w-4 text-green-600" />
                           </a>
-                        </div>
-                      );
-                    })}
+                        )}
+                      </div>
+                    ))}
+                    {(!strukturOrganisasi?.blokA?.pengurus || strukturOrganisasi.blokA.pengurus.length === 0) && (
+                      <p className="text-center text-muted-foreground text-sm py-4">
+                        Pengurus Blok A akan ditampilkan di sini
+                      </p>
+                    )}
                   </div>
                 </div>
                 
@@ -776,20 +785,19 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                     Blok B
                   </h3>
                   <div className="space-y-3">
-                    {pengurus.filter(p => p.blok === 'B').map((p) => {
-                      const jabatanLabel = (p as SafeUser & { jabatanLabel?: string }).jabatanLabel || getRoleBadge(p.role).label;
-                      return (
-                        <div key={p.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-emerald-50 transition-colors">
-                          <Avatar className="h-12 w-12">
-                            <AvatarImage src={p.photoUrl || undefined} alt={p.nama} />
-                            <AvatarFallback className="bg-emerald-500 text-white">
-                              {p.nama.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-semibold text-sm truncate">{p.nama}</h4>
-                            <p className="text-xs text-emerald-600">{jabatanLabel}</p>
-                          </div>
+                    {strukturOrganisasi?.blokB?.pengurus?.sort((a, b) => a.order - b.order).map((p) => (
+                      <div key={p.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-emerald-50 transition-colors">
+                        <Avatar className="h-12 w-12">
+                          <AvatarImage src={p.photoUrl || undefined} alt={p.nama} />
+                          <AvatarFallback className="bg-emerald-500 text-white">
+                            {p.nama.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-sm truncate">{p.nama}</h4>
+                          <p className="text-xs text-emerald-600">{p.jabatanLabel}</p>
+                        </div>
+                        {p.telepon && (
                           <a
                             href={getWhatsAppLink(p.telepon)}
                             target="_blank"
@@ -798,9 +806,14 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                           >
                             <MessageCircle className="h-4 w-4 text-green-600" />
                           </a>
-                        </div>
-                      );
-                    })}
+                        )}
+                      </div>
+                    ))}
+                    {(!strukturOrganisasi?.blokB?.pengurus || strukturOrganisasi.blokB.pengurus.length === 0) && (
+                      <p className="text-center text-muted-foreground text-sm py-4">
+                        Pengurus Blok B akan ditampilkan di sini
+                      </p>
+                    )}
                   </div>
                 </div>
                 
@@ -811,23 +824,19 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                   </h3>
                   <p className="text-xs text-emerald-200 text-center mb-4">Sie. Keamanan, Kebersihan & DKM Masjid Al Birr</p>
                   <div className="space-y-3">
-                    {pengurus.filter(p => {
-                      const jabatan = (p as SafeUser & { jabatan?: string }).jabatan;
-                      return jabatan && ['SIE_KEAMANAN', 'SIE_KEBERSIHAN', 'DKM_MASJID'].includes(jabatan);
-                    }).map((p) => {
-                      const jabatanLabel = (p as SafeUser & { jabatanLabel?: string }).jabatanLabel || getRoleBadge(p.role).label;
-                      return (
-                        <div key={p.id} className="flex items-center gap-3 p-3 rounded-lg bg-emerald-900/30 hover:bg-emerald-900/50 transition-colors">
-                          <Avatar className="h-12 w-12 border-2 border-emerald-400">
-                            <AvatarImage src={p.photoUrl || undefined} alt={p.nama} />
-                            <AvatarFallback className="bg-emerald-600 text-white">
-                              {p.nama.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-semibold text-sm truncate">{p.nama}</h4>
-                            <p className="text-xs text-emerald-300">{jabatanLabel}</p>
-                          </div>
+                    {strukturOrganisasi?.bersama?.pengurus?.sort((a, b) => a.order - b.order).map((p) => (
+                      <div key={p.id} className="flex items-center gap-3 p-3 rounded-lg bg-emerald-900/30 hover:bg-emerald-900/50 transition-colors">
+                        <Avatar className="h-12 w-12 border-2 border-emerald-400">
+                          <AvatarImage src={p.photoUrl || undefined} alt={p.nama} />
+                          <AvatarFallback className="bg-emerald-600 text-white">
+                            {p.nama.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-sm truncate">{p.nama}</h4>
+                          <p className="text-xs text-emerald-300">{p.jabatanLabel}</p>
+                        </div>
+                        {p.telepon && (
                           <a
                             href={getWhatsAppLink(p.telepon)}
                             target="_blank"
@@ -836,13 +845,10 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                           >
                             <MessageCircle className="h-4 w-4 text-emerald-300" />
                           </a>
-                        </div>
-                      );
-                    })}
-                    {pengurus.filter(p => {
-                      const jabatan = (p as SafeUser & { jabatan?: string }).jabatan;
-                      return jabatan && ['SIE_KEAMANAN', 'SIE_KEBERSIHAN', 'DKM_MASJID'].includes(jabatan);
-                    }).length === 0 && (
+                        )}
+                      </div>
+                    ))}
+                    {(!strukturOrganisasi?.bersama?.pengurus || strukturOrganisasi.bersama.pengurus.length === 0) && (
                       <p className="text-center text-emerald-300 text-sm py-4">
                         Pengurus bersama akan ditampilkan di sini
                       </p>

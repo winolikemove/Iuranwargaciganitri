@@ -1,6 +1,6 @@
 // API Client with Cache and Timeout Management for Google Apps Script Backend
 
-import type { ApiResponse, SafeUser, AppSettings, Permissions, User, Transaction, Payment, Agenda, Information, Gallery, Review, FinanceSummary, PublicFinanceSummary, AuthResponse, LoginRequest, RegisterRequest } from '@/types';
+import type { ApiResponse, SafeUser, AppSettings, Permissions, User, Transaction, Payment, Agenda, Information, Gallery, Review, FinanceSummary, PublicFinanceSummary, AuthResponse, LoginRequest, RegisterRequest, StrukturOrganisasi, JabatanInfo } from '@/types';
 
 // Configuration
 const API_URL = process.env.NEXT_PUBLIC_GAS_API_URL || '';
@@ -1291,6 +1291,15 @@ class ApiClient {
     });
   }
   
+  async getStrukturOrganisasi(): Promise<ApiResponse<StrukturOrganisasi>> {
+    return this.request<StrukturOrganisasi>('pengurus.strukturOrganisasi', {}, {
+      requireAuth: false,
+      useCache: true,
+      cacheKey: 'struktur_organisasi',
+      cacheTTL: 60 * 60 * 1000, // 1 hour
+    });
+  }
+  
   async getPublicReviews(limit?: number): Promise<ApiResponse<Review[]>> {
     return this.request<Review[]>('review.publicList', { limit }, {
       requireAuth: false,
@@ -1359,6 +1368,29 @@ class ApiClient {
   async updateUser(data: { telepon?: string; nama?: string; photoUrl?: string; nik?: string }): Promise<ApiResponse<SafeUser>> {
     CacheManager.remove('auth_me');
     return this.request<SafeUser>('user.update', data);
+  }
+  
+  async updateUserJabatan(userId: string, jabatan: string): Promise<ApiResponse<{ message: string }>> {
+    CacheManager.remove('struktur_organisasi');
+    CacheManager.remove('public_pengurus');
+    CacheManager.clearPattern('users');
+    return this.request<{ message: string }>('user.updateJabatan', { userId, jabatan });
+  }
+  
+  async getJabatanList(): Promise<ApiResponse<{
+    jabatanPerBlok: Record<string, JabatanInfo>;
+    jabatanBersama: Record<string, JabatanInfo>;
+    allJabatan: Record<string, JabatanInfo>;
+  }>> {
+    return this.request<{
+      jabatanPerBlok: Record<string, JabatanInfo>;
+      jabatanBersama: Record<string, JabatanInfo>;
+      allJabatan: Record<string, JabatanInfo>;
+    }>('role.jabatanList', {}, {
+      useCache: true,
+      cacheKey: 'jabatan_list',
+      cacheTTL: 60 * 60 * 1000, // 1 hour
+    });
   }
   
   // ==================== FINANCE ====================

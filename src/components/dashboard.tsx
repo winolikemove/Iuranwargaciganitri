@@ -45,6 +45,7 @@ import {
   Shield,
   User,
   Menu,
+  Building2,
 } from 'lucide-react';
 import { DashboardHome } from './dashboard/dashboard-home';
 import { FinancePage } from './dashboard/finance-page';
@@ -56,8 +57,9 @@ import { GalleryPage } from './dashboard/gallery-page';
 import { ReviewPage } from './dashboard/review-page';
 import { SettingsPage } from './dashboard/settings-page';
 import { ProfilePage } from './dashboard/profile-page';
+import { OrganizationPage } from './dashboard/organization-page';
 
-type PageType = 'dashboard' | 'finance' | 'payment' | 'users' | 'agenda' | 'information' | 'gallery' | 'reviews' | 'settings' | 'profile';
+type PageType = 'dashboard' | 'finance' | 'payment' | 'users' | 'agenda' | 'information' | 'gallery' | 'reviews' | 'settings' | 'profile' | 'organization';
 
 export function Dashboard() {
   const { user, permissions, logout } = useAuth();
@@ -88,6 +90,7 @@ export function Dashboard() {
       group: 'Manajemen',
       items: [
         { id: 'users' as PageType, label: 'Warga', icon: Users, show: permissions?.canViewAllUsers || permissions?.canViewOwnBlokUsers },
+        { id: 'organization' as PageType, label: 'Struktur Organisasi', icon: Building2, show: true },
         { id: 'agenda' as PageType, label: 'Agenda', icon: Calendar, show: settings?.enableAgenda },
         { id: 'information' as PageType, label: 'Informasi', icon: Bell, show: settings?.enableInformation },
         { id: 'gallery' as PageType, label: 'Galeri', icon: ImageIcon, show: settings?.enableGallery },
@@ -130,6 +133,8 @@ export function Dashboard() {
         return <SettingsPage />;
       case 'profile':
         return <ProfilePage />;
+      case 'organization':
+        return <OrganizationPage />;
       default:
         return <DashboardHome />;
     }

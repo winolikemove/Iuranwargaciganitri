@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { api, CacheManager } from '@/lib/api-client';
-import type { AppSettings, PublicFinanceSummary, Agenda, Information, Gallery, Review, SafeUser } from '@/types';
+import type { AppSettings, PublicFinanceSummary, Agenda, Information, Gallery, Review, SafeUser, StrukturOrganisasi } from '@/types';
 
 interface AppContextType {
   settings: AppSettings | null;
@@ -12,6 +12,7 @@ interface AppContextType {
   galleries: Gallery[];
   reviews: Review[];
   pengurus: SafeUser[];
+  strukturOrganisasi: StrukturOrganisasi | null;
   isLoading: boolean;
   
   // Refresh functions
@@ -22,6 +23,7 @@ interface AppContextType {
   refreshGalleries: () => Promise<void>;
   refreshReviews: () => Promise<void>;
   refreshPengurus: () => Promise<void>;
+  refreshStrukturOrganisasi: () => Promise<void>;
   refreshAll: () => Promise<void>;
 }
 
@@ -53,6 +55,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [galleries, setGalleries] = useState<Gallery[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [pengurus, setPengurus] = useState<SafeUser[]>([]);
+  const [strukturOrganisasi, setStrukturOrganisasi] = useState<StrukturOrganisasi | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Load initial public data
@@ -73,6 +76,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           api.getPublicGallery(12),
           api.getPublicReviews(10),
           api.getPublicPengurus(),
+          api.getStrukturOrganisasi(),
         ]);
         
         if (!mounted) return;
@@ -112,6 +116,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         // Process pengurus
         if (results[6].status === 'fulfilled' && results[6].value.ok && results[6].value.data) {
           setPengurus(results[6].value.data);
+        }
+        
+        // Process struktur organisasi
+        if (results[7].status === 'fulfilled' && results[7].value.ok && results[7].value.data) {
+          setStrukturOrganisasi(results[7].value.data);
         }
         
       } catch (error) {
@@ -189,6 +198,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const refreshStrukturOrganisasi = useCallback(async () => {
+    CacheManager.remove('struktur_organisasi');
+    const result = await api.getStrukturOrganisasi();
+    if (result.ok && result.data) {
+      setStrukturOrganisasi(result.data);
+    }
+  }, []);
+
   const refreshAll = useCallback(async () => {
     await Promise.all([
       refreshSettings(),
@@ -198,8 +215,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       refreshGalleries(),
       refreshReviews(),
       refreshPengurus(),
+      refreshStrukturOrganisasi(),
     ]);
-  }, [refreshSettings, refreshFinance, refreshAgendas, refreshInformations, refreshGalleries, refreshReviews, refreshPengurus]);
+  }, [refreshSettings, refreshFinance, refreshAgendas, refreshInformations, refreshGalleries, refreshReviews, refreshPengurus, refreshStrukturOrganisasi]);
 
   const value: AppContextType = {
     settings,
@@ -209,6 +227,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     galleries,
     reviews,
     pengurus,
+    strukturOrganisasi,
     isLoading,
     refreshSettings,
     refreshFinance,
@@ -217,6 +236,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     refreshGalleries,
     refreshReviews,
     refreshPengurus,
+    refreshStrukturOrganisasi,
     refreshAll,
   };
 

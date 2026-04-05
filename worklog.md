@@ -39,3 +39,66 @@ Key Files Modified:
 - `/home/z/my-project/src/components/landing-page.tsx` - Added agenda detail modal
 
 Build Status: Successful (no errors)
+
+---
+## Task ID: 2 - Organization Structure (Struktur Organisasi) Feature
+
+### Work Task
+Implement Organization Structure feature in the frontend with:
+- API client methods for struktur organisasi, jabatan list, and user jabatan update
+- State management for struktur organisasi in app context
+- Organization management page with 3-column layout (Blok A, Blok B, Bersama)
+- Menu item in dashboard sidebar
+- Updated landing page to use proper StrukturOrganisasi API
+
+### Work Summary
+
+**1. API Client Updates (`src/lib/api-client.ts`):**
+- Added import for `StrukturOrganisasi` and `JabatanInfo` types
+- Added `getStrukturOrganisasi()` public method that calls `pengurus.strukturOrganisasi`
+- Added `getJabatanList()` method that calls `role.jabatanList`
+- Added `updateUserJabatan(userId: string, jabatan: string)` method that calls `user.updateJabatan`
+- All methods include proper cache management
+
+**2. App Context Updates (`src/context/app-context.tsx`):**
+- Added `strukturOrganisasi` state of type `StrukturOrganisasi | null`
+- Added `refreshStrukturOrganisasi()` function
+- Updated initial data loading to include struktur organisasi
+- Updated `refreshAll()` to include struktur organisasi refresh
+
+**3. Organization Page (`src/components/dashboard/organization-page.tsx`):**
+- Comprehensive organization management page with features:
+  - Visual organization chart with 3 columns: Blok A, Blok B, Bersama
+  - Each column shows pengurus sorted by order with avatar, name, jabatan label, and WhatsApp contact
+  - Empty position slots with dashed borders for unfilled positions
+  - Admin can click empty slots to assign users to positions
+  - Edit dialog for changing/removing jabatan assignments
+  - Proper permission checks (only SUPERADMIN and ADMIN can manage jabatan)
+  - Refresh button to reload data
+  - Info card explaining the organization structure
+  - Dark theme for "Bersama" column (shared positions)
+  - Responsive design matching emerald color theme
+
+**4. Dashboard Updates (`src/components/dashboard.tsx`):**
+- Added `Building2` icon import
+- Added `OrganizationPage` component import
+- Added `'organization'` to `PageType` union
+- Added "Struktur Organisasi" menu item in sidebar under "Manajemen" group
+- Added route handler for organization page
+
+**5. Landing Page Updates (`src/components/landing-page.tsx`):**
+- Added import for `PengurusWithJabatan` type
+- Added `strukturOrganisasi` from useApp hook
+- Updated Pengurus Section to use `strukturOrganisasi` data instead of filtered pengurus array
+- Properly displays Blok A, Blok B, and Bersama columns
+- Shows appropriate empty state messages when no pengurus in a section
+- Sorts pengurus by order property
+
+**Key Types Used:**
+- `JabatanKey`: 'KETUA_RT' | 'WAKIL_KETUA' | 'SEKRETARIS' | 'BENDAHARA' | 'SIE_KEAMANAN' | 'SIE_KEBERSIHAN' | 'DKM_MASJID'
+- `JabatanInfo`: { label: string; order: number; scope: 'BLOK' | 'SHARED' }
+- `PengurusWithJabatan`: User with jabatan info
+- `StrukturBlok`: { label: string; pengurus: PengurusWithJabatan[] }
+- `StrukturOrganisasi`: { blokA: StrukturBlok; blokB: StrukturBlok; bersama: StrukturBlok }
+
+**Build Status:** Successful (npm run lint passed with no errors)
