@@ -2247,14 +2247,17 @@ function fileUpload(user, { fileName, mimeType, base64 }) {
   }
 }
 
-// ==================== SETUP FUNCTION (Run Once) ====================
-// Run this function once to update the transactions sheet with the new paymentId column
+// ==================== SETUP FUNCTIONS ====================
+
+/**
+ * Update transactions sheet dengan kolom paymentId
+ * Run sekali setelah update code.gs
+ */
 function updateTransactionsSheet() {
   const ss = SpreadsheetApp.openById(CONFIG.SPREADSHEETID);
   let sheet = ss.getSheetByName('transactions');
   
   if (!sheet) {
-    // Create new sheet with updated schema
     sheet = ss.insertSheet('transactions');
     const headers = SCHEMAS.transactions;
     sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
@@ -2263,10 +2266,8 @@ function updateTransactionsSheet() {
     return;
   }
   
-  // Check if paymentId column exists
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
   if (!headers.includes('paymentId')) {
-    // Add paymentId column after 'date' column
     const dateIdx = headers.indexOf('date');
     if (dateIdx >= 0) {
       sheet.insertColumnAt(dateIdx + 2);
@@ -2276,4 +2277,69 @@ function updateTransactionsSheet() {
   } else {
     Logger.log('paymentId column already exists');
   }
+}
+
+/**
+ * Initial Setup - Run sekali untuk inisialisasi awal
+ * Membuat semua sheets, admin default, dan settings default
+ */
+function initialSetup() {
+  // Create all sheets
+  Object.keys(SCHEMAS).forEach(getSheet);
+  
+  // Create default admin if not exists
+  const existingAdmin = dbFindOne('users', { email: 'admin@iwkrt11.local' });
+  
+  if (!existingAdmin) {
+    dbInsert('users', {
+      nama: 'Super Admin',
+      email: 'admin@iwkrt11.local',
+      passwordHash: hashPassword('admin123'),
+      nik: '0000000000000000',
+      telepon: '081234567890',
+      blok: 'A',
+      nomorRumah: '001',
+      role: 'SUPERADMIN',
+      status: 'ACTIVE',
+      photoUrl: '',
+    });
+    Logger.log('Default admin created: admin@iwkrt11.local / admin123');
+  }
+  
+  // Initialize default settings
+  const defaultSettings = [
+    ['appName', 'Pradha-Ciganitri Portal'],
+    ['rtName', 'RT 011'],
+    ['rwName', 'RW 005'],
+    ['address', 'Perumahan Indah Warga Kita'],
+    ['monthlyFee', '50000'],
+    ['tarifIuran', '50000'],
+    ['bankInfoA', JSON.stringify({ bankName: 'BCA', bankAccount: '1234567890', bankHolder: 'RT Pradha Ciganitri Blok A' })],
+    ['bankInfoB', JSON.stringify({ bankName: 'Mandiri', bankAccount: '0987654321', bankHolder: 'RT Pradha Ciganitri Blok B' })],
+    ['enableRegistration', 'true'],
+    ['enablePaymentSubmission', 'true'],
+    ['enableAgenda', 'true'],
+    ['enableGallery', 'true'],
+    ['enableInformation', 'true'],
+    ['enablePublicFinance', 'true'],
+    ['enableReviews', 'true'],
+    ['primaryColor', '#2563eb'],
+    ['googleMapsEmbedUrl', ''],
+    ['socialMediaLinks', '[]'],
+    ['incomeCategories', '["Iuran Bulanan","Dana Sosial","Lain-lain"]'],
+    ['expenseCategories', '["Kebersihan","Keamanan","Perbaikan","Listrik","Kegiatan","Administrasi","Lain-lain"]'],
+    ['informationCategories', '["Pengumuman","Berita","Info Penting"]'],
+    ['categoriesA', JSON.stringify({ income: ['Iuran Bulanan', 'Dana Sosial', 'Sumbangan', 'Lainnya'], expense: ['Kebersihan', 'Keamanan', 'Perbaikan', 'Listrik', 'Kegiatan', 'Lainnya'], information: ['Pengumuman', 'Berita', 'Info Penting'] })],
+    ['categoriesB', JSON.stringify({ income: ['Iuran Bulanan', 'Dana Sosial', 'Sumbangan', 'Lainnya'], expense: ['Kebersihan', 'Keamanan', 'Perbaikan', 'Listrik', 'Kegiatan', 'Lainnya'], information: ['Pengumuman', 'Berita', 'Info Penting'] })],
+  ];
+  
+  const sheet = getSheet('settings');
+  for (const [key, value] of defaultSettings) {
+    const existing = dbFindOne('settings', { key });
+    if (!existing) {
+      sheet.appendRow([key, value]);
+    }
+  }
+  
+  Logger.log('Initial setup complete!');
 }
