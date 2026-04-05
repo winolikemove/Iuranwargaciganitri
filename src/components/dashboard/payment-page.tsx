@@ -27,6 +27,7 @@ import {
   Upload,
   Calendar,
   Wallet,
+  Hourglass,
 } from 'lucide-react';
 import { PaymentWizard } from './payment-wizard';
 import type { Payment } from '@/types';
@@ -72,15 +73,25 @@ export function PaymentPage() {
 
   const availablePeriods = generateAvailablePeriods();
   
-  // Get pending periods from pending payments
+  // Get pending periods from pending payments (PENDING status only)
   const pendingPeriods = myPayments
     .filter(p => p.status === 'PENDING')
     .flatMap(p => p.periods);
 
-  // Unpaid periods = available - paid - pending
+  // Get rejected periods from rejected payments
+  const rejectedPeriods = myPayments
+    .filter(p => p.status === 'REJECTED')
+    .flatMap(p => p.periods);
+
+  // Unpaid periods = available - paid (APPROVED only) - pending
+  // Note: paidPeriods should only contain periods from APPROVED payments
   const unpaidPeriods = availablePeriods.filter(
     p => !paidPeriods.includes(p) && !pendingPeriods.includes(p)
   );
+
+  // Get pending payments count for warga
+  const myPendingPayments = myPayments.filter(p => p.status === 'PENDING');
+  const myApprovedPayments = myPayments.filter(p => p.status === 'APPROVED');
 
   useEffect(() => {
     loadData();
@@ -264,7 +275,7 @@ export function PaymentPage() {
   return (
     <div className="space-y-6">
       {/* Payment Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-4">
         <Card className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-lg">
@@ -281,13 +292,26 @@ export function PaymentPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-lg">
-              <Calendar className="h-5 w-5" />
+              <AlertCircle className="h-5 w-5" />
               Belum Dibayar
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold text-orange-500">{unpaidPeriods.length}</p>
             <p className="text-muted-foreground text-sm">periode</p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-yellow-200 bg-yellow-50">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-lg text-yellow-700">
+              <Hourglass className="h-5 w-5" />
+              Menunggu Verifikasi
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-yellow-600">{myPendingPayments.length}</p>
+            <p className="text-yellow-600 text-sm">pembayaran</p>
           </CardContent>
         </Card>
 
@@ -305,6 +329,42 @@ export function PaymentPage() {
         </Card>
       </div>
 
+      {/* Pending Payments Alert for Warga */}
+      {permissions?.canSubmitPayment && myPendingPayments.length > 0 && (
+        <Card className="border-yellow-200 bg-yellow-50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg text-yellow-700 flex items-center gap-2">
+              <Hourglass className="h-5 w-5" />
+              Pembayaran Menunggu Verifikasi
+            </CardTitle>
+            <CardDescription className="text-yellow-600">
+              Pembayaran Anda sedang diproses oleh admin/bendahara
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {myPendingPayments.map((payment) => (
+                <div key={payment.id} className="flex items-center justify-between p-3 bg-white rounded-lg border border-yellow-200">
+                  <div>
+                    <div className="flex flex-wrap gap-1 mb-1">
+                      {payment.periods.map((period) => (
+                        <Badge key={period} variant="outline" className="text-xs">
+                          {period}
+                        </Badge>
+                      ))}
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {formatDate(payment.createdAt)} • {formatCurrency(payment.amount)}
+                    </p>
+                  </div>
+                  <Badge className="bg-yellow-500">Menunggu Verifikasi</Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Unpaid Periods Alert */}
       {permissions?.canSubmitPayment && unpaidPeriods.length > 0 && (
         <Card className="border-orange-200 bg-orange-50">
@@ -313,6 +373,9 @@ export function PaymentPage() {
               <AlertCircle className="h-5 w-5" />
               Periode Belum Dibayar
             </CardTitle>
+            <CardDescription className="text-orange-600">
+              Periode berikut belum memiliki pembayaran yang disetujui
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2 mb-4">
@@ -331,6 +394,21 @@ export function PaymentPage() {
               <Upload className="h-4 w-4 mr-2" />
               Bayar Sekarang
             </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* No Unpaid Periods Message */}
+      {permissions?.canSubmitPayment && unpaidPeriods.length === 0 && myPendingPayments.length === 0 && (
+        <Card className="border-green-200 bg-green-50">
+          <CardContent className="py-6">
+            <div className="flex items-center gap-3">
+              <CheckCircle className="h-8 w-8 text-green-500" />
+              <div>
+                <p className="font-semibold text-green-700">Semua Periode Sudah Dibayar!</p>
+                <p className="text-sm text-green-600">Terima kasih telah melunasi semua iuran Anda.</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
       )}

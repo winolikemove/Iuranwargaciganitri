@@ -1036,7 +1036,11 @@ class ApiClient {
         break;
         
       case 'payment.approve':
-        result = { ok: true, data: { message: 'Pembayaran berhasil disetujui' } as T };
+        // When payment is approved, backend should:
+        // 1. Update payment status to APPROVED
+        // 2. Create an income transaction in the finance system
+        // 3. Add the periods to the user's paid periods
+        result = { ok: true, data: { message: 'Pembayaran berhasil disetujui dan dicatat sebagai pemasukan' } as T };
         break;
         
       case 'payment.reject':
@@ -1336,7 +1340,12 @@ class ApiClient {
   }
   
   async approvePayment(paymentId: string): Promise<ApiResponse<{ message: string }>> {
+    // Clear all related caches when payment is approved
+    // This will refresh: payments, finance summary, paid periods
     CacheManager.clearPattern('payment');
+    CacheManager.clearPattern('finance');
+    CacheManager.clearPattern('transactions');
+    CacheManager.remove('public_finance');
     return this.request<{ message: string }>('payment.approve', { paymentId });
   }
   
