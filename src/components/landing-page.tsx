@@ -50,7 +50,6 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
     galleries,
     reviews,
     pengurus,
-    users,
     strukturOrganisasi,
   } = useApp();
 
@@ -118,9 +117,14 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
     return `https://wa.me/${waNumber}`;
   };
 
-  // Calculate active residents count
-  const activeResidents = users?.filter(u => u.status === 'ACTIVE' && u.role === 'WARGA').length || 0;
-  const totalUnits = users?.filter(u => u.role === 'WARGA').length || 0;
+  // Calculate active residents count from struktur organisasi
+  const allPengurus = [
+    ...(strukturOrganisasi?.blokA?.pengurus || []),
+    ...(strukturOrganisasi?.blokB?.pengurus || []),
+    ...(strukturOrganisasi?.bersama?.pengurus || [])
+  ];
+  const activeResidents = allPengurus.length || 11;
+  const totalUnits = 98; // Placeholder - total unit di komplek
 
   // Scroll to section
   const scrollToSection = (sectionId: string) => {
