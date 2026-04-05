@@ -41,6 +41,7 @@ export interface Transaction {
   amount: number;
   description: string;
   date: string;
+  paymentId?: string; // Reference to payment if transaction is from approved payment
   createdBy: string;
   createdAt: string;
 }
@@ -62,6 +63,11 @@ export interface Payment {
   processedAt: string | null;
   rejectReason: string | null;
   createdAt: string;
+}
+
+// Payment with bukti preview for UI
+export interface PaymentWithPreview extends Payment {
+  buktiPreview?: string;
 }
 
 // Agenda types
