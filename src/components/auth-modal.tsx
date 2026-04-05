@@ -6,14 +6,9 @@ import { useApp } from '@/context/app-context';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select,
   SelectContent,
@@ -21,8 +16,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  User,
+  Phone,
+  Home,
+  Key,
+  HelpCircle,
+  Shield,
+  FileText,
+  Loader2,
+  CheckCircle2,
+  X,
+} from 'lucide-react';
 import type { LoginRequest, RegisterRequest } from '@/types';
 
 interface AuthModalProps {
@@ -35,13 +45,13 @@ interface AuthModalProps {
 export function AuthModal({ open, onOpenChange, mode, onModeChange }: AuthModalProps) {
   const { login, register } = useAuth();
   const { settings } = useApp();
-  
+
   // Login state
   const [loginData, setLoginData] = useState<LoginRequest>({
     email: '',
     password: '',
   });
-  
+
   // Register state
   const [registerData, setRegisterData] = useState<RegisterRequest>({
     nama: '',
@@ -53,20 +63,23 @@ export function AuthModal({ open, onOpenChange, mode, onModeChange }: AuthModalP
     blok: '',
     nomorRumah: '',
   });
-  
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [success, setSuccess] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setIsLoading(true);
-    
+
     try {
       const result = await login(loginData);
-      
+
       if (result.ok) {
         onOpenChange(false);
         setLoginData({ email: '', password: '' });
@@ -85,56 +98,56 @@ export function AuthModal({ open, onOpenChange, mode, onModeChange }: AuthModalP
     setError(null);
     setFieldErrors({});
     setSuccess(null);
-    
+
     // Client-side validation
     const errors: Record<string, string> = {};
-    
+
     if (!registerData.nama || registerData.nama.length < 3) {
       errors.nama = 'Nama minimal 3 karakter';
     }
-    
+
     if (!registerData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(registerData.email)) {
       errors.email = 'Format email tidak valid';
     }
-    
+
     if (!registerData.password || registerData.password.length < 6) {
       errors.password = 'Password minimal 6 karakter';
     }
-    
+
     if (registerData.password !== registerData.confirmPassword) {
       errors.confirmPassword = 'Password tidak cocok';
     }
-    
+
     // NIK is optional - only validate if provided
     if (registerData.nik && registerData.nik.length > 0) {
       if (registerData.nik.length !== 16 || !/^\d+$/.test(registerData.nik)) {
         errors.nik = 'NIK harus 16 digit angka';
       }
     }
-    
+
     if (!registerData.telepon || registerData.telepon.length < 10) {
       errors.telepon = 'Telepon minimal 10 digit';
     }
-    
+
     if (!registerData.blok) {
       errors.blok = 'Pilih blok';
     }
-    
+
     if (!registerData.nomorRumah) {
       errors.nomorRumah = 'Nomor rumah wajib diisi';
     }
-    
+
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       return;
     }
-    
+
     setIsLoading(true);
-    
+
     try {
       const { confirmPassword, ...dataToSend } = registerData;
       const result = await register(dataToSend);
-      
+
       if (result.ok) {
         setSuccess(result.data?.message || 'Registrasi berhasil. Menunggu persetujuan admin.');
         setRegisterData({
@@ -166,8 +179,8 @@ export function AuthModal({ open, onOpenChange, mode, onModeChange }: AuthModalP
     }
   };
 
-  const handleTabChange = (value: string) => {
-    onModeChange(value as 'login' | 'register');
+  const handleTabChange = (newMode: 'login' | 'register') => {
+    onModeChange(newMode);
     setError(null);
     setFieldErrors({});
     setSuccess(null);
@@ -175,229 +188,377 @@ export function AuthModal({ open, onOpenChange, mode, onModeChange }: AuthModalP
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>
-            {mode === 'login' ? 'Masuk' : 'Daftar Akun'}
-          </DialogTitle>
-          <DialogDescription>
-            {mode === 'login' 
-              ? 'Masuk ke akun Anda untuk mengakses dashboard'
-              : 'Daftar sebagai warga baru'}
-          </DialogDescription>
-        </DialogHeader>
-        
-        <Tabs value={mode} onValueChange={handleTabChange}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="login">Masuk</TabsTrigger>
-            <TabsTrigger value="register" disabled={!settings?.enableRegistration}>
-              Daftar
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="login" className="mt-4">
-            <form onSubmit={handleLogin} className="space-y-4">
-              {error && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-              
-              <div className="space-y-2">
-                <Label htmlFor="login-email">Email</Label>
-                <Input
-                  id="login-email"
-                  type="email"
-                  placeholder="email@example.com"
-                  value={loginData.email}
-                  onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
-                  required
+      <DialogContent className="sm:max-w-4xl p-0 overflow-hidden bg-transparent border-0 shadow-none">
+        <div className="w-full grid md:grid-cols-12 bg-[#f0fdf4]/70 backdrop-blur-xl rounded-xl shadow-[0px_24px_48px_rgba(19,30,25,0.06)] overflow-hidden">
+          {/* Left Branding Column (Hidden on mobile) */}
+          <div className="hidden md:flex md:col-span-5 flex-col justify-between p-8 bg-gradient-to-br from-[#003527] to-[#064e3b] text-white">
+            <div className="space-y-6">
+              <div className="flex items-center gap-3">
+                <img
+                  src={settings?.logoUrl || '/logo.jpg'}
+                  alt="Logo"
+                  className="w-10 h-10 object-contain rounded-lg bg-white/10 p-1"
                 />
+                <h1 className="text-xl font-bold tracking-tight">
+                  {settings?.siteName || 'Pradha Ciganitri'}
+                </h1>
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="login-password">Password</Label>
-                <Input
-                  id="login-password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={loginData.password}
-                  onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-                  required
-                />
+              <div className="pt-8">
+                <h2 className="text-3xl font-extrabold leading-tight mb-4">
+                  The Digital Sanctuary
+                </h2>
+                <p className="text-emerald-100 text-base leading-relaxed opacity-90">
+                  Selamat datang di portal warga modern Anda. Kelola rumah, komunitas, dan layanan dalam satu tempat yang nyaman.
+                </p>
               </div>
-              
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Memproses...
-                  </>
-                ) : (
-                  'Masuk'
+            </div>
+            <div className="flex items-center gap-4 text-xs opacity-60">
+              <span>© {new Date().getFullYear()} {settings?.siteName || 'Pradha Ciganitri'}</span>
+              <span className="w-1 h-1 rounded-full bg-white"></span>
+              <span>Portal Warga Terverifikasi</span>
+            </div>
+          </div>
+
+          {/* Right Form Column */}
+          <div className="col-span-12 md:col-span-7 bg-white p-6 md:p-8 lg:p-10 overflow-y-auto max-h-[90vh] md:max-h-[600px] relative">
+            {/* Close Button */}
+            <button
+              onClick={() => onOpenChange(false)}
+              className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 transition-colors"
+            >
+              <X className="h-5 w-5 text-gray-400" />
+            </button>
+
+            {/* Tab Switcher */}
+            <div className="flex bg-[#eaf7ee] p-1.5 rounded-full mb-8 w-fit mx-auto md:mx-0">
+              <button
+                onClick={() => handleTabChange('login')}
+                className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all duration-300 ${
+                  mode === 'login'
+                    ? 'bg-white text-[#003527] shadow-sm'
+                    : 'text-[#404944] hover:text-[#003527]'
+                }`}
+              >
+                Masuk
+              </button>
+              <button
+                onClick={() => handleTabChange('register')}
+                disabled={!settings?.enableRegistration}
+                className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all duration-300 ${
+                  mode === 'register'
+                    ? 'bg-white text-[#003527] shadow-sm'
+                    : 'text-[#404944] hover:text-[#003527] disabled:opacity-50 disabled:cursor-not-allowed'
+                }`}
+              >
+                Daftar
+              </button>
+            </div>
+
+            {/* Login Section */}
+            {mode === 'login' && (
+              <section className="space-y-6">
+                <header>
+                  <h3 className="text-2xl font-bold text-[#003527] mb-2">Selamat Datang</h3>
+                  <p className="text-[#404944]">Silakan masuk untuk mengakses dasbor warga Anda.</p>
+                </header>
+
+                {error && (
+                  <div className="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-lg text-sm">
+                    {error}
+                  </div>
                 )}
-              </Button>
-            </form>
-          </TabsContent>
-          
-          <TabsContent value="register" className="mt-4">
-            <form onSubmit={handleRegister} className="space-y-4">
-              {error && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-              
-              {success && (
-                <Alert className="border-green-500 bg-green-50 text-green-800">
-                  <CheckCircle2 className="h-4 w-4 text-green-500" />
-                  <AlertDescription>{success}</AlertDescription>
-                </Alert>
-              )}
-              
-              <div className="space-y-2">
-                <Label htmlFor="register-nama">Nama Lengkap</Label>
-                <Input
-                  id="register-nama"
-                  type="text"
-                  placeholder="Nama lengkap Anda"
-                  value={registerData.nama}
-                  onChange={(e) => setRegisterData({ ...registerData, nama: e.target.value })}
-                />
-                {fieldErrors.nama && (
-                  <p className="text-xs text-destructive">{fieldErrors.nama}</p>
-                )}
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="register-email">Email</Label>
-                  <Input
-                    id="register-email"
-                    type="email"
-                    placeholder="email@example.com"
-                    value={registerData.email}
-                    onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
-                  />
-                  {fieldErrors.email && (
-                    <p className="text-xs text-destructive">{fieldErrors.email}</p>
-                  )}
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="register-telepon">No. Telepon</Label>
-                  <Input
-                    id="register-telepon"
-                    type="tel"
-                    placeholder="08xxxxxxxxxx"
-                    value={registerData.telepon}
-                    onChange={(e) => setRegisterData({ ...registerData, telepon: e.target.value })}
-                  />
-                  {fieldErrors.telepon && (
-                    <p className="text-xs text-destructive">{fieldErrors.telepon}</p>
-                  )}
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex items-center gap-1">
-                  <Label htmlFor="register-nik">NIK (Opsional)</Label>
-                  <span className="text-xs text-muted-foreground">- 16 digit</span>
-                </div>
-                <Input
-                  id="register-nik"
-                  type="text"
-                  placeholder="3515xxxxxxxxxxxx (boleh kosong)"
-                  maxLength={16}
-                  value={registerData.nik}
-                  onChange={(e) => setRegisterData({ ...registerData, nik: e.target.value.replace(/\D/g, '') })}
-                />
-                {fieldErrors.nik && (
-                  <p className="text-xs text-destructive">{fieldErrors.nik}</p>
-                )}
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="register-blok">Blok</Label>
-                  <Select
-                    value={registerData.blok}
-                    onValueChange={(value) => setRegisterData({ ...registerData, blok: value })}
+
+                <form onSubmit={handleLogin} className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-[#131e19]">Alamat Email</label>
+                    <div className="relative group">
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-[#003527] transition-colors" />
+                      <Input
+                        type="email"
+                        placeholder="nama@email.com"
+                        value={loginData.email}
+                        onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
+                        className="w-full pl-12 pr-4 py-3 bg-[#deebe3] border-none rounded-xl focus:ring-2 focus:ring-[#003527]/20 text-[#131e19]"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-[#131e19]">Password</label>
+                    <div className="relative group">
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-[#003527] transition-colors" />
+                      <Input
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="••••••••"
+                        value={loginData.password}
+                        onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
+                        className="w-full pl-12 pr-12 py-3 bg-[#deebe3] border-none rounded-xl focus:ring-2 focus:ring-[#003527]/20 text-[#131e19]"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#003527]"
+                      >
+                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2">
+                    <label className="flex items-center gap-2 cursor-pointer group">
+                      <Checkbox
+                        checked={rememberMe}
+                        onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                        className="border-gray-300 data-[state=checked]:bg-[#003527] data-[state=checked]:border-[#003527]"
+                      />
+                      <span className="text-sm text-[#404944] group-hover:text-[#003527]">Ingat saya</span>
+                    </label>
+                    <button type="button" className="text-sm font-semibold text-[#003527] hover:underline">
+                      Lupa password?
+                    </button>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full py-4 rounded-xl bg-gradient-to-br from-[#003527] to-[#064e3b] text-white font-semibold hover:opacity-90 transition-all shadow-lg shadow-[#003527]/20"
                   >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Pilih blok" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {settings?.bloks?.map((blok) => (
-                        <SelectItem key={blok} value={blok}>Blok {blok}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {fieldErrors.blok && (
-                    <p className="text-xs text-destructive">{fieldErrors.blok}</p>
-                  )}
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="register-nomorRumah">No. Rumah</Label>
-                  <Input
-                    id="register-nomorRumah"
-                    type="text"
-                    placeholder="Contoh: 12"
-                    value={registerData.nomorRumah}
-                    onChange={(e) => setRegisterData({ ...registerData, nomorRumah: e.target.value })}
-                  />
-                  {fieldErrors.nomorRumah && (
-                    <p className="text-xs text-destructive">{fieldErrors.nomorRumah}</p>
-                  )}
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="register-password">Password</Label>
-                  <Input
-                    id="register-password"
-                    type="password"
-                    placeholder="Min. 6 karakter"
-                    value={registerData.password}
-                    onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
-                  />
-                  {fieldErrors.password && (
-                    <p className="text-xs text-destructive">{fieldErrors.password}</p>
-                  )}
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="register-confirmPassword">Ulangi Password</Label>
-                  <Input
-                    id="register-confirmPassword"
-                    type="password"
-                    placeholder="Ulangi password"
-                    value={registerData.confirmPassword}
-                    onChange={(e) => setRegisterData({ ...registerData, confirmPassword: e.target.value })}
-                  />
-                  {fieldErrors.confirmPassword && (
-                    <p className="text-xs text-destructive">{fieldErrors.confirmPassword}</p>
-                  )}
-                </div>
-              </div>
-              
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Memproses...
-                  </>
-                ) : (
-                  'Daftar'
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Memproses...
+                      </>
+                    ) : (
+                      'Masuk'
+                    )}
+                  </Button>
+                </form>
+              </section>
+            )}
+
+            {/* Registration Section */}
+            {mode === 'register' && (
+              <section className="space-y-6">
+                <header>
+                  <h3 className="text-2xl font-bold text-[#003527] mb-2">Pendaftaran Warga</h3>
+                  <p className="text-[#404944]">Lengkapi data diri Anda untuk bergabung dalam komunitas.</p>
+                </header>
+
+                {error && (
+                  <div className="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-lg text-sm">
+                    {error}
+                  </div>
                 )}
-              </Button>
-            </form>
-          </TabsContent>
-        </Tabs>
+
+                {success && (
+                  <div className="p-4 bg-emerald-50 border-l-4 border-emerald-500 text-emerald-700 rounded-lg text-sm flex items-center gap-3">
+                    <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                    <div>
+                      <p className="font-semibold">Berhasil!</p>
+                      <p className="text-xs opacity-80">{success}</p>
+                    </div>
+                  </div>
+                )}
+
+                <form onSubmit={handleRegister} className="space-y-4">
+                  {/* Name & Email Row */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold uppercase tracking-wider text-[#404944]">Nama Lengkap</label>
+                      <div className="relative group">
+                        <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-[#003527]" />
+                        <Input
+                          type="text"
+                          placeholder="John Doe"
+                          value={registerData.nama}
+                          onChange={(e) => setRegisterData({ ...registerData, nama: e.target.value })}
+                          className="w-full pl-10 pr-4 py-3 bg-[#deebe3] border-none rounded-xl focus:ring-2 focus:ring-[#003527]/20"
+                        />
+                      </div>
+                      {fieldErrors.nama && (
+                        <p className="text-xs text-red-500">{fieldErrors.nama}</p>
+                      )}
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold uppercase tracking-wider text-[#404944]">Email</label>
+                      <div className="relative group">
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-[#003527]" />
+                        <Input
+                          type="email"
+                          placeholder="john@email.com"
+                          value={registerData.email}
+                          onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
+                          className="w-full pl-10 pr-4 py-3 bg-[#deebe3] border-none rounded-xl focus:ring-2 focus:ring-[#003527]/20"
+                        />
+                      </div>
+                      {fieldErrors.email && (
+                        <p className="text-xs text-red-500">{fieldErrors.email}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Phone & NIK Row */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold uppercase tracking-wider text-[#404944]">No. Telepon</label>
+                      <div className="relative group">
+                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-[#003527]" />
+                        <Input
+                          type="tel"
+                          placeholder="0812..."
+                          value={registerData.telepon}
+                          onChange={(e) => setRegisterData({ ...registerData, telepon: e.target.value })}
+                          className="w-full pl-10 pr-4 py-3 bg-[#deebe3] border-none rounded-xl focus:ring-2 focus:ring-[#003527]/20"
+                        />
+                      </div>
+                      {fieldErrors.telepon && (
+                        <p className="text-xs text-red-500">{fieldErrors.telepon}</p>
+                      )}
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold uppercase tracking-wider text-[#404944]">NIK <span className="normal-case font-normal">(Opsional)</span></label>
+                      <Input
+                        type="text"
+                        placeholder="320..."
+                        maxLength={16}
+                        value={registerData.nik}
+                        onChange={(e) => setRegisterData({ ...registerData, nik: e.target.value.replace(/\D/g, '') })}
+                        className="w-full px-4 py-3 bg-[#deebe3] border-none rounded-xl focus:ring-2 focus:ring-[#003527]/20"
+                      />
+                      {fieldErrors.nik && (
+                        <p className="text-xs text-red-500">{fieldErrors.nik}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Block & House No Row */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold uppercase tracking-wider text-[#404944]">Blok</label>
+                      <Select
+                        value={registerData.blok}
+                        onValueChange={(value) => setRegisterData({ ...registerData, blok: value })}
+                      >
+                        <SelectTrigger className="w-full px-4 py-3 bg-[#deebe3] border-none rounded-xl focus:ring-2 focus:ring-[#003527]/20">
+                          <SelectValue placeholder="Pilih Blok" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {settings?.bloks?.map((blok) => (
+                            <SelectItem key={blok} value={blok}>Blok {blok}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {fieldErrors.blok && (
+                        <p className="text-xs text-red-500">{fieldErrors.blok}</p>
+                      )}
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold uppercase tracking-wider text-[#404944]">No. Rumah</label>
+                      <div className="relative group">
+                        <Home className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-[#003527]" />
+                        <Input
+                          type="text"
+                          placeholder="12"
+                          value={registerData.nomorRumah}
+                          onChange={(e) => setRegisterData({ ...registerData, nomorRumah: e.target.value })}
+                          className="w-full pl-10 pr-4 py-3 bg-[#deebe3] border-none rounded-xl focus:ring-2 focus:ring-[#003527]/20"
+                        />
+                      </div>
+                      {fieldErrors.nomorRumah && (
+                        <p className="text-xs text-red-500">{fieldErrors.nomorRumah}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Passwords Row */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold uppercase tracking-wider text-[#404944]">Password</label>
+                      <div className="relative group">
+                        <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-[#003527]" />
+                        <Input
+                          type={showPassword ? 'text' : 'password'}
+                          placeholder="••••••••"
+                          value={registerData.password}
+                          onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
+                          className="w-full pl-10 pr-10 py-3 bg-[#deebe3] border-none rounded-xl focus:ring-2 focus:ring-[#003527]/20"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#003527]"
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                      {fieldErrors.password && (
+                        <p className="text-xs text-red-500">{fieldErrors.password}</p>
+                      )}
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold uppercase tracking-wider text-[#404944]">Konfirmasi Password</label>
+                      <div className="relative group">
+                        <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-[#003527]" />
+                        <Input
+                          type={showConfirmPassword ? 'text' : 'password'}
+                          placeholder="••••••••"
+                          value={registerData.confirmPassword}
+                          onChange={(e) => setRegisterData({ ...registerData, confirmPassword: e.target.value })}
+                          className="w-full pl-10 pr-10 py-3 bg-[#deebe3] border-none rounded-xl focus:ring-2 focus:ring-[#003527]/20"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#003527]"
+                        >
+                          {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                      {fieldErrors.confirmPassword && (
+                        <p className="text-xs text-red-500">{fieldErrors.confirmPassword}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full py-4 rounded-xl bg-gradient-to-br from-[#003527] to-[#064e3b] text-white font-semibold hover:opacity-90 transition-all shadow-lg shadow-[#003527]/20 mt-2"
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Memproses...
+                      </>
+                    ) : (
+                      'Daftar Sekarang'
+                    )}
+                  </Button>
+                </form>
+              </section>
+            )}
+
+            {/* Support Links */}
+            <div className="mt-8 pt-6 border-t border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-[#404944]">
+              <div className="flex items-center gap-2">
+                <HelpCircle className="h-4 w-4" />
+                <span>Butuh bantuan akses?</span>
+              </div>
+              <div className="flex gap-6">
+                <span className="flex items-center gap-1 hover:text-[#003527] transition-colors cursor-pointer">
+                  <Shield className="h-4 w-4" />
+                  Kebijakan Privasi
+                </span>
+                <span className="flex items-center gap-1 hover:text-[#003527] transition-colors cursor-pointer">
+                  <FileText className="h-4 w-4" />
+                  Ketentuan Layanan
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
