@@ -246,17 +246,17 @@ export function AuthModal({ open, onOpenChange, mode, onModeChange }: AuthModalP
               </div>
               <div className="pt-8">
                 <h2 className="text-3xl font-extrabold leading-tight mb-4">
-                  The Digital Sanctuary
+                  Bersama Membangun Harmoni
                 </h2>
                 <p className="text-emerald-100 text-base leading-relaxed opacity-90">
-                  Selamat datang di portal warga modern Anda. Kelola rumah, komunitas, dan layanan dalam satu tempat yang nyaman.
+                  Bergabunglah dalam komunitas Pradha Ciganitri yang penuh kebersamaan. Kelola kehidupan warga dengan kemudahan digital untuk kesejahteraan bersama.
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-4 text-xs opacity-60">
               <span>© {new Date().getFullYear()} {settings?.siteName || 'Pradha Ciganitri'}</span>
               <span className="w-1 h-1 rounded-full bg-white"></span>
-              <span>Portal Warga Terverifikasi</span>
+              <span>Warga Pradha Ciganitri</span>
             </div>
           </div>
 
@@ -301,8 +301,8 @@ export function AuthModal({ open, onOpenChange, mode, onModeChange }: AuthModalP
             {mode === 'login' && (
               <section className="space-y-6">
                 <header>
-                  <h3 className="text-2xl font-bold text-[#003527] mb-2">Selamat Datang</h3>
-                  <p className="text-[#404944]">Silakan masuk untuk mengakses dasbor warga Anda.</p>
+                  <h3 className="text-2xl font-bold text-[#003527] mb-2">Selamat Datang Warga Pradha</h3>
+                  <p className="text-[#404944]">Masuk untuk terhubung dengan komunitas dan akses layanan digital kemurahan kita.</p>
                 </header>
 
                 {error && (
@@ -389,9 +389,9 @@ export function AuthModal({ open, onOpenChange, mode, onModeChange }: AuthModalP
             {mode === 'forgot-password' && (
               <section className="space-y-6">
                 <header>
-                  <h3 className="text-2xl font-bold text-[#003527] mb-2">Pulihkan Akses</h3>
+                  <h3 className="text-2xl font-bold text-[#003527] mb-2">Pemulihan Akses</h3>
                   <p className="text-[#404944]">
-                    Masukkan alamat email yang terdaftar. Kami akan mengirimkan link aman untuk mereset password Anda.
+                    Jangan khawatir, kami siap membantu Anda kembali terhubung dengan komunitas. Masukkan email terdaftar untuk menerima link pemulihan.
                   </p>
                 </header>
 
@@ -461,7 +461,7 @@ export function AuthModal({ open, onOpenChange, mode, onModeChange }: AuthModalP
                       <HelpCircle className="h-4 w-4 text-emerald-700" />
                     </div>
                     <p className="text-[#404944]">
-                      Butuh bantuan?{' '}
+                      Tim pengurus siap membantu{' '}
                       <span className="underline underline-offset-2 decoration-[#003527]/30 text-[#003527] cursor-pointer hover:text-[#064e3b]">
                         Hubungi Admin
                       </span>
@@ -475,8 +475,8 @@ export function AuthModal({ open, onOpenChange, mode, onModeChange }: AuthModalP
             {mode === 'register' && (
               <section className="space-y-6">
                 <header>
-                  <h3 className="text-2xl font-bold text-[#003527] mb-2">Pendaftaran Warga</h3>
-                  <p className="text-[#404944]">Lengkapi data diri Anda untuk bergabung dalam komunitas.</p>
+                  <h3 className="text-2xl font-bold text-[#003527] mb-2">Bergabung Bersama Kami</h3>
+                  <p className="text-[#404944]">Daftarkan diri Anda untuk menjadi bagian dari keluarga besar Pradha Ciganitri yang harmonis dan sejahtera.</p>
                 </header>
 
                 {error && (
@@ -678,7 +678,7 @@ export function AuthModal({ open, onOpenChange, mode, onModeChange }: AuthModalP
               <div className="mt-8 pt-6 border-t border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-[#404944]">
                 <div className="flex items-center gap-2">
                   <HelpCircle className="h-4 w-4" />
-                  <span>Butuh bantuan akses?</span>
+                  <span>Ada kendala? Tim kami siap membantu</span>
                 </div>
                 <div className="flex gap-6">
                   <span className="flex items-center gap-1 hover:text-[#003527] transition-colors cursor-pointer">

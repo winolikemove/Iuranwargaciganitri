@@ -186,18 +186,18 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
           <div className="relative z-10 w-full max-w-screen-2xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
             <div className="space-y-6">
               <h1 className="text-3xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-[#131e19]">
-                Hidup dalam<br />
-                <span className="text-[#003527]">Keselarasan Sempurna.</span>
+                Pradha Ciganitri<br />
+                <span className="text-[#003527]">Harmoni & Sejahtera Bersama.</span>
               </h1>
               <p className="text-base md:text-lg text-[#404944] max-w-lg leading-relaxed">
-                Rasakan tempat perlindungan di mana kehidupan modern bertemu dengan pertumbuhan komunitas yang alami. Kelola, terhubung, dan berkembang di lingkungan digital-first kami.
+                Komplek yang penuh kebersamaan, di mana setiap warga saling mendukung menuju kesejahteraan. Kelola kehidupan warga dengan kemudahan digital untuk kemajuan bersama.
               </p>
               <div className="flex flex-wrap gap-3">
                 <Button
                   onClick={onLoginClick}
                   className="bg-gradient-to-br from-[#003527] to-[#064e3b] text-white px-6 py-3 rounded-xl font-semibold shadow-xl hover:opacity-90 transition-opacity"
                 >
-                  Jelajahi Komunitas
+                  Bergabung Sekarang
                 </Button>
                 <Button
                   variant="outline"
@@ -359,7 +359,7 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                   </div>
                   <h3 className="text-2xl font-bold mb-3">Portal Keuangan</h3>
                   <p className="text-[#404944] leading-relaxed text-sm">
-                    Pembayaran yang aman, transparan, dan bebas repot untuk iuran bulanan dan kontribusi proyek khusus Anda.
+                    Transparansi keuangan untuk kepercayaan dan kesejahteraan bersama. Kelola iuran dan kontribusi dengan mudah dan aman.
                   </p>
                 </div>
                 <Button
@@ -613,9 +613,9 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
           <section className="py-16 px-6 md:px-12 bg-white">
             <div className="max-w-screen-2xl mx-auto">
               <div className="text-center mb-12 space-y-3">
-                <h2 className="text-3xl font-bold">Kehidupan Komunitas</h2>
+                <h2 className="text-3xl font-bold">Momen Kebersamaan</h2>
                 <p className="text-[#404944] max-w-2xl mx-auto text-sm">
-                  Sekilas momen sehari-hari dan pengalaman bersama di dalam tempat perlindungan kami.
+                  Dokumentasi kegiatan dan momen kebersamaan warga Pradha Ciganitri dalam membangun harmoni lingkungan.
                 </p>
               </div>
               <div className="columns-1 md:columns-2 lg:columns-3 gap-4 space-y-4">
@@ -731,7 +731,7 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
             <div className="max-w-screen-2xl mx-auto">
               <div className="text-center mb-12">
                 <h2 className="text-3xl font-bold mb-3">Tim Pengurus</h2>
-                <p className="text-[#404944]">Pengurus yang siap membantu kebutuhan warga</p>
+                <p className="text-[#404944]">Pengurus yang berdedikasi untuk kesejahteraan dan keharmonisan warga</p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {pengurus.map((p) => {
@@ -777,10 +777,10 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
           <div className="max-w-4xl mx-auto bg-gradient-to-br from-[#003527] to-[#064e3b] rounded-xl p-10 md:p-16 text-center text-white relative overflow-hidden shadow-[0px_24px_48px_rgba(19,30,25,0.06)]">
             <div className="relative z-10 space-y-6">
               <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight">
-                Siap bergabung<br />dengan komunitas?
+                Jadilah Bagian dari<br />Keluarga Pradha Ciganitri
               </h2>
               <p className="text-emerald-100 max-w-lg mx-auto">
-                Rasakan masa depan kehidupan perumahan. Daftarkan unit Anda hari ini dan buka pengalaman komunitas yang lengkap.
+                Bersama kita wujudkan lingkungan yang harmonis, sejahtera, dan penuh kebersamaan. Daftarkan diri Anda untuk mengakses semua layanan digital kemurahan.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center pt-3">
                 {settings?.enableRegistration ? (
@@ -829,7 +829,7 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
               </span>
             </div>
             <p className="text-emerald-200/60 max-w-xs text-center md:text-left text-xs">
-              {settings?.siteDescription || 'Tempat perlindungan untuk kehidupan yang mengalir, di mana komunitas bertemu dengan inovasi digital.'}
+              {settings?.siteDescription || 'Komplek Pradha Ciganitri - Bersama membangun harmoni, kesejahteraan, dan kebersamaan melalui layanan digital modern.'}
             </p>
             <p className="text-emerald-200/60 text-xs">
               © {new Date().getFullYear()} {settings?.siteName || 'Pradha Ciganitri'}. Hak cipta dilindungi.
