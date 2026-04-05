@@ -257,8 +257,9 @@ export function AgendaPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="ALL">Semua Blok</SelectItem>
-                      <SelectItem value="A">Blok A</SelectItem>
-                      <SelectItem value="B">Blok B</SelectItem>
+                      {settings?.bloks?.map((blok) => (
+                        <SelectItem key={blok} value={blok}>Blok {blok}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>

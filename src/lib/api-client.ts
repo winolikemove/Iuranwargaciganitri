@@ -20,203 +20,263 @@ interface CacheEntry<T> {
 // In-memory cache for client-side
 const memoryCache = new Map<string, CacheEntry<unknown>>();
 
-// Demo data for testing without backend
-const DEMO_DATA = {
-  settings: {
-    siteName: 'Pradha Ciganitri',
-    siteDescription: 'Sistem Manajemen Warga Modern',
-    logoUrl: '',
-    monthlyFee: 150000,
-    enableRegistration: true,
-    enablePaymentSubmission: true,
-    enableAgenda: true,
-    enableGallery: true,
-    enableInformation: true,
-    enablePublicFinance: true,
-    enableReviews: true,
-    incomeCategories: ['Iuran', 'Sumbangan', 'Kegiatan', 'Lainnya'],
-    expenseCategories: ['Kebersihan', 'Keamanan', 'Pemeliharaan', 'Kegiatan', 'Lainnya'],
-    informationCategories: ['Pengumuman', 'Kegiatan', 'Peringatan', 'Lainnya'],
-  } as AppSettings,
+// Helper function to get dynamic dates for demo data
+const getDemoDates = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
   
-  publicFinance: {
-    saldoAkhir: 2000000,
-    totalPemasukanBulanIni: 4500000,
-    totalPengeluaranBulanIni: 2500000,
-    periodLabel: 'April 2026',
-    lastUpdated: new Date().toISOString(),
-  } as PublicFinanceSummary,
+  // Format date as YYYY-MM-DD
+  const formatDate = (y: number, m: number, d: number) => {
+    return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  };
   
-  agendas: [
-    {
-      id: '1',
-      title: 'Kerja Bakti Bulanan',
-      description: 'Kerja bakti bersih-bersih lingkungan komplek',
-      location: 'Area Komplek Pradha Ciganitri',
-      startDate: '2026-04-12',
-      startTime: '07:00',
-      endDate: '2026-04-12',
-      endTime: '10:00',
-      status: 'upcoming',
-      targetBlok: 'all',
-      createdBy: 'admin',
-      createdAt: '2026-04-01T10:00:00Z',
-      updatedAt: '2026-04-01T10:00:00Z',
-    },
-    {
-      id: '2',
-      title: 'Rapat Bulanan Warga',
-      description: 'Rapat koordinasi bulanan warga komplek',
-      location: 'Aula Pradha Ciganitri',
-      startDate: '2026-04-20',
-      startTime: '19:00',
-      endDate: '2026-04-20',
-      endTime: '21:00',
-      status: 'upcoming',
-      targetBlok: 'all',
-      createdBy: 'admin',
-      createdAt: '2026-04-02T10:00:00Z',
-      updatedAt: '2026-04-02T10:00:00Z',
-    },
-  ] as Agenda[],
+  // Format datetime as ISO string
+  const formatDateTime = (y: number, m: number, d: number, h: number = 0, min: number = 0) => {
+    return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}T${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}:00Z`;
+  };
   
-  informations: [
-    {
-      id: '1',
-      title: 'Pembayaran Iuran Bulan April',
-      content: 'Diharapkan kepada seluruh warga untuk segera melakukan pembayaran iuran bulan April paling lambat tanggal 15 April 2026.',
-      category: 'Pengumuman',
-      isPinned: true,
-      targetBlok: 'all',
-      createdBy: 'admin',
-      createdAt: '2026-04-01T08:00:00Z',
-      updatedAt: '2026-04-01T08:00:00Z',
-    },
-    {
-      id: '2',
-      title: 'Perbaikan Jalan Utama',
-      content: 'Akan dilakukan perbaikan jalan utama komplek pada tanggal 10-12 April 2026. Mohon pengertiannya.',
-      category: 'Pengumuman',
-      isPinned: false,
-      targetBlok: 'all',
-      createdBy: 'admin',
-      createdAt: '2026-04-03T09:00:00Z',
-      updatedAt: '2026-04-03T09:00:00Z',
-    },
-  ] as Information[],
+  // Get next occurrence of a day (0=Sunday, 1=Monday, etc.)
+  const getNextDay = (dayOfWeek: number) => {
+    const result = new Date(now);
+    result.setDate(now.getDate() + ((dayOfWeek + 7 - now.getDay()) % 7 || 7));
+    return result;
+  };
   
-  galleries: [
-    {
-      id: '1',
-      title: 'Kerja Bakti Maret 2026',
-      description: 'Dokumentasi kegiatan kerja bakti bulan Maret',
-      imageUrl: 'https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=800',
-      thumbnailUrl: 'https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=400',
-      uploadedBy: 'admin',
-      createdAt: '2026-03-15T10:00:00Z',
-    },
-    {
-      id: '2',
-      title: 'Rapat Warga Q1 2026',
-      description: 'Rapat koordinasi warga kuartal pertama',
-      imageUrl: 'https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=800',
-      thumbnailUrl: 'https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=400',
-      uploadedBy: 'admin',
-      createdAt: '2026-03-20T19:00:00Z',
-    },
-  ] as Gallery[],
+  // Add days to a date
+  const addDays = (date: Date, days: number) => {
+    const result = new Date(date);
+    result.setDate(result.getDate() + days);
+    return result;
+  };
   
-  reviews: [
-    {
-      id: '1',
-      userId: 'user1',
-      userName: 'Budi Santoso',
-      userBlok: 'A1',
-      rating: 5,
-      comment: 'Komplek yang sangat nyaman dan terawat. Pengurus sangat aktif dan responsif.',
-      status: 'approved',
-      createdAt: '2026-03-25T15:00:00Z',
-    },
-    {
-      id: '2',
-      userId: 'user2',
-      userName: 'Siti Rahayu',
-      userBlok: 'B2',
-      rating: 4,
-      comment: 'Lingkungan yang asri dan aman. Cocok untuk keluarga.',
-      status: 'approved',
-      createdAt: '2026-03-28T10:00:00Z',
-    },
-  ] as Review[],
+  return {
+    year,
+    month,
+    monthName: monthNames[month],
+    periodLabel: `${monthNames[month]} ${year}`,
+    formatDate,
+    formatDateTime,
+    getNextDay,
+    addDays,
+    now: now.toISOString(),
+  };
+};
+
+// Generate dynamic demo data
+const generateDemoData = () => {
+  const dates = getDemoDates();
   
-  pengurus: [
-    {
-      id: 'admin1',
-      nama: 'Ahmad Hidayat',
-      email: 'ahmad@pradha.id',
-      nik: '3201010101010001',
-      blok: 'A1',
-      nomorRumah: '1',
-      telepon: '08123456789',
+  // Next Saturday for kerja bakti
+  const kerjaBaktiDate = dates.getNextDay(6); // Saturday
+  // Next Sunday for rapat
+  const rapatDate = dates.addDays(kerjaBaktiDate, 1); // Sunday after
+  
+  return {
+    settings: {
+      siteName: 'Pradha Ciganitri',
+      siteDescription: 'Sistem Manajemen Warga Modern',
+      logoUrl: '',
+      monthlyFee: 150000,
+      enableRegistration: true,
+      enablePaymentSubmission: true,
+      enableAgenda: true,
+      enableGallery: true,
+      enableInformation: true,
+      enablePublicFinance: true,
+      enableReviews: true,
+      incomeCategories: ['Iuran', 'Sumbangan', 'Kegiatan', 'Lainnya'],
+      expenseCategories: ['Kebersihan', 'Keamanan', 'Pemeliharaan', 'Kegiatan', 'Lainnya'],
+      informationCategories: ['Pengumuman', 'Kegiatan', 'Peringatan', 'Lainnya'],
+      bloks: ['A', 'B', 'C', 'D'],
+    } as AppSettings,
+    
+    publicFinance: {
+      saldoAkhir: 2000000,
+      totalPemasukanBulanIni: 4500000,
+      totalPengeluaranBulanIni: 2500000,
+      periodLabel: dates.periodLabel,
+      lastUpdated: dates.now,
+    } as PublicFinanceSummary,
+    
+    agendas: [
+      {
+        id: '1',
+        title: 'Kerja Bakti Bulanan',
+        description: 'Kerja bakti bersih-bersih lingkungan komplek',
+        location: 'Area Komplek Pradha Ciganitri',
+        startDate: dates.formatDate(kerjaBaktiDate.getFullYear(), kerjaBaktiDate.getMonth(), kerjaBaktiDate.getDate()),
+        startTime: '07:00',
+        endDate: dates.formatDate(kerjaBaktiDate.getFullYear(), kerjaBaktiDate.getMonth(), kerjaBaktiDate.getDate()),
+        endTime: '10:00',
+        status: 'UPCOMING',
+        targetBlok: 'all',
+        createdBy: 'admin',
+        createdAt: dates.formatDateTime(dates.year, dates.month, 1),
+        updatedAt: dates.formatDateTime(dates.year, dates.month, 1),
+      },
+      {
+        id: '2',
+        title: 'Rapat Bulanan Warga',
+        description: 'Rapat koordinasi bulanan warga komplek',
+        location: 'Aula Pradha Ciganitri',
+        startDate: dates.formatDate(rapatDate.getFullYear(), rapatDate.getMonth(), rapatDate.getDate()),
+        startTime: '19:00',
+        endDate: dates.formatDate(rapatDate.getFullYear(), rapatDate.getMonth(), rapatDate.getDate()),
+        endTime: '21:00',
+        status: 'UPCOMING',
+        targetBlok: 'all',
+        createdBy: 'admin',
+        createdAt: dates.formatDateTime(dates.year, dates.month, 2),
+        updatedAt: dates.formatDateTime(dates.year, dates.month, 2),
+      },
+    ] as Agenda[],
+    
+    informations: [
+      {
+        id: '1',
+        title: `Pembayaran Iuran Bulan ${dates.monthName}`,
+        content: `Diharapkan kepada seluruh warga untuk segera melakukan pembayaran iuran bulan ${dates.monthName} paling lambat tanggal 15 ${dates.monthName} ${dates.year}.`,
+        category: 'Pengumuman',
+        isPinned: true,
+        targetBlok: 'all',
+        publishedAt: dates.formatDateTime(dates.year, dates.month, 1),
+        expiredAt: null,
+        createdBy: 'admin',
+        createdAt: dates.formatDateTime(dates.year, dates.month, 1),
+      },
+      {
+        id: '2',
+        title: 'Perbaikan Jalan Utama',
+        content: 'Akan dilakukan perbaikan jalan utama komplek minggu depan. Mohon pengertiannya.',
+        category: 'Pengumuman',
+        isPinned: false,
+        targetBlok: 'all',
+        publishedAt: dates.formatDateTime(dates.year, dates.month, 3),
+        expiredAt: null,
+        createdBy: 'admin',
+        createdAt: dates.formatDateTime(dates.year, dates.month, 3),
+      },
+    ] as Information[],
+    
+    galleries: [
+      {
+        id: '1',
+        title: `Kerja Bakti ${dates.monthName} ${dates.year}`,
+        description: 'Dokumentasi kegiatan kerja bakti bulan ini',
+        imageUrl: 'https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=800',
+        thumbnailUrl: 'https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=400',
+        agendaId: null,
+        takenAt: dates.formatDateTime(dates.year, dates.month, 15),
+        uploadedBy: 'admin',
+        createdAt: dates.formatDateTime(dates.year, dates.month, 15),
+      },
+      {
+        id: '2',
+        title: `Rapat Warga Q1 ${dates.year}`,
+        description: 'Rapat koordinasi warga kuartal pertama',
+        imageUrl: 'https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=800',
+        thumbnailUrl: 'https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=400',
+        agendaId: null,
+        takenAt: dates.formatDateTime(dates.year, dates.month, 20, 19),
+        uploadedBy: 'admin',
+        createdAt: dates.formatDateTime(dates.year, dates.month, 20, 19),
+      },
+    ] as Gallery[],
+    
+    reviews: [
+      {
+        id: '1',
+        userId: 'user1',
+        userName: 'Budi Santoso',
+        userBlok: 'A1',
+        rating: 5,
+        comment: 'Komplek yang sangat nyaman dan terawat. Pengurus sangat aktif dan responsif.',
+        status: 'APPROVED',
+        createdAt: dates.formatDateTime(dates.year, dates.month, 25, 15),
+      },
+      {
+        id: '2',
+        userId: 'user2',
+        userName: 'Siti Rahayu',
+        userBlok: 'B2',
+        rating: 4,
+        comment: 'Lingkungan yang asri dan aman. Cocok untuk keluarga.',
+        status: 'APPROVED',
+        createdAt: dates.formatDateTime(dates.year, dates.month, 28, 10),
+      },
+    ] as Review[],
+    
+    pengurus: [
+      {
+        id: 'admin1',
+        nama: 'Ahmad Hidayat',
+        email: 'ahmad@pradha.id',
+        nik: '3201010101010001',
+        blok: 'A1',
+        nomorRumah: '1',
+        telepon: '08123456789',
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        photoUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200',
+      },
+      {
+        id: 'pengurus1',
+        nama: 'Dewi Lestari',
+        email: 'dewi@pradha.id',
+        nik: '3201010101010002',
+        blok: 'B3',
+        nomorRumah: '3',
+        telepon: '08123456790',
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        photoUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200',
+      },
+    ] as SafeUser[],
+    
+    demoUser: {
+      id: 'demo-user',
+      nama: 'Demo User',
+      email: 'demo@pradha.id',
+      nik: '3201010101010003',
+      blok: 'C5',
+      nomorRumah: '5',
+      telepon: '081234567899',
       role: 'ADMIN',
       status: 'ACTIVE',
-      photoUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200',
-    },
-    {
-      id: 'pengurus1',
-      nama: 'Dewi Lestari',
-      email: 'dewi@pradha.id',
-      nik: '3201010101010002',
-      blok: 'B3',
-      nomorRumah: '3',
-      telepon: '08123456790',
-      role: 'ADMIN',
-      status: 'ACTIVE',
-      photoUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200',
-    },
-  ] as SafeUser[],
-  
-  demoUser: {
-    id: 'demo-user',
-    nama: 'Demo User',
-    email: 'demo@pradha.id',
-    nik: '3201010101010003',
-    blok: 'C5',
-    nomorRumah: '5',
-    telepon: '081234567899',
-    role: 'ADMIN',
-    status: 'ACTIVE',
-    photoUrl: null,
-  } as SafeUser,
-  
-  demoPermissions: {
-    canViewAllUsers: true,
-    canViewOwnBlokUsers: true,
-    canApproveUsers: true,
-    canRejectUsers: true,
-    canChangeUserRole: true,
-    canBlockUsers: true,
-    canViewFinance: true,
-    canCreateTransaction: true,
-    canEditTransaction: true,
-    canDeleteTransaction: true,
-    canSubmitPayment: true,
-    canApprovePayment: true,
-    canRejectPayment: true,
-    canViewAllPayments: true,
-    canCreateAgenda: true,
-    canEditAgenda: true,
-    canDeleteAgenda: true,
-    canCreateInformation: true,
-    canEditInformation: true,
-    canDeleteInformation: true,
-    canUploadGallery: true,
-    canDeleteGallery: true,
-    canApproveReviews: true,
-    canDeleteReviews: true,
-    canManageSettings: true,
-    canManageRoles: true,
-  } as Permissions,
+      photoUrl: null,
+    } as SafeUser,
+    
+    demoPermissions: {
+      canViewAllUsers: true,
+      canViewOwnBlokUsers: true,
+      canApproveUsers: true,
+      canRejectUsers: true,
+      canChangeUserRole: true,
+      canBlockUsers: true,
+      canViewFinance: true,
+      canCreateTransaction: true,
+      canEditTransaction: true,
+      canDeleteTransaction: true,
+      canSubmitPayment: true,
+      canApprovePayment: true,
+      canRejectPayment: true,
+      canViewAllPayments: true,
+      canCreateAgenda: true,
+      canEditAgenda: true,
+      canDeleteAgenda: true,
+      canCreateInformation: true,
+      canEditInformation: true,
+      canDeleteInformation: true,
+      canUploadGallery: true,
+      canDeleteGallery: true,
+      canApproveReviews: true,
+      canDeleteReviews: true,
+      canManageSettings: true,
+      canManageRoles: true,
+    } as Permissions,
+  };
 };
 
 // Cache manager
@@ -388,11 +448,14 @@ class ApiClient {
   private baseUrl: string;
   private defaultTimeout: number;
   private demoMode: boolean;
+  private demoData: ReturnType<typeof generateDemoData>;
   
   constructor(baseUrl: string, defaultTimeout: number = DEFAULT_TIMEOUT) {
     this.baseUrl = baseUrl;
     this.defaultTimeout = defaultTimeout;
     this.demoMode = DEMO_MODE;
+    // Generate demo data once at initialization
+    this.demoData = generateDemoData();
   }
   
   // Core request method
@@ -509,7 +572,7 @@ class ApiClient {
           result = { 
             ok: true, 
             data: { 
-              user: DEMO_DATA.demoUser, 
+              user: this.demoData.demoUser, 
               token: 'demo-token-' + Date.now() 
             } as T 
           };
@@ -523,7 +586,7 @@ class ApiClient {
         break;
         
       case 'auth.me':
-        result = { ok: true, data: DEMO_DATA.demoUser as T };
+        result = { ok: true, data: this.demoData.demoUser as T };
         break;
         
       case 'auth.changePassword':
@@ -531,41 +594,41 @@ class ApiClient {
         break;
         
       case 'role.permissions':
-        result = { ok: true, data: DEMO_DATA.demoPermissions as T };
+        result = { ok: true, data: this.demoData.demoPermissions as T };
         break;
         
       // Public
       case 'settings.public':
-        result = { ok: true, data: DEMO_DATA.settings as T };
+        result = { ok: true, data: this.demoData.settings as T };
         break;
         
       case 'finance.publicSummary':
-        result = { ok: true, data: DEMO_DATA.publicFinance as T };
+        result = { ok: true, data: this.demoData.publicFinance as T };
         break;
         
       case 'agenda.publicList':
-        result = { ok: true, data: DEMO_DATA.agendas as T };
+        result = { ok: true, data: this.demoData.agendas as T };
         break;
         
       case 'info.publicList':
-        result = { ok: true, data: DEMO_DATA.informations as T };
+        result = { ok: true, data: this.demoData.informations as T };
         break;
         
       case 'gallery.publicList':
-        result = { ok: true, data: DEMO_DATA.galleries as T };
+        result = { ok: true, data: this.demoData.galleries as T };
         break;
         
       case 'review.publicList':
-        result = { ok: true, data: DEMO_DATA.reviews as T };
+        result = { ok: true, data: this.demoData.reviews as T };
         break;
         
       case 'pengurus.publicList':
-        result = { ok: true, data: DEMO_DATA.pengurus as T };
+        result = { ok: true, data: this.demoData.pengurus as T };
         break;
         
       // Settings
       case 'settings.all':
-        result = { ok: true, data: DEMO_DATA.settings as T };
+        result = { ok: true, data: this.demoData.settings as T };
         break;
         
       case 'settings.update':
@@ -577,7 +640,10 @@ class ApiClient {
         result = { 
           ok: true, 
           data: {
-            ...DEMO_DATA.publicFinance,
+            ...this.demoData.publicFinance,
+            saldoAwal: 1500000,
+            totalPemasukan: 4500000,
+            totalPengeluaran: 2500000,
             transactions: [],
             monthlyBreakdown: [],
           } as T 
@@ -594,7 +660,7 @@ class ApiClient {
         
       // Users
       case 'user.list':
-        result = { ok: true, data: [...DEMO_DATA.pengurus, DEMO_DATA.demoUser] as T };
+        result = { ok: true, data: [...this.demoData.pengurus, this.demoData.demoUser] as T };
         break;
         
       case 'user.pending':
@@ -619,7 +685,7 @@ class ApiClient {
         
       // Agenda
       case 'agenda.list':
-        result = { ok: true, data: DEMO_DATA.agendas as T };
+        result = { ok: true, data: this.demoData.agendas as T };
         break;
         
       case 'agenda.create':
@@ -636,7 +702,7 @@ class ApiClient {
         
       // Information
       case 'info.list':
-        result = { ok: true, data: DEMO_DATA.informations as T };
+        result = { ok: true, data: this.demoData.informations as T };
         break;
         
       case 'info.create':
@@ -653,7 +719,7 @@ class ApiClient {
         
       // Gallery
       case 'gallery.list':
-        result = { ok: true, data: DEMO_DATA.galleries as T };
+        result = { ok: true, data: this.demoData.galleries as T };
         break;
         
       case 'gallery.upload':
@@ -674,7 +740,7 @@ class ApiClient {
         break;
         
       case 'review.all':
-        result = { ok: true, data: DEMO_DATA.reviews as T };
+        result = { ok: true, data: this.demoData.reviews as T };
         break;
         
       case 'review.submit':
@@ -727,9 +793,9 @@ class ApiClient {
         result = { 
           ok: true, 
           data: {
-            admin: DEMO_DATA.demoPermissions,
-            pengurus: { ...DEMO_DATA.demoPermissions, canManageSettings: false, canManageRoles: false },
-            warga: { ...DEMO_DATA.demoPermissions, canViewAllUsers: false, canViewFinance: false, canCreateTransaction: false, canEditTransaction: false, canDeleteTransaction: false, canApprovePayment: false, canRejectPayment: false, canViewAllPayments: false, canCreateAgenda: false, canEditAgenda: false, canDeleteAgenda: false, canCreateInformation: false, canEditInformation: false, canDeleteInformation: false, canDeleteGallery: false, canApproveReviews: false, canDeleteReviews: false, canManageSettings: false, canManageRoles: false },
+            ADMIN: this.demoData.demoPermissions,
+            BENDAHARA: { ...this.demoData.demoPermissions, canManageSettings: false, canManageRoles: false },
+            WARGA: { ...this.demoData.demoPermissions, canViewAllUsers: false, canViewFinance: false, canCreateTransaction: false, canEditTransaction: false, canDeleteTransaction: false, canApprovePayment: false, canRejectPayment: false, canViewAllPayments: false, canCreateAgenda: false, canEditAgenda: false, canDeleteAgenda: false, canCreateInformation: false, canEditInformation: false, canDeleteInformation: false, canDeleteGallery: false, canApproveReviews: false, canDeleteReviews: false, canManageSettings: false, canManageRoles: false },
           } as T 
         };
         break;

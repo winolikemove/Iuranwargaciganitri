@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/auth-context';
+import { useApp } from '@/context/app-context';
 import { api } from '@/lib/api-client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -47,6 +48,7 @@ import type { SafeUser } from '@/types';
 
 export function UserManagementPage() {
   const { user, permissions } = useAuth();
+  const { settings } = useApp();
   
   const [users, setUsers] = useState<SafeUser[]>([]);
   const [pendingUsers, setPendingUsers] = useState<SafeUser[]>([]);
@@ -308,8 +310,9 @@ export function UserManagementPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="ALL">Semua Blok</SelectItem>
-                      <SelectItem value="A">Blok A</SelectItem>
-                      <SelectItem value="B">Blok B</SelectItem>
+                      {settings?.bloks?.map((blok) => (
+                        <SelectItem key={blok} value={blok}>Blok {blok}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 )}

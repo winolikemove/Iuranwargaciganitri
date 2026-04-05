@@ -40,6 +40,7 @@ const defaultSettings: AppSettings = {
   incomeCategories: ['Iuran', 'Sumbangan', 'Lainnya'],
   expenseCategories: ['Kebersihan', 'Keamanan', 'Lainnya'],
   informationCategories: ['Pengumuman', 'Kegiatan', 'Lainnya'],
+  bloks: ['A', 'B', 'C', 'D'],
 };
 
 const AppContext = createContext<AppContextType | undefined>(undefined);

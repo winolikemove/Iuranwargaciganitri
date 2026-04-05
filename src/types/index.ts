@@ -140,6 +140,7 @@ export interface AppSettings {
   incomeCategories: string[];
   expenseCategories: string[];
   informationCategories: string[];
+  bloks: string[]; // Dynamic blok names from settings
   [key: string]: unknown;
 }
 

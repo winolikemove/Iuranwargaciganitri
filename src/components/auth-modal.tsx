@@ -324,8 +324,9 @@ export function AuthModal({ open, onOpenChange, mode, onModeChange }: AuthModalP
                       <SelectValue placeholder="Pilih blok" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="A">Blok A</SelectItem>
-                      <SelectItem value="B">Blok B</SelectItem>
+                      {settings?.bloks?.map((blok) => (
+                        <SelectItem key={blok} value={blok}>Blok {blok}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   {fieldErrors.blok && (

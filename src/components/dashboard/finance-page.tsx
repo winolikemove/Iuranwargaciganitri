@@ -91,6 +91,12 @@ export function FinancePage() {
     { value: '12', label: 'Desember' },
   ];
 
+  // Generate years dynamically (current year - 2 to current year + 2)
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i);
+
+  const [formError, setFormError] = useState<string | null>(null);
+
   useEffect(() => {
     loadData();
   }, [filterYear, filterMonth, filterType]);
@@ -128,13 +134,32 @@ export function FinancePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError(null);
+    
+    // Validation
+    if (!formData.category) {
+      setFormError('Kategori harus dipilih');
+      return;
+    }
+    
+    const amount = parseInt(formData.amount);
+    if (isNaN(amount) || amount <= 0) {
+      setFormError('Nominal harus berupa angka positif');
+      return;
+    }
+    
+    if (!formData.description.trim()) {
+      setFormError('Keterangan harus diisi');
+      return;
+    }
+    
     setIsSubmitting(true);
     
     try {
       const result = await api.createTransaction({
         type: formData.type,
         category: formData.category,
-        amount: parseInt(formData.amount),
+        amount: amount,
         description: formData.description,
         date: formData.date,
       });
@@ -150,10 +175,10 @@ export function FinancePage() {
         });
         loadData();
       } else {
-        setError(result.error || 'Gagal menambah transaksi');
+        setFormError(result.error || 'Gagal menambah transaksi');
       }
     } catch (err) {
-      setError('Terjadi kesalahan');
+      setFormError('Terjadi kesalahan');
     } finally {
       setIsSubmitting(false);
     }
@@ -280,6 +305,13 @@ export function FinancePage() {
                     <DialogDescription>Masukkan detail transaksi</DialogDescription>
                   </DialogHeader>
                   <form onSubmit={handleSubmit} className="space-y-4">
+                    {formError && (
+                      <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription>{formError}</AlertDescription>
+                      </Alert>
+                    )}
+                    
                     <div className="space-y-2">
                       <Label>Tipe</Label>
                       <Select
@@ -367,7 +399,7 @@ export function FinancePage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {[2024, 2025, 2026].map((year) => (
+                  {years.map((year) => (
                     <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
                   ))}
                 </SelectContent>
