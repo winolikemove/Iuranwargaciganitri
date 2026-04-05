@@ -19,16 +19,11 @@ import {
   TrendingDown,
   LogIn,
   UserPlus,
-  Settings,
-  Notifications,
   Info,
-  Group,
-  AccountBalanceWallet,
-  Schedule,
-  LocationOn,
-  SocialLeaderboard,
-  Language,
+  Globe,
   Mail,
+  Trophy,
+  Landmark,
 } from 'lucide-react';
 
 interface LandingPageProps {
@@ -320,7 +315,7 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
               <div className="md:col-span-2 md:row-span-2 bg-[#deebe3] rounded-xl p-10 flex flex-col justify-between hover:scale-[1.02] transition-transform">
                 <div>
                   <div className="w-16 h-16 rounded-xl bg-[#003527] flex items-center justify-center mb-6">
-                    <AccountBalanceWallet className="h-8 w-8 text-white" />
+                    <Landmark className="h-8 w-8 text-white" />
                   </div>
                   <h3 className="text-3xl font-bold mb-4">Portal Keuangan</h3>
                   <p className="text-[#404944] leading-relaxed">
@@ -604,10 +599,10 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
             <div className="flex flex-col gap-6">
               <div className="flex gap-4">
                 <a href="#" className="hover:opacity-80 transition-opacity">
-                  <SocialLeaderboard className="h-5 w-5" />
+                  <Trophy className="h-5 w-5" />
                 </a>
                 <a href="#" className="hover:opacity-80 transition-opacity">
-                  <Language className="h-5 w-5" />
+                  <Globe className="h-5 w-5" />
                 </a>
                 <a href="#" className="hover:opacity-80 transition-opacity">
                   <Mail className="h-5 w-5" />
