@@ -250,7 +250,7 @@ export function ProfilePage() {
               <User className="h-5 w-5 text-muted-foreground" />
               <div className="flex-1">
                 <p className="text-xs text-muted-foreground">NIK</p>
-                <p className="font-medium">{user?.nik || <span className=\"text-muted-foreground italic\">Belum diisi</span>}</p>
+                <p className="font-medium">{user?.nik || <span className="text-muted-foreground italic">Belum diisi</span>}</p>
               </div>
             </div>
             <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
