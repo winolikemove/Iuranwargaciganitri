@@ -18,6 +18,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
 import {
   Image as ImageIcon,
   Plus,
@@ -28,12 +29,16 @@ import {
   CheckCircle,
   X,
   Link,
+  Calendar,
+  User,
+  Clock,
+  MapPin,
 } from 'lucide-react';
-import type { Gallery } from '@/types';
+import type { Gallery, Agenda } from '@/types';
 
 export function GalleryPage() {
   const { user, permissions } = useAuth();
-  const { settings } = useApp();
+  const { settings, agendas } = useApp();
   
   const [galleries, setGalleries] = useState<Gallery[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -49,6 +54,7 @@ export function GalleryPage() {
     description: '',
     imageUrl: '',
     takenAt: '',
+    agendaId: '',
   });
   
   const [uploadMethod, setUploadMethod] = useState<'file' | 'url'>('file');
@@ -73,6 +79,13 @@ export function GalleryPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Get agenda name by ID
+  const getAgendaName = (agendaId: string | null): string | null => {
+    if (!agendaId) return null;
+    const agenda = agendas?.find(a => a.id === agendaId);
+    return agenda?.title || null;
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -147,6 +160,7 @@ export function GalleryPage() {
         description: formData.description,
         imageUrl: imageUrl,
         takenAt: formData.takenAt || undefined,
+        agendaId: formData.agendaId || undefined,
       });
       
       if (result.ok) {
@@ -156,6 +170,7 @@ export function GalleryPage() {
           description: '',
           imageUrl: '',
           takenAt: '',
+          agendaId: '',
         });
         setSelectedFile(null);
         setFilePreview(null);
@@ -187,12 +202,39 @@ export function GalleryPage() {
       description: '',
       imageUrl: '',
       takenAt: '',
+      agendaId: '',
     });
     setSelectedFile(null);
     setFilePreview(null);
     setUploadError(null);
     setUploadSuccess(false);
     setUploadMethod('file');
+  };
+
+  const formatDate = (dateStr: string) => {
+    try {
+      return new Date(dateStr).toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      });
+    } catch {
+      return dateStr;
+    }
+  };
+
+  const formatDateTime = (dateStr: string) => {
+    try {
+      return new Date(dateStr).toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    } catch {
+      return dateStr;
+    }
   };
 
   if (!settings?.enableGallery) {
@@ -255,6 +297,22 @@ export function GalleryPage() {
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     placeholder="Deskripsi singkat"
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Kegiatan Terkait (Opsional)</Label>
+                  <select
+                    className="w-full flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    value={formData.agendaId}
+                    onChange={(e) => setFormData({ ...formData, agendaId: e.target.value })}
+                  >
+                    <option value="">Pilih kegiatan (opsional)</option>
+                    {agendas?.map((agenda) => (
+                      <option key={agenda.id} value={agenda.id}>
+                        {agenda.title}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 
                 <Tabs value={uploadMethod} onValueChange={(v) => setUploadMethod(v as 'file' | 'url')}>
@@ -393,11 +451,18 @@ export function GalleryPage() {
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 )}
+                {/* Overlay info on hover */}
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <p className="text-white font-medium truncate text-sm">{gallery.title}</p>
+                </div>
               </div>
               <CardContent className="p-3">
-                <p className="font-medium truncate">{gallery.title}</p>
-                {gallery.description && (
-                  <p className="text-xs text-muted-foreground truncate">{gallery.description}</p>
+                <p className="font-medium truncate text-sm">{gallery.title}</p>
+                {gallery.takenAt && (
+                  <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                    <Calendar className="h-3 w-3" />
+                    {formatDate(gallery.takenAt)}
+                  </p>
                 )}
               </CardContent>
             </Card>
@@ -405,23 +470,89 @@ export function GalleryPage() {
         </div>
       )}
 
-      {/* Image Preview Dialog */}
+      {/* Image Preview Dialog with Details */}
       <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
-        <DialogContent className="max-w-4xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
           {selectedImage && (
             <>
               <DialogHeader>
-                <DialogTitle>{selectedImage.title}</DialogTitle>
+                <DialogTitle className="text-xl">{selectedImage.title}</DialogTitle>
                 {selectedImage.description && (
-                  <DialogDescription>{selectedImage.description}</DialogDescription>
+                  <DialogDescription className="text-base">
+                    {selectedImage.description}
+                  </DialogDescription>
                 )}
               </DialogHeader>
+              
+              {/* Image */}
               <div className="aspect-video relative rounded-lg overflow-hidden bg-muted">
                 <img
                   src={selectedImage.imageUrl}
                   alt={selectedImage.title}
                   className="w-full h-full object-contain"
                 />
+              </div>
+              
+              {/* Details Section */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t">
+                {/* Date Taken */}
+                {selectedImage.takenAt && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
+                      <Calendar className="h-4 w-4 text-emerald-600" />
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-xs">Tanggal</p>
+                      <p className="font-medium">{formatDate(selectedImage.takenAt)}</p>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Uploaded By */}
+                {selectedImage.uploadedBy && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                      <User className="h-4 w-4 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-xs">Diupload oleh</p>
+                      <p className="font-medium">{selectedImage.uploadedBy}</p>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Related Agenda */}
+                {selectedImage.agendaId && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
+                      <MapPin className="h-4 w-4 text-purple-600" />
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-xs">Kegiatan</p>
+                      <p className="font-medium">{getAgendaName(selectedImage.agendaId)}</p>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Created At */}
+                <div className="flex items-center gap-2 text-sm">
+                  <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+                    <Clock className="h-4 w-4 text-gray-600" />
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs">Ditambahkan</p>
+                    <p className="font-medium text-xs">{formatDateTime(selectedImage.createdAt)}</p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Tags */}
+              <div className="flex flex-wrap gap-2">
+                {selectedImage.agendaId && (
+                  <Badge variant="secondary" className="bg-purple-100 text-purple-800">
+                    Kegiatan: {getAgendaName(selectedImage.agendaId)}
+                  </Badge>
+                )}
               </div>
             </>
           )}

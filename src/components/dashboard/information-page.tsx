@@ -36,6 +36,11 @@ import {
   Pin,
   PinOff,
   Calendar,
+  Clock,
+  User,
+  Tag,
+  Eye,
+  X,
 } from 'lucide-react';
 import type { Information } from '@/types';
 
@@ -47,6 +52,7 @@ export function InformationPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedInfo, setSelectedInfo] = useState<Information | null>(null);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -115,6 +121,20 @@ export function InformationPage() {
         day: 'numeric',
         month: 'long',
         year: 'numeric',
+      });
+    } catch {
+      return dateStr;
+    }
+  };
+
+  const formatDateTime = (dateStr: string) => {
+    try {
+      return new Date(dateStr).toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
       });
     } catch {
       return dateStr;
@@ -269,12 +289,16 @@ export function InformationPage() {
             </Card>
           ) : (
             informations.map((info) => (
-              <Card key={info.id} className={info.isPinned ? 'border-emerald-500' : ''}>
+              <Card 
+                key={info.id} 
+                className={`${info.isPinned ? 'border-emerald-500' : ''} cursor-pointer hover:shadow-md transition-shadow`}
+                onClick={() => setSelectedInfo(info)}
+              >
                 <CardHeader>
                   <div className="flex items-start justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <CardTitle>{info.title}</CardTitle>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <CardTitle className="text-lg">{info.title}</CardTitle>
                         {info.isPinned && (
                           <Badge variant="secondary" className="bg-emerald-100 text-emerald-800">
                             <Pin className="h-3 w-3 mr-1" />
@@ -282,7 +306,7 @@ export function InformationPage() {
                           </Badge>
                         )}
                       </div>
-                      <CardDescription className="flex items-center gap-2 mt-1">
+                      <CardDescription className="flex items-center gap-2 mt-2 flex-wrap">
                         <Calendar className="h-3 w-3" />
                         {formatDate(info.publishedAt)}
                         <Badge variant="outline" className="text-xs">{info.category}</Badge>
@@ -291,44 +315,193 @@ export function InformationPage() {
                         </Badge>
                       </CardDescription>
                     </div>
-                    {permissions?.canEditInformation && (
-                      <div className="flex items-center gap-1">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleTogglePin(info.id)}
-                        >
-                          {info.isPinned ? (
-                            <PinOff className="h-4 w-4" />
-                          ) : (
-                            <Pin className="h-4 w-4" />
-                          )}
-                        </Button>
-                        <Button size="sm" variant="ghost">
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        {permissions?.canDeleteInformation && (
+                    <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                      {permissions?.canEditInformation && (
+                        <>
                           <Button
                             size="sm"
                             variant="ghost"
-                            className="text-destructive"
-                            onClick={() => handleDelete(info.id)}
+                            onClick={() => handleTogglePin(info.id)}
+                            title={info.isPinned ? 'Lepas sematkan' : 'Sematkan'}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            {info.isPinned ? (
+                              <PinOff className="h-4 w-4" />
+                            ) : (
+                              <Pin className="h-4 w-4" />
+                            )}
                           </Button>
-                        )}
-                      </div>
-                    )}
+                          <Button size="sm" variant="ghost">
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
+                      {permissions?.canDeleteInformation && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-destructive"
+                          onClick={() => handleDelete(info.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground whitespace-pre-wrap">{info.content}</p>
+                  <p className="text-muted-foreground whitespace-pre-wrap line-clamp-3">{info.content}</p>
+                  <Button 
+                    variant="link" 
+                    className="p-0 h-auto mt-2 text-emerald-600"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedInfo(info);
+                    }}
+                  >
+                    <Eye className="h-4 w-4 mr-1" />
+                    Lihat selengkapnya
+                  </Button>
                 </CardContent>
               </Card>
             ))
           )}
         </div>
       )}
+
+      {/* Detail Information Modal */}
+      <Dialog open={!!selectedInfo} onOpenChange={() => setSelectedInfo(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          {selectedInfo && (
+            <>
+              <DialogHeader>
+                <div className="flex items-start gap-3">
+                  <DialogTitle className="text-xl">{selectedInfo.title}</DialogTitle>
+                  {selectedInfo.isPinned && (
+                    <Badge variant="secondary" className="bg-emerald-100 text-emerald-800 shrink-0">
+                      <Pin className="h-3 w-3 mr-1" />
+                      Disematkan
+                    </Badge>
+                  )}
+                </div>
+                <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-muted-foreground">
+                  <Badge variant="outline">{selectedInfo.category}</Badge>
+                  <Badge variant="outline">
+                    {selectedInfo.targetBlok === 'ALL' ? 'Semua Blok' : `Blok ${selectedInfo.targetBlok}`}
+                  </Badge>
+                </div>
+              </DialogHeader>
+              
+              {/* Meta Info */}
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 py-4 border-y">
+                {/* Published Date */}
+                <div className="flex items-center gap-2">
+                  <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
+                    <Calendar className="h-5 w-5 text-emerald-600" />
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs">Dipublikasikan</p>
+                    <p className="font-medium text-sm">{formatDate(selectedInfo.publishedAt)}</p>
+                  </div>
+                </div>
+                
+                {/* Author */}
+                {selectedInfo.createdBy && (
+                  <div className="flex items-center gap-2">
+                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                      <User className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-xs">Dibuat oleh</p>
+                      <p className="font-medium text-sm">{selectedInfo.createdBy}</p>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Expiry Date */}
+                {selectedInfo.expiredAt && (
+                  <div className="flex items-center gap-2">
+                    <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
+                      <Clock className="h-5 w-5 text-amber-600" />
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-xs">Berlaku hingga</p>
+                      <p className="font-medium text-sm">{formatDate(selectedInfo.expiredAt)}</p>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Category */}
+                <div className="flex items-center gap-2">
+                  <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
+                    <Tag className="h-5 w-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs">Kategori</p>
+                    <p className="font-medium text-sm">{selectedInfo.category}</p>
+                  </div>
+                </div>
+                
+                {/* Created At */}
+                <div className="flex items-center gap-2">
+                  <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                    <Clock className="h-5 w-5 text-gray-600" />
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs">Ditambahkan</p>
+                    <p className="font-medium text-sm">{formatDateTime(selectedInfo.createdAt)}</p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Content */}
+              <div className="py-4">
+                <div className="prose prose-sm max-w-none">
+                  <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">{selectedInfo.content}</p>
+                </div>
+              </div>
+              
+              {/* Actions */}
+              {permissions?.canEditInformation && (
+                <div className="flex justify-end gap-2 pt-4 border-t">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      handleTogglePin(selectedInfo.id);
+                      setSelectedInfo(null);
+                    }}
+                  >
+                    {selectedInfo.isPinned ? (
+                      <>
+                        <PinOff className="h-4 w-4 mr-2" />
+                        Lepas Sematkan
+                      </>
+                    ) : (
+                      <>
+                        <Pin className="h-4 w-4 mr-2" />
+                        Sematkan
+                      </>
+                    )}
+                  </Button>
+                  {permissions?.canDeleteInformation && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedInfo(null);
+                        handleDelete(selectedInfo.id);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Hapus
+                    </Button>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

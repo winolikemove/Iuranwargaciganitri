@@ -8,6 +8,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Dialog,
   DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import {
   Calendar,
@@ -28,7 +31,10 @@ import {
   Landmark,
   MessageCircle,
   X,
+  Camera,
+  User,
 } from 'lucide-react';
+import type { Gallery } from '@/types';
 
 interface LandingPageProps {
   onLoginClick: () => void;
@@ -46,7 +52,7 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
     users,
   } = useApp();
 
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<Gallery | null>(null);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -62,6 +68,32 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
       return new Date(dateStr).toLocaleDateString('id-ID', {
         day: 'numeric',
         month: 'short',
+      });
+    } catch {
+      return dateStr;
+    }
+  };
+
+  const formatFullDate = (dateStr: string) => {
+    try {
+      return new Date(dateStr).toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      });
+    } catch {
+      return dateStr;
+    }
+  };
+
+  const formatDateTime = (dateStr: string) => {
+    try {
+      return new Date(dateStr).toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
       });
     } catch {
       return dateStr;
@@ -477,14 +509,24 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                 {galleries.slice(0, 6).map((gallery) => (
                   <div 
                     key={gallery.id} 
-                    className="rounded-xl overflow-hidden shadow-[0px_24px_48px_rgba(19,30,25,0.06)] cursor-pointer"
-                    onClick={() => setSelectedImage(gallery.imageUrl)}
+                    className="rounded-xl overflow-hidden shadow-[0px_24px_48px_rgba(19,30,25,0.06)] cursor-pointer group relative"
+                    onClick={() => setSelectedImage(gallery)}
                   >
                     <img
                       src={gallery.thumbnailUrl || gallery.imageUrl}
                       alt={gallery.title}
                       className="w-full hover:scale-105 transition-transform duration-500"
                     />
+                    {/* Overlay with title */}
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <p className="text-white font-medium text-sm truncate">{gallery.title}</p>
+                      {gallery.takenAt && (
+                        <p className="text-white/70 text-xs flex items-center gap-1 mt-1">
+                          <Calendar className="h-3 w-3" />
+                          {formatFullDate(gallery.takenAt)}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -492,21 +534,80 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
           </section>
         )}
 
-        {/* Image Zoom Dialog */}
+        {/* Image Zoom Dialog with Details */}
         <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
-          <DialogContent className="max-w-4xl p-0 bg-transparent border-0 shadow-none">
-            <button
-              onClick={() => setSelectedImage(null)}
-              className="absolute top-2 right-2 z-50 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-colors"
-            >
-              <X className="h-5 w-5" />
-            </button>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 bg-white border-0">
             {selectedImage && (
-              <img
-                src={selectedImage}
-                alt="Gallery"
-                className="w-full h-auto rounded-lg"
-              />
+              <div className="relative">
+                {/* Close button */}
+                <button
+                  onClick={() => setSelectedImage(null)}
+                  className="absolute top-4 right-4 z-50 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+                
+                {/* Image */}
+                <div className="aspect-video relative bg-black">
+                  <img
+                    src={selectedImage.imageUrl}
+                    alt={selectedImage.title}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+                
+                {/* Details Section */}
+                <div className="p-6 space-y-4">
+                  <DialogHeader>
+                    <DialogTitle className="text-xl font-bold">{selectedImage.title}</DialogTitle>
+                    {selectedImage.description && (
+                      <DialogDescription className="text-base text-gray-600">
+                        {selectedImage.description}
+                      </DialogDescription>
+                    )}
+                  </DialogHeader>
+                  
+                  {/* Meta Info Grid */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t">
+                    {/* Date Taken */}
+                    {selectedImage.takenAt && (
+                      <div className="flex items-center gap-2">
+                        <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
+                          <Camera className="h-5 w-5 text-emerald-600" />
+                        </div>
+                        <div>
+                          <p className="text-gray-500 text-xs">Tanggal Foto</p>
+                          <p className="font-medium text-sm">{formatFullDate(selectedImage.takenAt)}</p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Uploaded By */}
+                    {selectedImage.uploadedBy && (
+                      <div className="flex items-center gap-2">
+                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                          <User className="h-5 w-5 text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="text-gray-500 text-xs">Diupload oleh</p>
+                          <p className="font-medium text-sm">{selectedImage.uploadedBy}</p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Upload Date */}
+                    <div className="flex items-center gap-2">
+                      <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                        <Clock className="h-5 w-5 text-gray-600" />
+                      </div>
+                      <div>
+                        <p className="text-gray-500 text-xs">Ditambahkan</p>
+                        <p className="font-medium text-sm">{formatDateTime(selectedImage.createdAt)}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             )}
           </DialogContent>
         </Dialog>
