@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { useApp } from '@/context/app-context';
 import { api } from '@/lib/api-client';
@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog,
   DialogContent,
@@ -24,6 +25,9 @@ import {
   AlertCircle,
   Trash2,
   Upload,
+  CheckCircle,
+  X,
+  Link,
 } from 'lucide-react';
 import type { Gallery } from '@/types';
 
@@ -36,6 +40,9 @@ export function GalleryPage() {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedImage, setSelectedImage] = useState<Gallery | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -43,6 +50,11 @@ export function GalleryPage() {
     imageUrl: '',
     takenAt: '',
   });
+  
+  const [uploadMethod, setUploadMethod] = useState<'file' | 'url'>('file');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [filePreview, setFilePreview] = useState<string | null>(null);
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -63,15 +75,77 @@ export function GalleryPage() {
     }
   };
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setUploadError('File harus berupa gambar (JPG, PNG, WEBP)');
+        return;
+      }
+      
+      // Validate file size (max 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        setUploadError('Ukuran file maksimal 2MB');
+        return;
+      }
+      
+      setSelectedFile(file);
+      setUploadError(null);
+      setUploadSuccess(false);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setFilePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeFile = () => {
+    setSelectedFile(null);
+    setFilePreview(null);
+    setUploadError(null);
+    setUploadSuccess(false);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setUploadError(null);
     
     try {
+      let imageUrl = formData.imageUrl;
+      
+      // If using file upload, upload the file first
+      if (uploadMethod === 'file' && selectedFile) {
+        setIsUploadingFile(true);
+        const uploadResult = await api.uploadFile(selectedFile);
+        setIsUploadingFile(false);
+        
+        if (uploadResult.ok && uploadResult.data?.url) {
+          imageUrl = uploadResult.data.url;
+        } else {
+          setUploadError(uploadResult.error || 'Gagal mengupload foto');
+          setIsSubmitting(false);
+          return;
+        }
+      }
+      
+      if (!imageUrl) {
+        setUploadError('Foto wajib diupload');
+        setIsSubmitting(false);
+        return;
+      }
+      
       const result = await api.uploadGallery({
         title: formData.title,
         description: formData.description,
-        imageUrl: formData.imageUrl,
+        imageUrl: imageUrl,
         takenAt: formData.takenAt || undefined,
       });
       
@@ -83,10 +157,15 @@ export function GalleryPage() {
           imageUrl: '',
           takenAt: '',
         });
+        setSelectedFile(null);
+        setFilePreview(null);
+        setUploadMethod('file');
         loadData();
+      } else {
+        setUploadError(result.error || 'Gagal menyimpan foto');
       }
     } catch (err) {
-      console.error('Failed to upload gallery:', err);
+      setUploadError('Terjadi kesalahan');
     } finally {
       setIsSubmitting(false);
     }
@@ -99,6 +178,21 @@ export function GalleryPage() {
         loadData();
       }
     }
+  };
+
+  const handleCloseDialog = () => {
+    setShowAddDialog(false);
+    setFormData({
+      title: '',
+      description: '',
+      imageUrl: '',
+      takenAt: '',
+    });
+    setSelectedFile(null);
+    setFilePreview(null);
+    setUploadError(null);
+    setUploadSuccess(false);
+    setUploadMethod('file');
   };
 
   if (!settings?.enableGallery) {
@@ -120,7 +214,10 @@ export function GalleryPage() {
           <p className="text-muted-foreground">Dokumentasi kegiatan warga</p>
         </div>
         {permissions?.canUploadGallery && (
-          <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+          <Dialog open={showAddDialog} onOpenChange={(open) => {
+            if (!open) handleCloseDialog();
+            else setShowAddDialog(true);
+          }}>
             <DialogTrigger asChild>
               <Button>
                 <Plus className="h-4 w-4 mr-2" />
@@ -130,14 +227,23 @@ export function GalleryPage() {
             <DialogContent className="max-w-md">
               <DialogHeader>
                 <DialogTitle>Upload Foto Baru</DialogTitle>
-                <DialogDescription>Masukkan detail foto</DialogDescription>
+                <DialogDescription>Masukkan detail foto (maksimal 2MB)</DialogDescription>
               </DialogHeader>
+              
+              {uploadError && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{uploadError}</AlertDescription>
+                </Alert>
+              )}
+              
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <Label>Judul</Label>
                   <Input
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    placeholder="Judul foto"
                     required
                   />
                 </div>
@@ -147,19 +253,83 @@ export function GalleryPage() {
                   <Input
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    placeholder="Deskripsi singkat"
                   />
                 </div>
                 
-                <div className="space-y-2">
-                  <Label>URL Foto</Label>
-                  <Input
-                    type="url"
-                    placeholder="https://..."
-                    value={formData.imageUrl}
-                    onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                    required
-                  />
-                </div>
+                <Tabs value={uploadMethod} onValueChange={(v) => setUploadMethod(v as 'file' | 'url')}>
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="file">
+                      <Upload className="h-4 w-4 mr-2" />
+                      Upload File
+                    </TabsTrigger>
+                    <TabsTrigger value="url">
+                      <Link className="h-4 w-4 mr-2" />
+                      URL
+                    </TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="file" className="space-y-2">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                    />
+                    
+                    {filePreview ? (
+                      <div className="relative">
+                        <img
+                          src={filePreview}
+                          alt="Preview"
+                          className="w-full h-48 object-cover rounded-lg border"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          className="absolute top-2 right-2"
+                          onClick={removeFile}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:bg-muted/50 transition-colors"
+                      >
+                        <ImageIcon className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                        <p className="font-medium">Klik untuk upload foto</p>
+                        <p className="text-sm text-muted-foreground">JPG, PNG, WEBP (max 2MB)</p>
+                      </div>
+                    )}
+                    
+                    {selectedFile && (
+                      <div className="flex items-center gap-2 text-sm text-green-600">
+                        <CheckCircle className="h-4 w-4" />
+                        <span>{selectedFile.name}</span>
+                      </div>
+                    )}
+                  </TabsContent>
+                  
+                  <TabsContent value="url">
+                    <div className="space-y-2">
+                      <Label>URL Foto</Label>
+                      <Input
+                        type="url"
+                        placeholder="https://..."
+                        value={formData.imageUrl}
+                        onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Masukkan URL gambar dari sumber eksternal
+                      </p>
+                    </div>
+                  </TabsContent>
+                </Tabs>
                 
                 <div className="space-y-2">
                   <Label>Tanggal Diambil</Label>
@@ -170,11 +340,11 @@ export function GalleryPage() {
                   />
                 </div>
                 
-                <Button type="submit" className="w-full" disabled={isSubmitting}>
-                  {isSubmitting ? (
+                <Button type="submit" className="w-full" disabled={isSubmitting || isUploadingFile}>
+                  {isSubmitting || isUploadingFile ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Menyimpan...
+                      {isUploadingFile ? 'Mengupload...' : 'Menyimpan...'}
                     </>
                   ) : (
                     'Simpan'

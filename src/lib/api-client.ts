@@ -889,6 +889,21 @@ class ApiClient {
         result = { ok: true, data: { message: 'Pengguna diblokir' } as T };
         break;
         
+      case 'user.update':
+        // Update current demo user
+        if (currentDemoUser && payload) {
+          currentDemoUser = {
+            ...currentDemoUser,
+            ...(payload.nama && { nama: payload.nama as string }),
+            ...(payload.telepon && { telepon: payload.telepon as string }),
+            ...(payload.photoUrl !== undefined && { photoUrl: payload.photoUrl as string | null }),
+          };
+          result = { ok: true, data: currentDemoUser as T };
+        } else {
+          result = { ok: false, error: 'Gagal memperbarui profil' };
+        }
+        break;
+        
       // Agenda
       case 'agenda.list':
         result = { ok: true, data: this.demoData.agendas as T };
@@ -1025,6 +1040,12 @@ class ApiClient {
         
       case 'role.updatePermissions':
         result = { ok: true, data: { message: 'Permission berhasil diperbarui' } as T };
+        break;
+        
+      case 'file.upload':
+        // File upload is handled separately in uploadFile method
+        // This case shouldn't be reached in normal flow
+        result = { ok: false, error: 'Gunakan method uploadFile untuk upload file' };
         break;
         
       default:
@@ -1479,8 +1500,71 @@ class ApiClient {
   
   // ==================== FILE UPLOAD ====================
   
-  async uploadFile(file: string, filename: string): Promise<ApiResponse<{ url: string }>> {
-    return this.request<{ url: string }>('file.upload', { file, filename });
+  async uploadFile(file: File): Promise<ApiResponse<{ url: string }>> {
+    // For demo mode, return a mock URL
+    if (this.demoMode) {
+      return this.handleDemoFileUpload(file);
+    }
+    
+    // Convert file to base64
+    const base64 = await this.fileToBase64(file);
+    
+    const result = await this.request<{ url: string }>('file.upload', {
+      fileName: file.name,
+      mimeType: file.type,
+      base64: base64,
+    });
+    
+    return result;
+  }
+  
+  // Helper to convert File to base64
+  private fileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        // Remove the data:xxx;base64, prefix
+        const base64 = result.split(',')[1];
+        resolve(base64);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+  
+  // Demo mode file upload - returns a local object URL for preview
+  private async handleDemoFileUpload(file: File): Promise<ApiResponse<{ url: string }>> {
+    await simulateDelay(500);
+    
+    // In demo mode, we create a local object URL for the file
+    // This won't persist after page refresh, but allows testing the UI
+    const objectUrl = URL.createObjectURL(file);
+    
+    // Store in localStorage as base64 for demo persistence
+    try {
+      const base64 = await this.fileToBase64(file);
+      const demoFileKey = `demo_file_${Date.now()}`;
+      localStorage.setItem(demoFileKey, JSON.stringify({
+        name: file.name,
+        type: file.type,
+        base64: `data:${file.type};base64,${base64}`,
+      }));
+      
+      // Return a data URL that will work
+      return {
+        ok: true,
+        data: {
+          url: `data:${file.type};base64,${base64}`,
+        },
+      };
+    } catch {
+      // Fallback to object URL
+      return {
+        ok: true,
+        data: { url: objectUrl },
+      };
+    }
   }
 }
 

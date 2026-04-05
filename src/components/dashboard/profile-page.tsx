@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { api } from '@/lib/api-client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AvatarUpload } from '@/components/ui/file-upload';
 import {
   User,
   Mail,
@@ -21,6 +23,8 @@ import {
   AlertCircle,
   CheckCircle,
   Save,
+  Camera,
+  Shield,
 } from 'lucide-react';
 
 export function ProfilePage() {
@@ -36,12 +40,57 @@ export function ProfilePage() {
     telepon: user?.telepon || '',
   });
   
+  // Photo state
+  const [photoUrl, setPhotoUrl] = useState<string | null>(user?.photoUrl || null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  
   // Password form
   const [passwordData, setPasswordData] = useState({
     oldPassword: '',
     newPassword: '',
     confirmPassword: '',
   });
+
+  // Update local state when user changes
+  useEffect(() => {
+    if (user) {
+      setProfileData({
+        nama: user.nama || '',
+        telepon: user.telepon || '',
+      });
+      setPhotoUrl(user.photoUrl || null);
+    }
+  }, [user]);
+
+  const handlePhotoUpload = async (file: File): Promise<{ ok: boolean; url?: string; error?: string }> => {
+    setIsUploadingPhoto(true);
+    setError(null);
+    
+    try {
+      const result = await api.uploadFile(file);
+      
+      if (result.ok && result.data?.url) {
+        // Update user photo URL
+        const updateResult = await api.updateUser({ photoUrl: result.data.url });
+        
+        if (updateResult.ok) {
+          setPhotoUrl(result.data.url);
+          refreshUser();
+          setSuccess('Foto profil berhasil diperbarui');
+          setTimeout(() => setSuccess(null), 3000);
+          return { ok: true, url: result.data.url };
+        } else {
+          return { ok: false, error: updateResult.error || 'Gagal menyimpan foto' };
+        }
+      }
+      
+      return { ok: false, error: result.error || 'Gagal mengupload foto' };
+    } catch (err) {
+      return { ok: false, error: 'Terjadi kesalahan saat upload' };
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -153,19 +202,35 @@ export function ProfilePage() {
       {/* Profile Info Card */}
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-4">
-            <Avatar className="h-20 w-20">
-              <AvatarImage src={user?.photoUrl || undefined} />
-              <AvatarFallback className="bg-emerald-500 text-white text-xl">
-                {user?.nama?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-              </AvatarFallback>
-            </Avatar>
-            <div>
+          <div className="flex flex-col sm:flex-row items-center gap-4">
+            <div className="relative">
+              {isUploadingPhoto ? (
+                <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <AvatarUpload
+                  onUpload={handlePhotoUpload}
+                  value={photoUrl}
+                  onValueChange={setPhotoUrl}
+                  maxSizeMB={2}
+                />
+              )}
+              {!isUploadingPhoto && (
+                <div className="absolute bottom-0 right-0 bg-primary text-primary-foreground rounded-full p-1.5 cursor-pointer">
+                  <Camera className="h-3 w-3" />
+                </div>
+              )}
+            </div>
+            <div className="text-center sm:text-left">
               <CardTitle>{user?.nama}</CardTitle>
-              <CardDescription className="flex items-center gap-2 mt-1">
+              <CardDescription className="flex items-center gap-2 mt-1 justify-center sm:justify-start">
                 {getRoleBadge(user?.role || 'WARGA')}
                 {getStatusBadge(user?.status || 'ACTIVE')}
               </CardDescription>
+              <p className="text-sm text-muted-foreground mt-1">
+                Klik foto untuk mengubah
+              </p>
             </div>
           </div>
         </CardHeader>
@@ -203,101 +268,140 @@ export function ProfilePage() {
         </CardContent>
       </Card>
 
-      {/* Update Profile Form */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
+      {/* Tabs for Edit Profile and Change Password */}
+      <Tabs defaultValue="profile" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="profile">
+            <User className="h-4 w-4 mr-2" />
             Edit Profil
-          </CardTitle>
-          <CardDescription>Perbarui informasi profil Anda</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleUpdateProfile} className="space-y-4">
-            <div className="space-y-2">
-              <Label>Nama Lengkap</Label>
-              <Input
-                value={profileData.nama}
-                onChange={(e) => setProfileData({ ...profileData, nama: e.target.value })}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label>Nomor Telepon</Label>
-              <Input
-                value={profileData.telepon}
-                onChange={(e) => setProfileData({ ...profileData, telepon: e.target.value })}
-              />
-            </div>
-            
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Menyimpan...
-                </>
-              ) : (
-                <>
-                  <Save className="mr-2 h-4 w-4" />
-                  Simpan Perubahan
-                </>
-              )}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-
-      {/* Change Password Form */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Lock className="h-5 w-5" />
-            Ubah Password
-          </CardTitle>
-          <CardDescription>Perbarui password akun Anda</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleChangePassword} className="space-y-4">
-            <div className="space-y-2">
-              <Label>Password Lama</Label>
-              <Input
-                type="password"
-                value={passwordData.oldPassword}
-                onChange={(e) => setPasswordData({ ...passwordData, oldPassword: e.target.value })}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label>Password Baru</Label>
-              <Input
-                type="password"
-                value={passwordData.newPassword}
-                onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label>Konfirmasi Password Baru</Label>
-              <Input
-                type="password"
-                value={passwordData.confirmPassword}
-                onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-              />
-            </div>
-            
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Menyimpan...
-                </>
-              ) : (
-                'Ubah Password'
-              )}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+          </TabsTrigger>
+          <TabsTrigger value="security">
+            <Shield className="h-4 w-4 mr-2" />
+            Keamanan
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="profile">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5" />
+                Edit Profil
+              </CardTitle>
+              <CardDescription>Perbarui informasi profil Anda</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleUpdateProfile} className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Nama Lengkap</Label>
+                  <Input
+                    value={profileData.nama}
+                    onChange={(e) => setProfileData({ ...profileData, nama: e.target.value })}
+                    placeholder="Masukkan nama lengkap"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Nomor Telepon</Label>
+                  <Input
+                    value={profileData.telepon}
+                    onChange={(e) => setProfileData({ ...profileData, telepon: e.target.value })}
+                    placeholder="Masukkan nomor telepon"
+                  />
+                </div>
+                
+                <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
+                  <p className="font-medium mb-1">Informasi:</p>
+                  <ul className="list-disc list-inside space-y-1 text-xs">
+                    <li>Nama minimal 3 karakter</li>
+                    <li>Nomor telepon minimal 10 digit</li>
+                    <li>Email dan NIK tidak dapat diubah</li>
+                  </ul>
+                </div>
+                
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Menyimpan...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="mr-2 h-4 w-4" />
+                      Simpan Perubahan
+                    </>
+                  )}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="security">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Lock className="h-5 w-5" />
+                Ubah Password
+              </CardTitle>
+              <CardDescription>Perbarui password akun Anda</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleChangePassword} className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Password Lama</Label>
+                  <Input
+                    type="password"
+                    value={passwordData.oldPassword}
+                    onChange={(e) => setPasswordData({ ...passwordData, oldPassword: e.target.value })}
+                    placeholder="Masukkan password lama"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Password Baru</Label>
+                  <Input
+                    type="password"
+                    value={passwordData.newPassword}
+                    onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                    placeholder="Masukkan password baru"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Konfirmasi Password Baru</Label>
+                  <Input
+                    type="password"
+                    value={passwordData.confirmPassword}
+                    onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                    placeholder="Konfirmasi password baru"
+                  />
+                </div>
+                
+                <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
+                  <p className="font-medium mb-1">Tips Keamanan:</p>
+                  <ul className="list-disc list-inside space-y-1 text-xs">
+                    <li>Password minimal 6 karakter</li>
+                    <li>Gunakan kombinasi huruf besar, kecil, angka, dan simbol</li>
+                    <li>Hindari menggunakan tanggal lahir atau nama</li>
+                  </ul>
+                </div>
+                
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Menyimpan...
+                    </>
+                  ) : (
+                    'Ubah Password'
+                  )}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

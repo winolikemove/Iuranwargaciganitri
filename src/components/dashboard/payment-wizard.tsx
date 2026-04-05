@@ -100,9 +100,9 @@ export function PaymentWizard({
         setError('File harus berupa gambar (JPG, PNG, dll)');
         return;
       }
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        setError('Ukuran file maksimal 5MB');
+      // Validate file size (max 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        setError('Ukuran file maksimal 2MB');
         return;
       }
       
@@ -162,12 +162,21 @@ export function PaymentWizard({
     setError(null);
 
     try {
-      // In demo mode, we simulate the upload
-      // In production, you'd upload to Google Drive first
-      let buktiUrl = 'demo://uploaded-image';
+      let buktiUrl = '';
       
-      // For demo, if we have a preview, use it as base64
-      if (buktiPreview) {
+      // Upload file first if exists
+      if (buktiFile) {
+        const uploadResult = await api.uploadFile(buktiFile);
+        
+        if (uploadResult.ok && uploadResult.data?.url) {
+          buktiUrl = uploadResult.data.url;
+        } else {
+          setError(uploadResult.error || 'Gagal mengupload bukti transfer');
+          setIsSubmitting(false);
+          return;
+        }
+      } else if (buktiPreview) {
+        // Fallback for existing preview (shouldn't happen in normal flow)
         buktiUrl = buktiPreview;
       }
 
@@ -328,7 +337,7 @@ export function PaymentWizard({
             <Alert>
               <Upload className="h-4 w-4" />
               <AlertDescription>
-                Upload bukti transfer pembayaran. Format yang didukung: JPG, PNG. Maksimal 5MB.
+                Upload bukti transfer pembayaran. Format yang didukung: JPG, PNG, WEBP. Maksimal 2MB.
               </AlertDescription>
             </Alert>
 
