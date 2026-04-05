@@ -355,19 +355,84 @@ const generateDemoData = () => {
       canManageRoles: false,
     } as Permissions,
     
-    // Demo user starts as SUPERADMIN for testing
-    demoUser: {
-      id: 'demo-user',
-      nama: 'Demo Super Admin',
-      email: 'demo@pradha.id',
-      nik: '3201010101010003',
-      blok: 'A',
-      nomorRumah: '1',
-      telepon: '081234567899',
-      role: 'SUPERADMIN',
-      status: 'ACTIVE',
-      photoUrl: null,
-    } as SafeUser,
+    // Demo users for different roles
+    demoUsers: {
+      superadmin: {
+        id: 'demo-superadmin',
+        nama: 'Super Admin',
+        email: 'superadmin@pradha.id',
+        nik: '3201010101010001',
+        blok: 'A',
+        nomorRumah: '1',
+        telepon: '081234567801',
+        role: 'SUPERADMIN',
+        status: 'ACTIVE',
+        photoUrl: null,
+      } as SafeUser,
+      admin: {
+        id: 'demo-admin',
+        nama: 'Admin Blok A',
+        email: 'admin@pradha.id',
+        nik: '3201010101010002',
+        blok: 'A',
+        nomorRumah: '5',
+        telepon: '081234567802',
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        photoUrl: null,
+      } as SafeUser,
+      adminB: {
+        id: 'demo-admin-b',
+        nama: 'Admin Blok B',
+        email: 'admin.b@pradha.id',
+        nik: '3201010101010003',
+        blok: 'B',
+        nomorRumah: '3',
+        telepon: '081234567803',
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        photoUrl: null,
+      } as SafeUser,
+      bendahara: {
+        id: 'demo-bendahara',
+        nama: 'Bendahara',
+        email: 'bendahara@pradha.id',
+        nik: '3201010101010004',
+        blok: 'C',
+        nomorRumah: '2',
+        telepon: '081234567804',
+        role: 'BENDAHARA',
+        status: 'ACTIVE',
+        photoUrl: null,
+      } as SafeUser,
+      warga: {
+        id: 'demo-warga',
+        nama: 'Warga Demo',
+        email: 'warga@pradha.id',
+        nik: '3201010101010005',
+        blok: 'D',
+        nomorRumah: '10',
+        telepon: '081234567805',
+        role: 'WARGA',
+        status: 'ACTIVE',
+        photoUrl: null,
+      } as SafeUser,
+      wargaA: {
+        id: 'demo-warga-a',
+        nama: 'Budi Santoso',
+        email: 'warga.a@pradha.id',
+        nik: '3201010101010006',
+        blok: 'A',
+        nomorRumah: '12',
+        telepon: '081234567806',
+        role: 'WARGA',
+        status: 'ACTIVE',
+        photoUrl: null,
+      } as SafeUser,
+    },
+    
+    // Current demo user (will be set on login)
+    demoUser: null as SafeUser | null,
   };
 };
 
@@ -535,6 +600,9 @@ const TokenManager = {
 // Simulate network delay for demo mode
 const simulateDelay = (ms: number = 500) => new Promise(resolve => setTimeout(resolve, ms));
 
+// Store current demo user in memory (for demo mode)
+let currentDemoUser: SafeUser | null = null;
+
 // Main API client
 class ApiClient {
   private baseUrl: string;
@@ -660,11 +728,38 @@ class ApiClient {
       // Auth
       case 'auth.login':
         if (payload.email && payload.password) {
+          // Select demo user based on email
+          const email = payload.email as string;
+          const demoUsers = this.demoData.demoUsers;
+          
+          let selectedUser: SafeUser | null = null;
+          
+          // Match email to demo user
+          if (email === 'superadmin@pradha.id' || email === 'superadmin') {
+            selectedUser = demoUsers.superadmin;
+          } else if (email === 'admin@pradha.id' || email === 'admin') {
+            selectedUser = demoUsers.admin;
+          } else if (email === 'admin.b@pradha.id') {
+            selectedUser = demoUsers.adminB;
+          } else if (email === 'bendahara@pradha.id' || email === 'bendahara') {
+            selectedUser = demoUsers.bendahara;
+          } else if (email === 'warga@pradha.id' || email === 'warga') {
+            selectedUser = demoUsers.warga;
+          } else if (email === 'warga.a@pradha.id') {
+            selectedUser = demoUsers.wargaA;
+          } else {
+            // Default to superadmin for any other email in demo mode
+            selectedUser = demoUsers.superadmin;
+          }
+          
+          // Store the current demo user
+          currentDemoUser = selectedUser;
           TokenManager.set('demo-token-' + Date.now());
+          
           result = { 
             ok: true, 
             data: { 
-              user: this.demoData.demoUser, 
+              user: selectedUser, 
               token: 'demo-token-' + Date.now() 
             } as T 
           };
@@ -678,7 +773,7 @@ class ApiClient {
         break;
         
       case 'auth.me':
-        result = { ok: true, data: this.demoData.demoUser as T };
+        result = { ok: true, data: (currentDemoUser || this.demoData.demoUsers.superadmin) as T };
         break;
         
       case 'auth.changePassword':
@@ -687,7 +782,7 @@ class ApiClient {
         
       case 'role.permissions':
         // Return permissions based on user's role
-        const userRole = this.demoData.demoUser.role;
+        const userRole = (currentDemoUser || this.demoData.demoUsers.superadmin).role;
         let permissions: Permissions;
         switch (userRole) {
           case 'SUPERADMIN':
@@ -769,7 +864,9 @@ class ApiClient {
         
       // Users
       case 'user.list':
-        result = { ok: true, data: [...this.demoData.pengurus, this.demoData.demoUser] as T };
+        // Include all demo users in the list
+        const allDemoUsers = Object.values(this.demoData.demoUsers);
+        result = { ok: true, data: [...this.demoData.pengurus, ...allDemoUsers] as T };
         break;
         
       case 'user.pending':
@@ -964,6 +1061,7 @@ class ApiClient {
   logout(): void {
     TokenManager.remove();
     CacheManager.clear();
+    currentDemoUser = null; // Reset demo user on logout
   }
   
   // ==================== PUBLIC API ====================
