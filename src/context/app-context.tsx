@@ -45,6 +45,135 @@ const defaultSettings: AppSettings = {
   bloks: ['A', 'B', 'C', 'D'],
 };
 
+// Dummy data untuk struktur organisasi (fallback jika API belum punya data)
+const dummyStrukturOrganisasi: StrukturOrganisasi = {
+  blokA: {
+    label: 'Blok A',
+    pengurus: [
+      {
+        id: 'dummy-1',
+        nama: 'Bpk Afip',
+        blok: 'A',
+        telepon: '087364848848',
+        photoUrl: '',
+        jabatan: 'KETUA_RT',
+        jabatanLabel: 'Ketua RT',
+        order: 1
+      },
+      {
+        id: 'dummy-2',
+        nama: 'Bpk Dedi',
+        blok: 'A',
+        telepon: '081321654987',
+        photoUrl: '',
+        jabatan: 'WAKIL_KETUA',
+        jabatanLabel: 'Wakil Ketua RT',
+        order: 2
+      },
+      {
+        id: 'dummy-3',
+        nama: 'Ibu Siti',
+        blok: 'A',
+        telepon: '085678912345',
+        photoUrl: '',
+        jabatan: 'SEKRETARIS',
+        jabatanLabel: 'Sekretaris',
+        order: 3
+      },
+      {
+        id: 'dummy-4',
+        nama: 'Bpk Hendra',
+        blok: 'A',
+        telepon: '082198765432',
+        photoUrl: '',
+        jabatan: 'BENDAHARA',
+        jabatanLabel: 'Bendahara',
+        order: 4
+      }
+    ]
+  },
+  blokB: {
+    label: 'Blok B',
+    pengurus: [
+      {
+        id: 'dummy-5',
+        nama: 'Bpk Risan',
+        blok: 'B',
+        telepon: '08122495879',
+        photoUrl: '',
+        jabatan: 'KETUA_RT',
+        jabatanLabel: 'Ketua RT',
+        order: 1
+      },
+      {
+        id: 'dummy-6',
+        nama: 'Bpk Ahmad',
+        blok: 'B',
+        telepon: '085712345678',
+        photoUrl: '',
+        jabatan: 'WAKIL_KETUA',
+        jabatanLabel: 'Wakil Ketua RT',
+        order: 2
+      },
+      {
+        id: 'dummy-7',
+        nama: 'Ibu Ratna',
+        blok: 'B',
+        telepon: '081234567891',
+        photoUrl: '',
+        jabatan: 'SEKRETARIS',
+        jabatanLabel: 'Sekretaris',
+        order: 3
+      },
+      {
+        id: 'dummy-8',
+        nama: 'Bpk Yanto',
+        blok: 'B',
+        telepon: '087812345678',
+        photoUrl: '',
+        jabatan: 'BENDAHARA',
+        jabatanLabel: 'Bendahara',
+        order: 4
+      }
+    ]
+  },
+  bersama: {
+    label: 'Bersama',
+    pengurus: [
+      {
+        id: 'dummy-9',
+        nama: 'Bpk Karim',
+        blok: 'A',
+        telepon: '085612345678',
+        photoUrl: '',
+        jabatan: 'SIE_KEAMANAN',
+        jabatanLabel: 'Sie. Keamanan',
+        order: 10
+      },
+      {
+        id: 'dummy-10',
+        nama: 'Bpk Dani',
+        blok: 'B',
+        telepon: '082112345678',
+        photoUrl: '',
+        jabatan: 'SIE_KEBERSIHAN',
+        jabatanLabel: 'Sie. Kebersihan',
+        order: 11
+      },
+      {
+        id: 'dummy-11',
+        nama: 'Bpk Basir',
+        blok: 'B',
+        telepon: '085220590365',
+        photoUrl: '',
+        jabatan: 'DKM_MASJID',
+        jabatanLabel: 'DKM Masjid Al Birr',
+        order: 12
+      }
+    ]
+  }
+};
+
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
@@ -120,7 +249,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         
         // Process struktur organisasi
         if (results[7].status === 'fulfilled' && results[7].value.ok && results[7].value.data) {
-          setStrukturOrganisasi(results[7].value.data);
+          // Check if data has actual pengurus, otherwise use dummy
+          const data = results[7].value.data;
+          const hasPengurus = 
+            data.blokA?.pengurus?.length > 0 || 
+            data.blokB?.pengurus?.length > 0 || 
+            data.bersama?.pengurus?.length > 0;
+          
+          if (hasPengurus) {
+            setStrukturOrganisasi(data);
+          } else {
+            // Use dummy data if no real data exists
+            setStrukturOrganisasi(dummyStrukturOrganisasi);
+          }
+        } else {
+          // Use dummy data if API fails
+          setStrukturOrganisasi(dummyStrukturOrganisasi);
         }
         
       } catch (error) {
@@ -202,7 +346,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     CacheManager.remove('struktur_organisasi');
     const result = await api.getStrukturOrganisasi();
     if (result.ok && result.data) {
-      setStrukturOrganisasi(result.data);
+      // Check if data has actual pengurus, otherwise use dummy
+      const data = result.data;
+      const hasPengurus = 
+        data.blokA?.pengurus?.length > 0 || 
+        data.blokB?.pengurus?.length > 0 || 
+        data.bersama?.pengurus?.length > 0;
+      
+      if (hasPengurus) {
+        setStrukturOrganisasi(data);
+      } else {
+        setStrukturOrganisasi(dummyStrukturOrganisasi);
+      }
+    } else {
+      setStrukturOrganisasi(dummyStrukturOrganisasi);
     }
   }, []);
 
