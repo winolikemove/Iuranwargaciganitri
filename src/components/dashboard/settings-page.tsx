@@ -30,8 +30,9 @@ import {
   Wallet,
   Plus,
   X,
+  Phone,
 } from 'lucide-react';
-import type { AppSettings, Permissions, BankInfo, BlokCategories } from '@/types';
+import type { AppSettings, Permissions, BankInfo, BlokCategories, SafeUser } from '@/types';
 
 export function SettingsPage() {
   const { user, permissions } = useAuth();
@@ -43,6 +44,7 @@ export function SettingsPage() {
   const [activeTab, setActiveTab] = useState('general');
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [adminUsers, setAdminUsers] = useState<SafeUser[]>([]);
 
   useEffect(() => {
     loadData();
@@ -64,6 +66,15 @@ export function SettingsPage() {
         if (permRes.ok && permRes.data) {
           setRolePermissions(permRes.data);
         }
+      }
+      
+      // Fetch admin users for contact settings
+      const usersRes = await api.getUsers({ status: 'ACTIVE' });
+      if (usersRes.ok && usersRes.data) {
+        const admins = usersRes.data.filter(u => 
+          ['SUPERADMIN', 'ADMIN', 'BENDAHARA'].includes(u.role)
+        );
+        setAdminUsers(admins);
       }
     } catch (err) {
       console.error('Failed to load settings:', err);
@@ -165,6 +176,14 @@ export function SettingsPage() {
 
   const updateSetting = (key: string, value: unknown) => {
     setSettings(prev => prev ? { ...prev, [key]: value } : null);
+  };
+
+  // Helper function to handle number input without leading zeros
+  const handleNumberInput = (key: string, value: string) => {
+    // Remove leading zeros but keep at least one digit
+    const normalizedValue = value.replace(/^0+/, '') || '0';
+    const numericValue = parseInt(normalizedValue) || 0;
+    updateSetting(key, numericValue);
   };
 
   // Update bank info for specific blok
@@ -326,8 +345,9 @@ export function SettingsPage() {
                         <Label>Iuran Bulanan (Rp)</Label>
                         <Input
                           type="number"
-                          value={settings.monthlyFee || 0}
-                          onChange={(e) => updateSetting('monthlyFee', parseInt(e.target.value) || 0)}
+                          value={settings.monthlyFee || ''}
+                          onChange={(e) => handleNumberInput('monthlyFee', e.target.value)}
+                          min="0"
                         />
                       </div>
                     </div>
@@ -477,15 +497,25 @@ export function SettingsPage() {
                           description="Format: JPG, PNG, WEBP. Disarankan ukuran persegi (1:1)"
                           previewClassName="h-32"
                         />
-                        {settings.logoUrl && (
-                          <div className="p-4 bg-muted rounded-lg flex items-center justify-center">
+                        {/* Show preview - either uploaded logo or dummy */}
+                        <div className="p-4 bg-muted rounded-lg flex flex-col items-center justify-center">
+                          {settings.logoUrl ? (
                             <img 
                               src={settings.logoUrl} 
                               alt="Logo Preview" 
                               className="max-h-20 object-contain"
                             />
-                          </div>
-                        )}
+                          ) : (
+                            <>
+                              <img 
+                                src="/dummy-logo.svg" 
+                                alt="Default Logo" 
+                                className="max-h-20 object-contain opacity-50"
+                              />
+                              <p className="text-xs text-muted-foreground mt-2">Logo default (upload untuk mengganti)</p>
+                            </>
+                          )}
+                        </div>
                       </div>
 
                       {/* Banner Upload */}
@@ -513,15 +543,25 @@ export function SettingsPage() {
                           description="Format: JPG, PNG, WEBP. Disarankan rasio 16:9"
                           previewClassName="h-32"
                         />
-                        {settings.bannerUrl && (
-                          <div className="p-4 bg-muted rounded-lg">
+                        {/* Show preview - either uploaded banner or dummy */}
+                        <div className="p-4 bg-muted rounded-lg">
+                          {settings.bannerUrl ? (
                             <img 
                               src={settings.bannerUrl} 
                               alt="Banner Preview" 
                               className="w-full h-32 object-cover rounded"
                             />
-                          </div>
-                        )}
+                          ) : (
+                            <div className="flex flex-col items-center">
+                              <img 
+                                src="/dummy-banner.svg" 
+                                alt="Default Banner" 
+                                className="w-full h-32 object-cover rounded opacity-50"
+                              />
+                              <p className="text-xs text-muted-foreground mt-2">Banner default (upload untuk mengganti)</p>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
 
@@ -625,8 +665,9 @@ export function SettingsPage() {
                         <Label>Iuran Bulanan (Rp)</Label>
                         <Input
                           type="number"
-                          value={settings.monthlyFee || 0}
-                          onChange={(e) => updateSetting('monthlyFee', parseInt(e.target.value) || 0)}
+                          value={settings.monthlyFee || ''}
+                          onChange={(e) => handleNumberInput('monthlyFee', e.target.value)}
+                          min="0"
                         />
                         <p className="text-xs text-muted-foreground">
                           Nominal iuran warga per bulan
@@ -774,9 +815,10 @@ export function SettingsPage() {
                           <Label>Nominal (Rp)</Label>
                           <Input
                             type="number"
-                            value={settings.saldoAwalA || 0}
-                            onChange={(e) => updateSetting('saldoAwalA', parseInt(e.target.value) || 0)}
+                            value={settings.saldoAwalA || ''}
+                            onChange={(e) => handleNumberInput('saldoAwalA', e.target.value)}
                             placeholder="0"
+                            min="0"
                           />
                           <p className="text-xs text-muted-foreground">
                             Saldo awal tahun {new Date().getFullYear()} untuk Blok A
@@ -806,9 +848,10 @@ export function SettingsPage() {
                           <Label>Nominal (Rp)</Label>
                           <Input
                             type="number"
-                            value={settings.saldoAwalB || 0}
-                            onChange={(e) => updateSetting('saldoAwalB', parseInt(e.target.value) || 0)}
+                            value={settings.saldoAwalB || ''}
+                            onChange={(e) => handleNumberInput('saldoAwalB', e.target.value)}
                             placeholder="0"
+                            min="0"
                           />
                           <p className="text-xs text-muted-foreground">
                             Saldo awal tahun {new Date().getFullYear()} untuk Blok B
@@ -857,15 +900,49 @@ export function SettingsPage() {
                 {settings && (
                   <>
                     <div className="space-y-4">
+                      {/* Dynamic Admin Contacts */}
                       <div className="space-y-2">
-                        <Label>Nomor WhatsApp Admin</Label>
+                        <Label>Kontak Admin Pengurus</Label>
+                        <p className="text-xs text-muted-foreground mb-2">
+                          Daftar kontak admin yang terdaftar di sistem
+                        </p>
+                        <div className="space-y-2 max-h-64 overflow-y-auto">
+                          {adminUsers.length > 0 ? (
+                            adminUsers.map((admin) => (
+                              <div key={admin.id} className="flex items-center justify-between p-3 border rounded-lg bg-muted/30">
+                                <div>
+                                  <p className="font-medium">{admin.nama}</p>
+                                  <p className="text-xs text-muted-foreground">{admin.role} - Blok {admin.blok}</p>
+                                </div>
+                                <a 
+                                  href={`https://wa.me/${admin.telepon.replace(/^0/, '62')}`} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                >
+                                  <Button size="sm" variant="outline">
+                                    <Phone className="h-4 w-4 mr-2" />
+                                    {admin.telepon}
+                                  </Button>
+                                </a>
+                              </div>
+                            ))
+                          ) : (
+                            <p className="text-sm text-muted-foreground">Belum ada admin terdaftar</p>
+                          )}
+                        </div>
+                      </div>
+
+                      <Separator />
+
+                      <div className="space-y-2">
+                        <Label>Nomor WhatsApp Admin Utama</Label>
                         <Input
                           value={settings.whatsappAdmin || ''}
                           onChange={(e) => updateSetting('whatsappAdmin', e.target.value)}
                           placeholder="08123456789"
                         />
                         <p className="text-xs text-muted-foreground">
-                          Nomor yang akan ditampilkan untuk kontak admin
+                          Nomor utama yang akan ditampilkan di landing page
                         </p>
                       </div>
 
