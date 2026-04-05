@@ -38,6 +38,7 @@ export function ProfilePage() {
   const [profileData, setProfileData] = useState({
     nama: user?.nama || '',
     telepon: user?.telepon || '',
+    nik: user?.nik || '',
   });
   
   // Photo state
@@ -57,6 +58,7 @@ export function ProfilePage() {
       setProfileData({
         nama: user.nama || '',
         telepon: user.telepon || '',
+        nik: user.nik || '',
       });
       setPhotoUrl(user.photoUrl || null);
     }
@@ -102,6 +104,7 @@ export function ProfilePage() {
       const result = await api.updateUser({
         nama: profileData.nama,
         telepon: profileData.telepon,
+        nik: profileData.nik || undefined, // Only send if provided
       });
       
       if (result.ok) {
@@ -245,9 +248,9 @@ export function ProfilePage() {
             </div>
             <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
               <User className="h-5 w-5 text-muted-foreground" />
-              <div>
+              <div className="flex-1">
                 <p className="text-xs text-muted-foreground">NIK</p>
-                <p className="font-medium">{user?.nik}</p>
+                <p className="font-medium">{user?.nik || <span className=\"text-muted-foreground italic\">Belum diisi</span>}</p>
               </div>
             </div>
             <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
@@ -302,6 +305,19 @@ export function ProfilePage() {
                 </div>
                 
                 <div className="space-y-2">
+                  <div className="flex items-center gap-1">
+                    <Label>NIK (Opsional)</Label>
+                    <span className="text-xs text-muted-foreground">- 16 digit angka</span>
+                  </div>
+                  <Input
+                    value={profileData.nik}
+                    onChange={(e) => setProfileData({ ...profileData, nik: e.target.value.replace(/\D/g, '').slice(0, 16) })}
+                    placeholder="Masukkan NIK 16 digit (boleh kosong)"
+                    maxLength={16}
+                  />
+                </div>
+                
+                <div className="space-y-2">
                   <Label>Nomor Telepon</Label>
                   <Input
                     value={profileData.telepon}
@@ -314,8 +330,9 @@ export function ProfilePage() {
                   <p className="font-medium mb-1">Informasi:</p>
                   <ul className="list-disc list-inside space-y-1 text-xs">
                     <li>Nama minimal 3 karakter</li>
+                    <li>NIK bersifat opsional, jika diisi harus 16 digit angka</li>
                     <li>Nomor telepon minimal 10 digit</li>
-                    <li>Email dan NIK tidak dapat diubah</li>
+                    <li>Email tidak dapat diubah</li>
                   </ul>
                 </div>
                 

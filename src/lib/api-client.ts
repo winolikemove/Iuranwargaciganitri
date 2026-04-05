@@ -1259,7 +1259,7 @@ class ApiClient {
     return this.request<{ message: string }>('user.unblock', { userId });
   }
   
-  async updateUser(data: { telepon?: string; nama?: string; photoUrl?: string }): Promise<ApiResponse<SafeUser>> {
+  async updateUser(data: { telepon?: string; nama?: string; photoUrl?: string; nik?: string }): Promise<ApiResponse<SafeUser>> {
     CacheManager.remove('auth_me');
     return this.request<SafeUser>('user.update', data);
   }

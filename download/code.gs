@@ -424,8 +424,11 @@ function authRegister({ nama, email, password, nik, telepon, blok, nomorRumah })
     errors.password = 'Password minimal 6 karakter';
   }
   
-  if (!nik || nik.length !== 16 || !/^\d+$/.test(nik)) {
-    errors.nik = 'NIK harus 16 digit angka';
+  // NIK is optional - only validate if provided
+  if (nik && nik.length > 0) {
+    if (nik.length !== 16 || !/^\d+$/.test(nik)) {
+      errors.nik = 'NIK harus 16 digit angka';
+    }
   }
   
   if (!telepon || telepon.length < 10) {
@@ -449,8 +452,11 @@ function authRegister({ nama, email, password, nik, telepon, blok, nomorRumah })
     return { ok: false, error: 'Email sudah terdaftar' };
   }
   
-  if (dbFindOne('users', { nik })) {
-    return { ok: false, error: 'NIK sudah terdaftar' };
+  // Only check NIK duplicate if NIK is provided
+  if (nik && nik.length > 0) {
+    if (dbFindOne('users', { nik })) {
+      return { ok: false, error: 'NIK sudah terdaftar' };
+    }
   }
   
   dbInsert('users', {
@@ -982,7 +988,7 @@ function userUnblock(user, { userId }) {
   return { ok: true, data: { message: 'Blokir user berhasil dibuka' } };
 }
 
-function userUpdate(user, { telepon, nama, photoUrl }) {
+function userUpdate(user, { telepon, nama, photoUrl, nik }) {
   const updates = {};
   
   if (telepon !== undefined) {
@@ -1001,6 +1007,21 @@ function userUpdate(user, { telepon, nama, photoUrl }) {
   
   if (photoUrl !== undefined) {
     updates.photoUrl = photoUrl;
+  }
+  
+  // NIK is optional - validate if provided
+  if (nik !== undefined) {
+    if (nik && nik.length > 0) {
+      if (nik.length !== 16 || !/^\d+$/.test(nik)) {
+        return { ok: false, error: 'NIK harus 16 digit angka' };
+      }
+      // Check duplicate NIK (exclude current user)
+      const existingNik = dbFindOne('users', { nik });
+      if (existingNik && existingNik.id !== user.id) {
+        return { ok: false, error: 'NIK sudah digunakan oleh user lain' };
+      }
+    }
+    updates.nik = nik;
   }
   
   if (Object.keys(updates).length === 0) {

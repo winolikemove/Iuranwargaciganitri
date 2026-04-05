@@ -105,8 +105,11 @@ export function AuthModal({ open, onOpenChange, mode, onModeChange }: AuthModalP
       errors.confirmPassword = 'Password tidak cocok';
     }
     
-    if (!registerData.nik || registerData.nik.length !== 16 || !/^\d+$/.test(registerData.nik)) {
-      errors.nik = 'NIK harus 16 digit angka';
+    // NIK is optional - only validate if provided
+    if (registerData.nik && registerData.nik.length > 0) {
+      if (registerData.nik.length !== 16 || !/^\d+$/.test(registerData.nik)) {
+        errors.nik = 'NIK harus 16 digit angka';
+      }
     }
     
     if (!registerData.telepon || registerData.telepon.length < 10) {
@@ -299,11 +302,14 @@ export function AuthModal({ open, onOpenChange, mode, onModeChange }: AuthModalP
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="register-nik">NIK (16 digit)</Label>
+                <div className="flex items-center gap-1">
+                  <Label htmlFor="register-nik">NIK (Opsional)</Label>
+                  <span className="text-xs text-muted-foreground">- 16 digit</span>
+                </div>
                 <Input
                   id="register-nik"
                   type="text"
-                  placeholder="3515xxxxxxxxxxxx"
+                  placeholder="3515xxxxxxxxxxxx (boleh kosong)"
                   maxLength={16}
                   value={registerData.nik}
                   onChange={(e) => setRegisterData({ ...registerData, nik: e.target.value.replace(/\D/g, '') })}
