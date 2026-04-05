@@ -31,6 +31,8 @@ import {
   X,
   ArrowLeft,
   ArrowRight,
+  Copy,
+  Camera,
 } from 'lucide-react';
 
 interface PaymentWizardProps {
@@ -69,12 +71,24 @@ export function PaymentWizard({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const monthlyFee = settings?.monthlyFee || 150000;
   const totalAmount = selectedPeriods.length * monthlyFee;
 
   const progress = (currentStep / 6) * 100;
+
+  // Copy to clipboard function
+  const copyToClipboard = async (text: string, fieldName: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedField(fieldName);
+      setTimeout(() => setCopiedField(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -348,20 +362,81 @@ export function PaymentWizard({
                   Silakan transfer ke rekening berikut sesuai blok Anda
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="bg-white p-4 rounded-lg border border-blue-200">
-                  <p className="text-sm text-muted-foreground">Bank</p>
-                  <p className="text-lg font-bold text-blue-700">{bankName}</p>
-                  <p className="text-sm text-muted-foreground mt-2">Nomor Rekening</p>
-                  <p className="text-xl font-bold text-blue-700 font-mono">{bankAccount}</p>
-                  <p className="text-sm text-muted-foreground mt-2">Atas Nama</p>
-                  <p className="font-medium">{bankHolder}</p>
+              <CardContent className="space-y-3">
+                <div className="bg-white p-4 rounded-lg border border-blue-200 space-y-3">
+                  {/* Bank Name */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Bank</p>
+                      <p className="text-lg font-bold text-blue-700">{bankName}</p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => copyToClipboard(bankName, 'bankName')}
+                      className="h-8"
+                    >
+                      {copiedField === 'bankName' ? (
+                        <Check className="h-4 w-4 text-green-600" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                  
+                  {/* Account Number */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Nomor Rekening</p>
+                      <p className="text-xl font-bold text-blue-700 font-mono">{bankAccount}</p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => copyToClipboard(bankAccount, 'bankAccount')}
+                      className="h-8"
+                    >
+                      {copiedField === 'bankAccount' ? (
+                        <Check className="h-4 w-4 text-green-600" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                  
+                  {/* Account Holder */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Atas Nama</p>
+                      <p className="font-medium">{bankHolder}</p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => copyToClipboard(bankHolder, 'bankHolder')}
+                      className="h-8"
+                    >
+                      {copiedField === 'bankHolder' ? (
+                        <Check className="h-4 w-4 text-green-600" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
                 </div>
+                
+                {/* Important Instructions */}
+                <Alert className="border-amber-200 bg-amber-50">
+                  <Camera className="h-4 w-4 text-amber-600" />
+                  <AlertDescription className="text-amber-800">
+                    <strong>PENTING:</strong> Setelah transfer, harap <strong>screenshot/foto bukti pembayaran</strong> Anda. Langkah selanjutnya adalah upload bukti transfer.
+                  </AlertDescription>
+                </Alert>
+                
                 <Alert className="mt-2">
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>
-                    Pastikan transfer ke rekening Blok {userBlok} sesuai blok Anda.
-                    Simpan bukti transfer untuk diupload di langkah selanjutnya.
+                    Pastikan transfer ke rekening <strong>Blok {userBlok}</strong> sesuai blok Anda dengan jumlah <strong>{formatCurrency(totalAmount)}</strong>.
                   </AlertDescription>
                 </Alert>
               </CardContent>
@@ -372,10 +447,11 @@ export function PaymentWizard({
       case 3:
         return (
           <div className="space-y-4">
-            <Alert>
-              <Upload className="h-4 w-4" />
-              <AlertDescription>
-                Upload bukti transfer pembayaran. Format yang didukung: JPG, PNG, WEBP. Maksimal 2MB.
+            {/* Screenshot Reminder */}
+            <Alert className="border-amber-200 bg-amber-50">
+              <Camera className="h-4 w-4 text-amber-600" />
+              <AlertDescription className="text-amber-800">
+                <strong>Upload Bukti Transfer:</strong> Silakan upload screenshot atau foto bukti pembayaran yang sudah Anda simpan. Format: JPG, PNG, WEBP. Maksimal 2MB.
               </AlertDescription>
             </Alert>
 
@@ -411,6 +487,7 @@ export function PaymentWizard({
                 <ImageIcon className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                 <p className="font-medium">Klik untuk upload bukti transfer</p>
                 <p className="text-sm text-muted-foreground">atau drag & drop file di sini</p>
+                <p className="text-xs text-muted-foreground mt-2">JPG, PNG, WEBP • Maks 2MB</p>
               </div>
             )}
 
