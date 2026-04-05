@@ -499,21 +499,13 @@ export function SettingsPage() {
                         />
                         {/* Show preview - either uploaded logo or dummy */}
                         <div className="p-4 bg-muted rounded-lg flex flex-col items-center justify-center">
-                          {settings.logoUrl ? (
-                            <img 
-                              src={settings.logoUrl} 
-                              alt="Logo Preview" 
-                              className="max-h-20 object-contain"
-                            />
-                          ) : (
-                            <>
-                              <img 
-                                src="/dummy-logo.svg" 
-                                alt="Default Logo" 
-                                className="max-h-20 object-contain opacity-50"
-                              />
-                              <p className="text-xs text-muted-foreground mt-2">Logo default (upload untuk mengganti)</p>
-                            </>
+                          <img
+                            src={settings.logoUrl || '/logo.jpg'}
+                            alt="Logo Preview"
+                            className="max-h-20 object-contain"
+                          />
+                          {!settings.logoUrl && (
+                            <p className="text-xs text-muted-foreground mt-2">Logo default (upload untuk mengganti)</p>
                           )}
                         </div>
                       </div>
@@ -545,21 +537,13 @@ export function SettingsPage() {
                         />
                         {/* Show preview - either uploaded banner or dummy */}
                         <div className="p-4 bg-muted rounded-lg">
-                          {settings.bannerUrl ? (
-                            <img 
-                              src={settings.bannerUrl} 
-                              alt="Banner Preview" 
-                              className="w-full h-32 object-cover rounded"
-                            />
-                          ) : (
-                            <div className="flex flex-col items-center">
-                              <img 
-                                src="/dummy-banner.svg" 
-                                alt="Default Banner" 
-                                className="w-full h-32 object-cover rounded opacity-50"
-                              />
-                              <p className="text-xs text-muted-foreground mt-2">Banner default (upload untuk mengganti)</p>
-                            </div>
+                          <img
+                            src={settings.bannerUrl || '/banner.jpg'}
+                            alt="Banner Preview"
+                            className="w-full h-32 object-cover rounded"
+                          />
+                          {!settings.bannerUrl && (
+                            <p className="text-xs text-muted-foreground mt-2 text-center">Banner default (upload untuk mengganti)</p>
                           )}
                         </div>
                       </div>

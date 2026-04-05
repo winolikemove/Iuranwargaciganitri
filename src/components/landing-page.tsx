@@ -76,19 +76,11 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-2">
-            {settings?.logoUrl ? (
-              <img 
-                src={settings.logoUrl} 
-                alt="Logo" 
-                className="w-10 h-10 object-contain"
-              />
-            ) : (
-              <img 
-                src="/dummy-logo.svg" 
-                alt="Logo" 
-                className="w-10 h-10 object-contain"
-              />
-            )}
+            <img
+              src={settings?.logoUrl || '/logo.jpg'}
+              alt="Logo"
+              className="w-10 h-10 object-contain"
+            />
             <div>
               <h1 className="font-bold text-lg">{settings?.siteName || 'Pradha Ciganitri'}</h1>
               <p className="text-xs text-muted-foreground">{settings?.siteDescription || 'Sistem Manajemen Warga'}</p>
