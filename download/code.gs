@@ -2505,3 +2505,229 @@ function initialSetup() {
   
   Logger.log('Initial setup complete!');
 }
+
+// ==================== SEED DUMMY PENGURUS ====================
+// Jalankan fungsi ini dari Apps Script Editor untuk memasukkan data dummy pengurus
+// Run this function from Apps Script Editor to insert dummy pengurus data
+function seedDummyPengurus() {
+  const dummyPengurus = [
+    // ===== BLOK A =====
+    {
+      nama: 'Bpk Afip',
+      email: 'afip@pradha-ciganitri.local',
+      password: 'afip123',
+      nik: '3273010101010001',
+      telepon: '087364848848',
+      blok: 'A',
+      nomorRumah: '49',
+      role: 'ADMIN',
+      jabatan: 'KETUA_RT'
+    },
+    {
+      nama: 'Bpk Dedi',
+      email: 'dedi@pradha-ciganitri.local',
+      password: 'dedi123',
+      nik: '3273010101010002',
+      telepon: '081321654987',
+      blok: 'A',
+      nomorRumah: '25',
+      role: 'WARGA',
+      jabatan: 'WAKIL_KETUA'
+    },
+    {
+      nama: 'Ibu Siti',
+      email: 'siti@pradha-ciganitri.local',
+      password: 'siti123',
+      nik: '3273010101010003',
+      telepon: '085678912345',
+      blok: 'A',
+      nomorRumah: '12',
+      role: 'WARGA',
+      jabatan: 'SEKRETARIS'
+    },
+    {
+      nama: 'Bpk Hendra',
+      email: 'hendra@pradha-ciganitri.local',
+      password: 'hendra123',
+      nik: '3273010101010004',
+      telepon: '082198765432',
+      blok: 'A',
+      nomorRumah: '78',
+      role: 'BENDAHARA',
+      jabatan: 'BENDAHARA'
+    },
+    
+    // ===== BLOK B =====
+    {
+      nama: 'Bpk Risan',
+      email: 'risan@pradha-ciganitri.local',
+      password: 'risan123',
+      nik: '3273010101010005',
+      telepon: '08122495879',
+      blok: 'B',
+      nomorRumah: '149',
+      role: 'ADMIN',
+      jabatan: 'KETUA_RT'
+    },
+    {
+      nama: 'Bpk Ahmad',
+      email: 'ahmad@pradha-ciganitri.local',
+      password: 'ahmad123',
+      nik: '3273010101010006',
+      telepon: '085712345678',
+      blok: 'B',
+      nomorRumah: '125',
+      role: 'WARGA',
+      jabatan: 'WAKIL_KETUA'
+    },
+    {
+      nama: 'Ibu Ratna',
+      email: 'ratna@pradha-ciganitri.local',
+      password: 'ratna123',
+      nik: '3273010101010007',
+      telepon: '081234567891',
+      blok: 'B',
+      nomorRumah: '167',
+      role: 'WARGA',
+      jabatan: 'SEKRETARIS'
+    },
+    {
+      nama: 'Bpk Yanto',
+      email: 'yanto@pradha-ciganitri.local',
+      password: 'yanto123',
+      nik: '3273010101010008',
+      telepon: '087812345678',
+      blok: 'B',
+      nomorRumah: '180',
+      role: 'BENDAHARA',
+      jabatan: 'BENDAHARA'
+    },
+    
+    // ===== BERSAMA (SHARED) =====
+    {
+      nama: 'Bpk Karim',
+      email: 'karim@pradha-ciganitri.local',
+      password: 'karim123',
+      nik: '3273010101010009',
+      telepon: '085612345678',
+      blok: 'A',
+      nomorRumah: '55',
+      role: 'WARGA',
+      jabatan: 'SIE_KEAMANAN'
+    },
+    {
+      nama: 'Bpk Dani',
+      email: 'dani@pradha-ciganitri.local',
+      password: 'dani123',
+      nik: '3273010101010010',
+      telepon: '082112345678',
+      blok: 'B',
+      nomorRumah: '175',
+      role: 'WARGA',
+      jabatan: 'SIE_KEBERSIHAN'
+    },
+    {
+      nama: 'Bpk Basir',
+      email: 'basir@pradha-ciganitri.local',
+      password: 'basir123',
+      nik: '3273010101010011',
+      telepon: '085220590365',
+      blok: 'B',
+      nomorRumah: '132',
+      role: 'WARGA',
+      jabatan: 'DKM_MASJID'
+    }
+  ];
+  
+  const results = {
+    success: [],
+    skipped: [],
+    errors: []
+  };
+  
+  for (const pengurus of dummyPengurus) {
+    try {
+      // Check if email already exists
+      const existingEmail = dbFindOne('users', { email: pengurus.email.toLowerCase() });
+      if (existingEmail) {
+        results.skipped.push({ nama: pengurus.nama, email: pengurus.email, reason: 'Email sudah terdaftar' });
+        continue;
+      }
+      
+      // Check if NIK already exists
+      const existingNik = dbFindOne('users', { nik: pengurus.nik });
+      if (existingNik) {
+        results.skipped.push({ nama: pengurus.nama, nik: pengurus.nik, reason: 'NIK sudah terdaftar' });
+        continue;
+      }
+      
+      // Insert new pengurus
+      dbInsert('users', {
+        nama: pengurus.nama,
+        email: pengurus.email.toLowerCase(),
+        passwordHash: hashPassword(pengurus.password),
+        nik: pengurus.nik,
+        telepon: pengurus.telepon,
+        blok: pengurus.blok,
+        nomorRumah: pengurus.nomorRumah,
+        role: pengurus.role,
+        status: 'ACTIVE',
+        photoUrl: '',
+        jabatan: pengurus.jabatan
+      });
+      
+      results.success.push({
+        nama: pengurus.nama,
+        jabatan: ALL_JABATAN[pengurus.jabatan].label,
+        blok: pengurus.blok,
+        telepon: pengurus.telepon
+      });
+      
+    } catch (error) {
+      results.errors.push({ nama: pengurus.nama, error: error.message });
+    }
+  }
+  
+  // Log results
+  Logger.log('===== SEED DUMMY PENGURUS RESULTS =====');
+  Logger.log(`Berhasil ditambahkan: ${results.success.length}`);
+  results.success.forEach(s => Logger.log(`  ✓ ${s.nama} - ${s.jabatan} Blok ${s.blok} (${s.telepon})`));
+  
+  Logger.log(`Dilewati: ${results.skipped.length}`);
+  results.skipped.forEach(s => Logger.log(`  ⊘ ${s.nama} - ${s.reason}`));
+  
+  Logger.log(`Error: ${results.errors.length}`);
+  results.errors.forEach(e => Logger.log(`  ✗ ${e.nama} - ${e.error}`));
+  
+  return results;
+}
+
+// Fungsi untuk menghapus semua dummy pengurus (untuk reset)
+function clearDummyPengurus() {
+  const dummyEmails = [
+    'afip@pradha-ciganitri.local',
+    'dedi@pradha-ciganitri.local',
+    'siti@pradha-ciganitri.local',
+    'hendra@pradha-ciganitri.local',
+    'risan@pradha-ciganitri.local',
+    'ahmad@pradha-ciganitri.local',
+    'ratna@pradha-ciganitri.local',
+    'yanto@pradha-ciganitri.local',
+    'karim@pradha-ciganitri.local',
+    'dani@pradha-ciganitri.local',
+    'basir@pradha-ciganitri.local'
+  ];
+  
+  let deleted = 0;
+  for (const email of dummyEmails) {
+    const user = dbFindOne('users', { email: email.toLowerCase() });
+    if (user) {
+      dbDelete('users', user.id);
+      deleted++;
+      Logger.log(`Deleted: ${user.nama} (${email})`);
+    }
+  }
+  
+  Logger.log(`Total deleted: ${deleted}`);
+  return { deleted };
+}
