@@ -101,15 +101,41 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
         </div>
       </header>
 
+      {/* Banner Section */}
+      <section className="relative w-full h-64 md:h-80 lg:h-96 overflow-hidden">
+        <img
+          src={settings?.bannerUrl || '/banner.jpg'}
+          alt="Banner"
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10">
+          <div className="container mx-auto">
+            <div className="flex items-center gap-3 mb-2">
+              <img
+                src={settings?.logoUrl || '/logo.jpg'}
+                alt="Logo"
+                className="w-12 h-12 md:w-16 md:h-16 object-contain rounded-lg bg-white/90 p-1"
+              />
+              <div>
+                <h2 className="text-2xl md:text-4xl font-bold text-white">
+                  {settings?.siteName || 'Pradha Ciganitri'}
+                </h2>
+                <p className="text-sm md:text-base text-white/80">
+                  {settings?.siteDescription || 'Sistem Manajemen Warga'}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Hero Section */}
-      <section className="py-20 px-4">
+      <section className="py-12 px-4">
         <div className="container mx-auto text-center">
           <Badge className="mb-4" variant="secondary">Selamat Datang</Badge>
-          <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
-            {settings?.siteName || 'Pradha Ciganitri'}
-          </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-            {settings?.siteDescription || 'Sistem manajemen warga modern untuk mengelola keuangan, pembayaran, agenda, dan informasi warga secara digital.'}
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-6">
+            Sistem manajemen warga modern untuk mengelola keuangan, pembayaran, agenda, dan informasi warga secara digital.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <Button size="lg" onClick={onLoginClick}>
