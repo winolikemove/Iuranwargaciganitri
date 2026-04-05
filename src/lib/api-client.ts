@@ -235,20 +235,8 @@ const generateDemoData = () => {
       },
     ] as SafeUser[],
     
-    demoUser: {
-      id: 'demo-user',
-      nama: 'Demo User',
-      email: 'demo@pradha.id',
-      nik: '3201010101010003',
-      blok: 'C5',
-      nomorRumah: '5',
-      telepon: '081234567899',
-      role: 'ADMIN',
-      status: 'ACTIVE',
-      photoUrl: null,
-    } as SafeUser,
-    
-    demoPermissions: {
+    // SUPERADMIN - Full access including global settings and role management
+    superadminPermissions: {
       canViewAllUsers: true,
       canViewOwnBlokUsers: true,
       canApproveUsers: true,
@@ -273,9 +261,113 @@ const generateDemoData = () => {
       canDeleteGallery: true,
       canApproveReviews: true,
       canDeleteReviews: true,
-      canManageSettings: true,
-      canManageRoles: true,
+      canManageSettings: true,  // Only SUPERADMIN can manage global settings
+      canManageRoles: true,      // Only SUPERADMIN can manage roles
     } as Permissions,
+    
+    // ADMIN - Can manage blok-level, but NOT global settings or roles
+    adminPermissions: {
+      canViewAllUsers: false,      // Only users in their blok
+      canViewOwnBlokUsers: true,
+      canApproveUsers: true,
+      canRejectUsers: true,
+      canChangeUserRole: false,    // Cannot change roles
+      canBlockUsers: true,
+      canViewFinance: true,
+      canCreateTransaction: true,
+      canEditTransaction: true,
+      canDeleteTransaction: false, // Cannot delete transactions
+      canSubmitPayment: false,     // Admin doesn't submit payments
+      canApprovePayment: true,
+      canRejectPayment: true,
+      canViewAllPayments: true,
+      canCreateAgenda: true,
+      canEditAgenda: true,
+      canDeleteAgenda: true,
+      canCreateInformation: true,
+      canEditInformation: true,
+      canDeleteInformation: true,
+      canUploadGallery: true,
+      canDeleteGallery: true,
+      canApproveReviews: true,
+      canDeleteReviews: true,
+      canManageSettings: false,    // Cannot manage global settings
+      canManageRoles: false,       // Cannot manage roles
+    } as Permissions,
+    
+    // BENDAHARA - Focus on finance
+    bendaharaPermissions: {
+      canViewAllUsers: false,
+      canViewOwnBlokUsers: true,
+      canApproveUsers: false,
+      canRejectUsers: false,
+      canChangeUserRole: false,
+      canBlockUsers: false,
+      canViewFinance: true,
+      canCreateTransaction: true,
+      canEditTransaction: true,
+      canDeleteTransaction: false,
+      canSubmitPayment: false,
+      canApprovePayment: true,
+      canRejectPayment: true,
+      canViewAllPayments: true,
+      canCreateAgenda: false,
+      canEditAgenda: false,
+      canDeleteAgenda: false,
+      canCreateInformation: false,
+      canEditInformation: false,
+      canDeleteInformation: false,
+      canUploadGallery: false,
+      canDeleteGallery: false,
+      canApproveReviews: false,
+      canDeleteReviews: false,
+      canManageSettings: false,
+      canManageRoles: false,
+    } as Permissions,
+    
+    // WARGA - Basic user permissions
+    wargaPermissions: {
+      canViewAllUsers: false,
+      canViewOwnBlokUsers: false,
+      canApproveUsers: false,
+      canRejectUsers: false,
+      canChangeUserRole: false,
+      canBlockUsers: false,
+      canViewFinance: false,
+      canCreateTransaction: false,
+      canEditTransaction: false,
+      canDeleteTransaction: false,
+      canSubmitPayment: true,      // Can submit their own payments
+      canApprovePayment: false,
+      canRejectPayment: false,
+      canViewAllPayments: false,
+      canCreateAgenda: false,
+      canEditAgenda: false,
+      canDeleteAgenda: false,
+      canCreateInformation: false,
+      canEditInformation: false,
+      canDeleteInformation: false,
+      canUploadGallery: false,
+      canDeleteGallery: false,
+      canApproveReviews: false,
+      canDeleteReviews: false,
+      canManageSettings: false,
+      canManageRoles: false,
+    } as Permissions,
+    
+    // Demo user starts as SUPERADMIN for testing
+    demoUser: {
+      id: 'demo-user',
+      nama: 'Demo Super Admin',
+      email: 'demo@pradha.id',
+      nik: '3201010101010003',
+      blok: 'A',
+      nomorRumah: '1',
+      telepon: '081234567899',
+      role: 'SUPERADMIN',
+      status: 'ACTIVE',
+      photoUrl: null,
+    } as SafeUser,
   };
 };
 
@@ -594,7 +686,24 @@ class ApiClient {
         break;
         
       case 'role.permissions':
-        result = { ok: true, data: this.demoData.demoPermissions as T };
+        // Return permissions based on user's role
+        const userRole = this.demoData.demoUser.role;
+        let permissions: Permissions;
+        switch (userRole) {
+          case 'SUPERADMIN':
+            permissions = this.demoData.superadminPermissions;
+            break;
+          case 'ADMIN':
+            permissions = this.demoData.adminPermissions;
+            break;
+          case 'BENDAHARA':
+            permissions = this.demoData.bendaharaPermissions;
+            break;
+          case 'WARGA':
+          default:
+            permissions = this.demoData.wargaPermissions;
+        }
+        result = { ok: true, data: permissions as T };
         break;
         
       // Public
@@ -793,9 +902,10 @@ class ApiClient {
         result = { 
           ok: true, 
           data: {
-            ADMIN: this.demoData.demoPermissions,
-            BENDAHARA: { ...this.demoData.demoPermissions, canManageSettings: false, canManageRoles: false },
-            WARGA: { ...this.demoData.demoPermissions, canViewAllUsers: false, canViewFinance: false, canCreateTransaction: false, canEditTransaction: false, canDeleteTransaction: false, canApprovePayment: false, canRejectPayment: false, canViewAllPayments: false, canCreateAgenda: false, canEditAgenda: false, canDeleteAgenda: false, canCreateInformation: false, canEditInformation: false, canDeleteInformation: false, canDeleteGallery: false, canApproveReviews: false, canDeleteReviews: false, canManageSettings: false, canManageRoles: false },
+            SUPERADMIN: this.demoData.superadminPermissions,
+            ADMIN: this.demoData.adminPermissions,
+            BENDAHARA: this.demoData.bendaharaPermissions,
+            WARGA: this.demoData.wargaPermissions,
           } as T 
         };
         break;
