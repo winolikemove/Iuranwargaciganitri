@@ -987,7 +987,23 @@ class ApiClient {
         break;
         
       case 'payment.paidPeriods':
-        result = { ok: true, data: [] as T };
+        // Return demo paid periods based on user
+        const paidPeriodsUser = currentDemoUser || this.demoData.demoUsers.superadmin;
+        const now = new Date();
+        const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+        
+        // Demo: some users have paid some periods
+        let demoPaidPeriods: string[] = [];
+        if (paidPeriodsUser.role === 'WARGA') {
+          // Warga has paid 2 months ago and 3 months ago
+          const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+          const prevPrevMonth = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+          demoPaidPeriods = [
+            `${monthNames[prevMonth.getMonth()]} ${prevMonth.getFullYear()}`,
+            `${monthNames[prevPrevMonth.getMonth()]} ${prevPrevMonth.getFullYear()}`,
+          ];
+        }
+        result = { ok: true, data: demoPaidPeriods as T };
         break;
         
       case 'payment.unpaidUsers':

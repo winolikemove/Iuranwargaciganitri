@@ -25,7 +25,10 @@ import {
   XCircle,
   Clock,
   Upload,
+  Calendar,
+  Wallet,
 } from 'lucide-react';
+import { PaymentWizard } from './payment-wizard';
 import type { Payment } from '@/types';
 
 export function PaymentPage() {
@@ -35,8 +38,49 @@ export function PaymentPage() {
   const [myPayments, setMyPayments] = useState<Payment[]>([]);
   const [pendingPayments, setPendingPayments] = useState<Payment[]>([]);
   const [allPayments, setAllPayments] = useState<Payment[]>([]);
+  const [paidPeriods, setPaidPeriods] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('my');
+  const [wizardOpen, setWizardOpen] = useState(false);
+
+  // Generate available periods (last 12 months + current + next 3 months)
+  const generateAvailablePeriods = () => {
+    const periods: string[] = [];
+    const now = new Date();
+    const monthNames = [
+      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+    
+    // Last 12 months
+    for (let i = 12; i >= 1; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      periods.push(`${monthNames[d.getMonth()]} ${d.getFullYear()}`);
+    }
+    
+    // Current month
+    periods.push(`${monthNames[now.getMonth()]} ${now.getFullYear()}`);
+    
+    // Next 3 months
+    for (let i = 1; i <= 3; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+      periods.push(`${monthNames[d.getMonth()]} ${d.getFullYear()}`);
+    }
+    
+    return periods;
+  };
+
+  const availablePeriods = generateAvailablePeriods();
+  
+  // Get pending periods from pending payments
+  const pendingPeriods = myPayments
+    .filter(p => p.status === 'PENDING')
+    .flatMap(p => p.periods);
+
+  // Unpaid periods = available - paid - pending
+  const unpaidPeriods = availablePeriods.filter(
+    p => !paidPeriods.includes(p) && !pendingPeriods.includes(p)
+  );
 
   useEffect(() => {
     loadData();
@@ -47,9 +91,17 @@ export function PaymentPage() {
     
     try {
       if (activeTab === 'my' && permissions?.canSubmitPayment) {
-        const res = await api.getMyPayments();
-        if (res.ok && res.data) {
-          setMyPayments(res.data);
+        const [paymentsRes, paidRes] = await Promise.all([
+          api.getMyPayments(),
+          api.getPaidPeriods(user?.id || ''),
+        ]);
+        
+        if (paymentsRes.ok && paymentsRes.data) {
+          setMyPayments(paymentsRes.data);
+        }
+        
+        if (paidRes.ok && paidRes.data) {
+          setPaidPeriods(paidRes.data);
         }
       }
       
@@ -116,6 +168,10 @@ export function PaymentPage() {
     if (result.ok) {
       loadData();
     }
+  };
+
+  const handleWizardSuccess = () => {
+    loadData();
   };
 
   const renderPaymentTable = (payments: Payment[], showActions: boolean = false) => (
@@ -207,29 +263,77 @@ export function PaymentPage() {
 
   return (
     <div className="space-y-6">
-      {/* Monthly Fee Info */}
-      <Card className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5" />
-            Iuran Bulanan
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <p className="text-emerald-100">Iuran per bulan:</p>
-              <p className="text-3xl font-bold">{formatCurrency(settings?.monthlyFee || 0)}</p>
+      {/* Payment Summary Cards */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Wallet className="h-5 w-5" />
+              Iuran Bulanan
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold">{formatCurrency(settings?.monthlyFee || 0)}</p>
+            <p className="text-emerald-100 text-sm">per bulan</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Calendar className="h-5 w-5" />
+              Belum Dibayar
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-orange-500">{unpaidPeriods.length}</p>
+            <p className="text-muted-foreground text-sm">periode</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <CheckCircle className="h-5 w-5" />
+              Sudah Dibayar
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-green-500">{paidPeriods.length}</p>
+            <p className="text-muted-foreground text-sm">periode</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Unpaid Periods Alert */}
+      {permissions?.canSubmitPayment && unpaidPeriods.length > 0 && (
+        <Card className="border-orange-200 bg-orange-50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg text-orange-700 flex items-center gap-2">
+              <AlertCircle className="h-5 w-5" />
+              Periode Belum Dibayar
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2 mb-4">
+              {unpaidPeriods.slice(0, 6).map((period) => (
+                <Badge key={period} variant="outline" className="bg-white">
+                  {period}
+                </Badge>
+              ))}
+              {unpaidPeriods.length > 6 && (
+                <Badge variant="outline" className="bg-white">
+                  +{unpaidPeriods.length - 6} lainnya
+                </Badge>
+              )}
             </div>
-            {permissions?.canSubmitPayment && (
-              <Button variant="secondary">
-                <Upload className="h-4 w-4 mr-2" />
-                Upload Bukti Bayar
-              </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+            <Button onClick={() => setWizardOpen(true)}>
+              <Upload className="h-4 w-4 mr-2" />
+              Bayar Sekarang
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Payment Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -307,6 +411,16 @@ export function PaymentPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Payment Wizard */}
+      <PaymentWizard
+        open={wizardOpen}
+        onClose={() => setWizardOpen(false)}
+        onSuccess={handleWizardSuccess}
+        unpaidPeriods={unpaidPeriods}
+        paidPeriods={paidPeriods}
+        pendingPeriods={pendingPeriods}
+      />
     </div>
   );
 }
