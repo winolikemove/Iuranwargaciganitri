@@ -26,8 +26,12 @@ import {
   CreditCard,
   MessageSquare,
   MapPin,
+  Building2,
+  Wallet,
+  Plus,
+  X,
 } from 'lucide-react';
-import type { AppSettings, Permissions } from '@/types';
+import type { AppSettings, Permissions, BankInfo, BlokCategories } from '@/types';
 
 export function SettingsPage() {
   const { user, permissions } = useAuth();
@@ -127,6 +131,27 @@ export function SettingsPage() {
     }
   };
 
+  // Handle saldo awal save
+  const handleSaveSaldoAwal = async (blok: 'A' | 'B', amount: number) => {
+    setIsSubmitting(true);
+    setError(null);
+    
+    try {
+      const year = new Date().getFullYear();
+      const result = await api.setSaldoAwal(blok, year, amount);
+      if (result.ok) {
+        setSuccess(`Saldo awal Blok ${blok} berhasil disimpan`);
+        setTimeout(() => setSuccess(null), 3000);
+      } else {
+        setError(result.error || 'Gagal menyimpan saldo awal');
+      }
+    } catch (err) {
+      setError('Terjadi kesalahan');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   if (!permissions?.canManageSettings && !permissions?.canManageRoles) {
     return (
       <Alert>
@@ -140,6 +165,36 @@ export function SettingsPage() {
 
   const updateSetting = (key: string, value: unknown) => {
     setSettings(prev => prev ? { ...prev, [key]: value } : null);
+  };
+
+  // Update bank info for specific blok
+  const updateBankInfo = (blok: 'A' | 'B', field: keyof BankInfo, value: string) => {
+    const key = blok === 'A' ? 'bankInfoA' : 'bankInfoB';
+    const currentInfo = settings?.[key] as BankInfo | undefined;
+    setSettings(prev => prev ? {
+      ...prev,
+      [key]: {
+        bankName: currentInfo?.bankName || '',
+        bankAccount: currentInfo?.bankAccount || '',
+        bankHolder: currentInfo?.bankHolder || '',
+        [field]: value,
+      }
+    } : null);
+  };
+
+  // Update categories for specific blok
+  const updateCategories = (blok: 'A' | 'B', type: 'income' | 'expense' | 'information', categories: string[]) => {
+    const key = blok === 'A' ? 'categoriesA' : 'categoriesB';
+    const currentCategories = settings?.[key] as BlokCategories | undefined;
+    setSettings(prev => prev ? {
+      ...prev,
+      [key]: {
+        income: currentCategories?.income || [],
+        expense: currentCategories?.expense || [],
+        information: currentCategories?.information || [],
+        [type]: categories,
+      }
+    } : null);
   };
 
   const updatePermission = (role: string, key: keyof Permissions, value: boolean) => {
@@ -182,6 +237,11 @@ export function SettingsPage() {
     canManageRoles: 'Kelola Permission',
   };
 
+  // Default categories for each blok
+  const defaultIncomeCategories = ['Iuran Bulanan', 'Dana Sosial', 'Sumbangan', 'Lain-lain'];
+  const defaultExpenseCategories = ['Kebersihan', 'Keamanan', 'Perbaikan', 'Listrik', 'Kegiatan', 'Administrasi', 'Lain-lain'];
+  const defaultInformationCategories = ['Pengumuman', 'Berita', 'Info Penting'];
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -221,13 +281,17 @@ export function SettingsPage() {
                 <CreditCard className="h-4 w-4 mr-2" />
                 Pembayaran
               </TabsTrigger>
-              <TabsTrigger value="contact">
-                <MessageSquare className="h-4 w-4 mr-2" />
-                Kontak
+              <TabsTrigger value="saldo">
+                <Wallet className="h-4 w-4 mr-2" />
+                Saldo Awal
               </TabsTrigger>
               <TabsTrigger value="categories">
                 <Tags className="h-4 w-4 mr-2" />
                 Kategori
+              </TabsTrigger>
+              <TabsTrigger value="contact">
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Kontak
               </TabsTrigger>
             </>
           )}
@@ -542,16 +606,16 @@ export function SettingsPage() {
           </TabsContent>
         )}
 
-        {/* Payment Settings */}
+        {/* Payment Settings - Per Blok */}
         {permissions?.canManageSettings && (
           <TabsContent value="payment" className="mt-4">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <CreditCard className="h-5 w-5" />
-                  Pengaturan Pembayaran
+                  Pengaturan Pembayaran Per Blok
                 </CardTitle>
-                <CardDescription>Konfigurasi metode pembayaran iuran</CardDescription>
+                <CardDescription>Konfigurasi nomor rekening untuk masing-masing blok</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 {settings && (
@@ -572,47 +636,95 @@ export function SettingsPage() {
 
                     <Separator />
 
+                    {/* Bank Info Blok A */}
                     <div className="space-y-4">
-                      <Label className="text-base font-semibold">Informasi Bank</Label>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-5 w-5 text-blue-600" />
+                        <Label className="text-base font-semibold">Rekening Blok A</Label>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
                         <div className="space-y-2">
                           <Label>Nama Bank</Label>
                           <Input
-                            value={settings.bankName || ''}
-                            onChange={(e) => updateSetting('bankName', e.target.value)}
+                            value={settings.bankInfoA?.bankName || ''}
+                            onChange={(e) => updateBankInfo('A', 'bankName', e.target.value)}
                             placeholder="Contoh: BCA, Mandiri, BRI"
                           />
                         </div>
                         <div className="space-y-2">
                           <Label>Nomor Rekening</Label>
                           <Input
-                            value={settings.bankAccount || ''}
-                            onChange={(e) => updateSetting('bankAccount', e.target.value)}
+                            value={settings.bankInfoA?.bankAccount || ''}
+                            onChange={(e) => updateBankInfo('A', 'bankAccount', e.target.value)}
                             placeholder="1234567890"
                           />
                         </div>
                         <div className="space-y-2">
                           <Label>Nama Pemilik Rekening</Label>
                           <Input
-                            value={settings.bankHolder || ''}
-                            onChange={(e) => updateSetting('bankHolder', e.target.value)}
+                            value={settings.bankInfoA?.bankHolder || ''}
+                            onChange={(e) => updateBankInfo('A', 'bankHolder', e.target.value)}
                             placeholder="Nama lengkap"
                           />
                         </div>
                       </div>
+                      {settings.bankInfoA?.bankName && (
+                        <div className="bg-background p-3 rounded border border-blue-200">
+                          <p className="font-medium">{settings.bankInfoA.bankName}</p>
+                          <p className="text-lg font-bold">{settings.bankInfoA.bankAccount}</p>
+                          <p className="text-sm text-muted-foreground">a.n. {settings.bankInfoA.bankHolder}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    <Separator />
+
+                    {/* Bank Info Blok B */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-5 w-5 text-green-600" />
+                        <Label className="text-base font-semibold">Rekening Blok B</Label>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-green-50 rounded-lg border border-green-200">
+                        <div className="space-y-2">
+                          <Label>Nama Bank</Label>
+                          <Input
+                            value={settings.bankInfoB?.bankName || ''}
+                            onChange={(e) => updateBankInfo('B', 'bankName', e.target.value)}
+                            placeholder="Contoh: BCA, Mandiri, BRI"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Nomor Rekening</Label>
+                          <Input
+                            value={settings.bankInfoB?.bankAccount || ''}
+                            onChange={(e) => updateBankInfo('B', 'bankAccount', e.target.value)}
+                            placeholder="1234567890"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Nama Pemilik Rekening</Label>
+                          <Input
+                            value={settings.bankInfoB?.bankHolder || ''}
+                            onChange={(e) => updateBankInfo('B', 'bankHolder', e.target.value)}
+                            placeholder="Nama lengkap"
+                          />
+                        </div>
+                      </div>
+                      {settings.bankInfoB?.bankName && (
+                        <div className="bg-background p-3 rounded border border-green-200">
+                          <p className="font-medium">{settings.bankInfoB.bankName}</p>
+                          <p className="text-lg font-bold">{settings.bankInfoB.bankAccount}</p>
+                          <p className="text-sm text-muted-foreground">a.n. {settings.bankInfoB.bankHolder}</p>
+                        </div>
+                      )}
                     </div>
 
                     <div className="p-4 bg-muted rounded-lg">
-                      <p className="text-sm text-muted-foreground mb-2">
-                        Informasi pembayaran akan ditampilkan saat warga melakukan pembayaran iuran.
+                      <p className="text-sm text-muted-foreground">
+                        Informasi pembayaran akan ditampilkan kepada warga sesuai dengan blok mereka.
+                        Warga Blok A akan melihat rekening Blok A, dan sebaliknya.
                       </p>
-                      {settings.bankName && (
-                        <div className="bg-background p-3 rounded border">
-                          <p className="font-medium">{settings.bankName}</p>
-                          <p className="text-lg font-bold">{settings.bankAccount}</p>
-                          <p className="text-sm text-muted-foreground">a.n. {settings.bankHolder}</p>
-                        </div>
-                      )}
                     </div>
 
                     <Button onClick={handleSaveSettings} disabled={isSubmitting}>
@@ -628,6 +740,101 @@ export function SettingsPage() {
                         </>
                       )}
                     </Button>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
+
+        {/* Saldo Awal Settings */}
+        {permissions?.canManageSettings && (
+          <TabsContent value="saldo" className="mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Wallet className="h-5 w-5" />
+                  Saldo Awal Per Blok
+                </CardTitle>
+                <CardDescription>
+                  Atur saldo awal untuk tahun {new Date().getFullYear()}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {settings && (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Saldo Awal Blok A */}
+                      <div className="space-y-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <div className="flex items-center gap-2">
+                          <Building2 className="h-5 w-5 text-blue-600" />
+                          <Label className="text-base font-semibold">Saldo Awal Blok A</Label>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Nominal (Rp)</Label>
+                          <Input
+                            type="number"
+                            value={settings.saldoAwalA || 0}
+                            onChange={(e) => updateSetting('saldoAwalA', parseInt(e.target.value) || 0)}
+                            placeholder="0"
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Saldo awal tahun {new Date().getFullYear()} untuk Blok A
+                          </p>
+                        </div>
+                        <Button 
+                          onClick={() => handleSaveSaldoAwal('A', settings.saldoAwalA || 0)}
+                          disabled={isSubmitting}
+                          className="w-full"
+                        >
+                          {isSubmitting ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : (
+                            <Save className="mr-2 h-4 w-4" />
+                          )}
+                          Simpan Saldo A
+                        </Button>
+                      </div>
+
+                      {/* Saldo Awal Blok B */}
+                      <div className="space-y-4 p-4 bg-green-50 rounded-lg border border-green-200">
+                        <div className="flex items-center gap-2">
+                          <Building2 className="h-5 w-5 text-green-600" />
+                          <Label className="text-base font-semibold">Saldo Awal Blok B</Label>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Nominal (Rp)</Label>
+                          <Input
+                            type="number"
+                            value={settings.saldoAwalB || 0}
+                            onChange={(e) => updateSetting('saldoAwalB', parseInt(e.target.value) || 0)}
+                            placeholder="0"
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Saldo awal tahun {new Date().getFullYear()} untuk Blok B
+                          </p>
+                        </div>
+                        <Button 
+                          onClick={() => handleSaveSaldoAwal('B', settings.saldoAwalB || 0)}
+                          disabled={isSubmitting}
+                          className="w-full"
+                        >
+                          {isSubmitting ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : (
+                            <Save className="mr-2 h-4 w-4" />
+                          )}
+                          Simpan Saldo B
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-muted rounded-lg">
+                      <p className="text-sm text-muted-foreground">
+                        Saldo awal adalah jumlah uang yang ada di kas blok pada awal tahun.
+                        Ini akan digunakan untuk menghitung saldo akhir di laporan keuangan.
+                      </p>
+                    </div>
                   </>
                 )}
               </CardContent>
@@ -804,69 +1011,169 @@ export function SettingsPage() {
           </TabsContent>
         )}
 
-        {/* Categories Tab */}
+        {/* Categories Tab - Per Blok */}
         {permissions?.canManageSettings && (
           <TabsContent value="categories" className="mt-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-6">
+              {/* Blok A Categories */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Kategori Pemasukan</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    <Building2 className="h-5 w-5 text-blue-600" />
+                    Kategori Blok A
+                  </CardTitle>
+                  <CardDescription>Kategori untuk transaksi dan informasi Blok A</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Textarea
-                    value={settings?.incomeCategories?.join('\n') || ''}
-                    onChange={(e) => updateSetting('incomeCategories', e.target.value.split('\n').filter(Boolean))}
-                    placeholder="Satu kategori per baris"
-                    rows={5}
-                  />
+                  {settings && (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <CategoryEditor
+                        title="Kategori Pemasukan"
+                        categories={settings.categoriesA?.income || settings.incomeCategories || defaultIncomeCategories}
+                        onChange={(cats) => updateCategories('A', 'income', cats)}
+                      />
+                      <CategoryEditor
+                        title="Kategori Pengeluaran"
+                        categories={settings.categoriesA?.expense || settings.expenseCategories || defaultExpenseCategories}
+                        onChange={(cats) => updateCategories('A', 'expense', cats)}
+                      />
+                      <CategoryEditor
+                        title="Kategori Informasi"
+                        categories={settings.categoriesA?.information || settings.informationCategories || defaultInformationCategories}
+                        onChange={(cats) => updateCategories('A', 'information', cats)}
+                      />
+                    </div>
+                  )}
                 </CardContent>
               </Card>
+
+              {/* Blok B Categories */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Building2 className="h-5 w-5 text-green-600" />
+                    Kategori Blok B
+                  </CardTitle>
+                  <CardDescription>Kategori untuk transaksi dan informasi Blok B</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {settings && (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <CategoryEditor
+                        title="Kategori Pemasukan"
+                        categories={settings.categoriesB?.income || settings.incomeCategories || defaultIncomeCategories}
+                        onChange={(cats) => updateCategories('B', 'income', cats)}
+                      />
+                      <CategoryEditor
+                        title="Kategori Pengeluaran"
+                        categories={settings.categoriesB?.expense || settings.expenseCategories || defaultExpenseCategories}
+                        onChange={(cats) => updateCategories('B', 'expense', cats)}
+                      />
+                      <CategoryEditor
+                        title="Kategori Informasi"
+                        categories={settings.categoriesB?.information || settings.informationCategories || defaultInformationCategories}
+                        onChange={(cats) => updateCategories('B', 'information', cats)}
+                      />
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <div className="p-4 bg-muted rounded-lg">
+                <p className="text-sm text-muted-foreground">
+                  Kategori yang dipisahkan per blok akan memudahkan input laporan keuangan.
+                  Setiap blok dapat memiliki kategori pemasukan, pengeluaran, dan informasi yang berbeda.
+                </p>
+              </div>
               
-              <Card>
-                <CardHeader>
-                  <CardTitle>Kategori Pengeluaran</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Textarea
-                    value={settings?.expenseCategories?.join('\n') || ''}
-                    onChange={(e) => updateSetting('expenseCategories', e.target.value.split('\n').filter(Boolean))}
-                    placeholder="Satu kategori per baris"
-                    rows={5}
-                  />
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader>
-                  <CardTitle>Kategori Informasi</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Textarea
-                    value={settings?.informationCategories?.join('\n') || ''}
-                    onChange={(e) => updateSetting('informationCategories', e.target.value.split('\n').filter(Boolean))}
-                    placeholder="Satu kategori per baris"
-                    rows={5}
-                  />
-                </CardContent>
-              </Card>
+              <Button onClick={handleSaveSettings} disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Menyimpan...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    Simpan Kategori
+                  </>
+                )}
+              </Button>
             </div>
-            
-            <Button onClick={handleSaveSettings} disabled={isSubmitting} className="mt-4">
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Menyimpan...
-                </>
-              ) : (
-                <>
-                  <Save className="mr-2 h-4 w-4" />
-                  Simpan Kategori
-                </>
-              )}
-            </Button>
           </TabsContent>
         )}
       </Tabs>
+    </div>
+  );
+}
+
+// Category Editor Component
+function CategoryEditor({ 
+  title, 
+  categories, 
+  onChange 
+}: { 
+  title: string; 
+  categories: string[]; 
+  onChange: (cats: string[]) => void;
+}) {
+  const [newCategory, setNewCategory] = useState('');
+
+  const addCategory = () => {
+    if (newCategory.trim() && !categories.includes(newCategory.trim())) {
+      onChange([...categories, newCategory.trim()]);
+      setNewCategory('');
+    }
+  };
+
+  const removeCategory = (index: number) => {
+    onChange(categories.filter((_, i) => i !== index));
+  };
+
+  const updateCategory = (index: number, value: string) => {
+    const newCategories = [...categories];
+    newCategories[index] = value;
+    onChange(newCategories);
+  };
+
+  return (
+    <div className="space-y-3">
+      <Label className="font-semibold">{title}</Label>
+      <div className="space-y-2">
+        {categories.map((cat, index) => (
+          <div key={index} className="flex items-center gap-2">
+            <Input
+              value={cat}
+              onChange={(e) => updateCategory(index, e.target.value)}
+              className="flex-1"
+            />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => removeCategory(index)}
+              className="text-destructive hover:text-destructive"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        ))}
+      </div>
+      <div className="flex gap-2">
+        <Input
+          value={newCategory}
+          onChange={(e) => setNewCategory(e.target.value)}
+          placeholder="Kategori baru..."
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              addCategory();
+            }
+          }}
+        />
+        <Button variant="outline" size="sm" onClick={addCategory}>
+          <Plus className="h-4 w-4" />
+        </Button>
+      </div>
     </div>
   );
 }

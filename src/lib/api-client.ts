@@ -88,14 +88,40 @@ const generateDemoData = () => {
       enableInformation: true,
       enablePublicFinance: true,
       enableReviews: true,
-      incomeCategories: ['Iuran', 'Sumbangan', 'Kegiatan', 'Lainnya'],
-      expenseCategories: ['Kebersihan', 'Keamanan', 'Pemeliharaan', 'Kegiatan', 'Lainnya'],
-      informationCategories: ['Pengumuman', 'Kegiatan', 'Peringatan', 'Lainnya'],
       bloks: ['A', 'B'],
-      // Bank & Payment
+      // Bank Info per Blok (NEW)
+      bankInfoA: {
+        bankName: 'BCA',
+        bankAccount: '1234567890',
+        bankHolder: 'RT Pradha Ciganitri Blok A',
+      },
+      bankInfoB: {
+        bankName: 'Mandiri',
+        bankAccount: '0987654321',
+        bankHolder: 'RT Pradha Ciganitri Blok B',
+      },
+      // Legacy bank info (for backward compatibility)
       bankName: 'BCA',
       bankAccount: '1234567890',
       bankHolder: 'RT Pradha Ciganitri',
+      // Categories per Blok (NEW)
+      categoriesA: {
+        income: ['Iuran Bulanan', 'Dana Sosial', 'Sumbangan', 'Lainnya'],
+        expense: ['Kebersihan', 'Keamanan', 'Perbaikan', 'Listrik', 'Kegiatan', 'Lainnya'],
+        information: ['Pengumuman', 'Berita', 'Info Penting'],
+      },
+      categoriesB: {
+        income: ['Iuran Bulanan', 'Dana Sosial', 'Sumbangan', 'Lainnya'],
+        expense: ['Kebersihan', 'Keamanan', 'Perbaikan', 'Listrik', 'Kegiatan', 'Lainnya'],
+        information: ['Pengumuman', 'Berita', 'Info Penting'],
+      },
+      // Legacy categories (for backward compatibility)
+      incomeCategories: ['Iuran', 'Sumbangan', 'Kegiatan', 'Lainnya'],
+      expenseCategories: ['Kebersihan', 'Keamanan', 'Pemeliharaan', 'Kegiatan', 'Lainnya'],
+      informationCategories: ['Pengumuman', 'Kegiatan', 'Peringatan', 'Lainnya'],
+      // Saldo Awal
+      saldoAwalA: 1000000,
+      saldoAwalB: 500000,
       // Contact & Location
       whatsappAdmin: '081234567890',
       rtName: 'RT 011',

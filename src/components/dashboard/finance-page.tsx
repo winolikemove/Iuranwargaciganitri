@@ -215,9 +215,15 @@ export function FinancePage() {
     return true;
   });
 
+  // Get categories based on user's blok
+  const userBlok = user?.blok || 'A';
+  const blokCategories = userBlok === 'A' ? settings?.categoriesA : settings?.categoriesB;
+  
   const categories = formData.type === 'INCOME' 
-    ? settings?.incomeCategories || ['Iuran', 'Sumbangan', 'Lainnya']
-    : settings?.expenseCategories || ['Kebersihan', 'Keamanan', 'Lainnya'];
+    ? blokCategories?.income || settings?.incomeCategories || ['Iuran', 'Sumbangan', 'Lainnya']
+    : formData.type === 'EXPENSE'
+    ? blokCategories?.expense || settings?.expenseCategories || ['Kebersihan', 'Keamanan', 'Lainnya']
+    : [];
 
   if (!permissions?.canViewFinance) {
     return (

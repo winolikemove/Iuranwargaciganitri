@@ -124,6 +124,27 @@ export interface Review {
   createdAt: string;
 }
 
+// Bank Info per Blok
+export interface BankInfo {
+  bankName: string;
+  bankAccount: string;
+  bankHolder: string;
+}
+
+// Saldo Awal per Blok
+export interface SaldoAwal {
+  blok: string;
+  year: number;
+  amount: number;
+}
+
+// Categories per Blok
+export interface BlokCategories {
+  income: string[];
+  expense: string[];
+  information: string[];
+}
+
 // Setting types
 export interface AppSettings {
   siteName: string;
@@ -139,14 +160,24 @@ export interface AppSettings {
   enableInformation: boolean;
   enablePublicFinance: boolean;
   enableReviews: boolean;
-  incomeCategories: string[];
-  expenseCategories: string[];
-  informationCategories: string[];
   bloks: string[];
-  // Bank & Payment
+  // Bank Info per Blok (NEW)
+  bankInfoA?: BankInfo;
+  bankInfoB?: BankInfo;
+  // Legacy bank info (for backward compatibility)
   bankName?: string;
   bankAccount?: string;
   bankHolder?: string;
+  // Categories per Blok (NEW)
+  categoriesA?: BlokCategories;
+  categoriesB?: BlokCategories;
+  // Legacy categories (for backward compatibility)
+  incomeCategories: string[];
+  expenseCategories: string[];
+  informationCategories: string[];
+  // Saldo Awal
+  saldoAwalA?: number;
+  saldoAwalB?: number;
   // Contact & Location
   whatsappAdmin?: string;
   rtName?: string;

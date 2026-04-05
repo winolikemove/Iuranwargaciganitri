@@ -137,7 +137,10 @@ export function InformationPage() {
     }
   };
 
-  const categories = settings?.informationCategories || ['UMUM', 'Pengumuman', 'Kegiatan', 'Lainnya'];
+  // Get categories based on user's blok
+  const userBlok = user?.blok || 'A';
+  const blokCategories = userBlok === 'A' ? settings?.categoriesA : settings?.categoriesB;
+  const categories = blokCategories?.information || settings?.informationCategories || ['UMUM', 'Pengumuman', 'Kegiatan', 'Lainnya'];
 
   if (!settings?.enableInformation) {
     return (

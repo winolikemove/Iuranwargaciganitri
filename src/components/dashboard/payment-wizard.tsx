@@ -287,6 +287,14 @@ export function PaymentWizard({
         );
 
       case 2:
+        // Get bank info based on user's blok
+        const userBlok = user?.blok || 'A';
+        const bankInfo = userBlok === 'A' ? settings?.bankInfoA : settings?.bankInfoB;
+        // Fallback to legacy bank info if blok-specific not set
+        const bankName = bankInfo?.bankName || settings?.bankName || '-';
+        const bankAccount = bankInfo?.bankAccount || settings?.bankAccount || '-';
+        const bankHolder = bankInfo?.bankHolder || settings?.bankHolder || '-';
+        
         return (
           <div className="space-y-4">
             <Card>
@@ -326,6 +334,36 @@ export function PaymentWizard({
                     <span className="text-primary">{formatCurrency(totalAmount)}</span>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+            
+            {/* Bank Info for user's blok */}
+            <Card className="border-blue-200 bg-blue-50">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <CreditCard className="h-5 w-5" />
+                  Transfer ke Rekening Blok {userBlok}
+                </CardTitle>
+                <CardDescription>
+                  Silakan transfer ke rekening berikut sesuai blok Anda
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="bg-white p-4 rounded-lg border border-blue-200">
+                  <p className="text-sm text-muted-foreground">Bank</p>
+                  <p className="text-lg font-bold text-blue-700">{bankName}</p>
+                  <p className="text-sm text-muted-foreground mt-2">Nomor Rekening</p>
+                  <p className="text-xl font-bold text-blue-700 font-mono">{bankAccount}</p>
+                  <p className="text-sm text-muted-foreground mt-2">Atas Nama</p>
+                  <p className="font-medium">{bankHolder}</p>
+                </div>
+                <Alert className="mt-2">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Pastikan transfer ke rekening Blok {userBlok} sesuai blok Anda.
+                    Simpan bukti transfer untuk diupload di langkah selanjutnya.
+                  </AlertDescription>
+                </Alert>
               </CardContent>
             </Card>
           </div>
@@ -386,6 +424,13 @@ export function PaymentWizard({
         );
 
       case 4:
+        // Get bank info based on user's blok
+        const userBlokPreview = user?.blok || 'A';
+        const bankInfoPreview = userBlokPreview === 'A' ? settings?.bankInfoA : settings?.bankInfoB;
+        const bankNamePreview = bankInfoPreview?.bankName || settings?.bankName || '-';
+        const bankAccountPreview = bankInfoPreview?.bankAccount || settings?.bankAccount || '-';
+        const bankHolderPreview = bankInfoPreview?.bankHolder || settings?.bankHolder || '-';
+        
         return (
           <div className="space-y-4">
             <h4 className="font-semibold">Periksa kembali data pembayaran Anda:</h4>
@@ -437,6 +482,19 @@ export function PaymentWizard({
                       <span>Total Pembayaran:</span>
                       <span className="text-primary">{formatCurrency(totalAmount)}</span>
                     </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-blue-200 bg-blue-50">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">Rekening Tujuan (Blok {userBlokPreview})</CardTitle>
+                </CardHeader>
+                <CardContent className="text-sm">
+                  <div className="bg-white p-3 rounded border border-blue-200">
+                    <p className="font-medium">{bankNamePreview}</p>
+                    <p className="text-lg font-bold font-mono">{bankAccountPreview}</p>
+                    <p className="text-muted-foreground">a.n. {bankHolderPreview}</p>
                   </div>
                 </CardContent>
               </Card>
