@@ -881,6 +881,36 @@ class ApiClient {
         result = { ok: true, data: this.demoData.pengurus as T };
         break;
         
+      case 'pengurus.strukturOrganisasi':
+        result = { 
+          ok: true, 
+          data: {
+            blokA: {
+              label: 'Blok A',
+              pengurus: this.demoData.pengurus.filter((p: SafeUser) => p.blok === 'A').map((p: SafeUser) => ({
+                ...p,
+                jabatan: p.role === 'ADMIN' ? 'KETUA_RT' : p.role === 'BENDAHARA' ? 'BENDAHARA' : '',
+                jabatanLabel: p.role === 'ADMIN' ? 'Ketua RT' : p.role === 'BENDAHARA' ? 'Bendahara' : '',
+                order: p.role === 'ADMIN' ? 1 : p.role === 'BENDAHARA' ? 4 : 100,
+              }))
+            },
+            blokB: {
+              label: 'Blok B',
+              pengurus: this.demoData.pengurus.filter((p: SafeUser) => p.blok === 'B').map((p: SafeUser) => ({
+                ...p,
+                jabatan: p.role === 'ADMIN' ? 'KETUA_RT' : p.role === 'BENDAHARA' ? 'BENDAHARA' : '',
+                jabatanLabel: p.role === 'ADMIN' ? 'Ketua RT' : p.role === 'BENDAHARA' ? 'Bendahara' : '',
+                order: p.role === 'ADMIN' ? 1 : p.role === 'BENDAHARA' ? 4 : 100,
+              }))
+            },
+            bersama: {
+              label: 'Bersama',
+              pengurus: []
+            }
+          } as T 
+        };
+        break;
+        
       // Settings
       case 'settings.all':
         result = { ok: true, data: this.demoData.settings as T };
@@ -965,6 +995,10 @@ class ApiClient {
         } else {
           result = { ok: false, error: 'Gagal memperbarui profil' };
         }
+        break;
+        
+      case 'user.updateJabatan':
+        result = { ok: true, data: { message: 'Jabatan berhasil diperbarui' } as T };
         break;
         
       // Agenda
@@ -1115,6 +1149,34 @@ class ApiClient {
         
       case 'role.updatePermissions':
         result = { ok: true, data: { message: 'Permission berhasil diperbarui' } as T };
+        break;
+        
+      case 'role.jabatanList':
+        result = { 
+          ok: true, 
+          data: {
+            jabatanPerBlok: {
+              KETUA_RT: { label: 'Ketua RT', order: 1, scope: 'BLOK' },
+              WAKIL_KETUA: { label: 'Wakil Ketua RT', order: 2, scope: 'BLOK' },
+              SEKRETARIS: { label: 'Sekretaris', order: 3, scope: 'BLOK' },
+              BENDAHARA: { label: 'Bendahara', order: 4, scope: 'BLOK' },
+            },
+            jabatanBersama: {
+              SIE_KEAMANAN: { label: 'Sie. Keamanan', order: 10, scope: 'SHARED' },
+              SIE_KEBERSIHAN: { label: 'Sie. Kebersihan', order: 11, scope: 'SHARED' },
+              DKM_MASJID: { label: 'DKM Masjid Al Birr', order: 12, scope: 'SHARED' },
+            },
+            allJabatan: {
+              KETUA_RT: { label: 'Ketua RT', order: 1, scope: 'BLOK' },
+              WAKIL_KETUA: { label: 'Wakil Ketua RT', order: 2, scope: 'BLOK' },
+              SEKRETARIS: { label: 'Sekretaris', order: 3, scope: 'BLOK' },
+              BENDAHARA: { label: 'Bendahara', order: 4, scope: 'BLOK' },
+              SIE_KEAMANAN: { label: 'Sie. Keamanan', order: 10, scope: 'SHARED' },
+              SIE_KEBERSIHAN: { label: 'Sie. Kebersihan', order: 11, scope: 'SHARED' },
+              DKM_MASJID: { label: 'DKM Masjid Al Birr', order: 12, scope: 'SHARED' },
+            }
+          } as T 
+        };
         break;
         
       case 'file.upload':

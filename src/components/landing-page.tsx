@@ -730,43 +730,125 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
           <section id="warga" className="py-16 px-6 md:px-12 bg-[#eaf7ee]">
             <div className="max-w-screen-2xl mx-auto">
               <div className="text-center mb-12">
-                <h2 className="text-3xl font-bold mb-3">Tim Pengurus</h2>
+                <h2 className="text-3xl font-bold mb-3">Struktur Organisasi</h2>
                 <p className="text-[#404944]">Pengurus yang berdedikasi untuk kesejahteraan dan keharmonisan warga</p>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {pengurus.map((p) => {
-                  const badge = getRoleBadge(p.role);
-                  return (
-                    <div key={p.id} className="bg-white p-5 rounded-xl shadow-[0px_24px_48px_rgba(19,30,25,0.06)] hover:scale-[1.02] transition-transform">
-                      <div className="flex flex-col items-center text-center">
-                        <Avatar className="h-14 w-14 mb-3">
-                          <AvatarImage src={p.photoUrl || undefined} alt={p.nama} />
-                          <AvatarFallback className="bg-emerald-500 text-white">
-                            {p.nama.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <h4 className="font-semibold text-sm">{p.nama}</h4>
-                        <Badge variant="secondary" className="mt-1 text-xs">{badge.label}</Badge>
-                        
-                        {/* WhatsApp Button */}
-                        <a
-                          href={getWhatsAppLink(p.telepon)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="mt-3 w-full"
-                        >
-                          <Button
-                            variant="outline"
-                            className="w-full bg-green-50 hover:bg-green-100 text-green-700 border-green-200 text-xs py-2"
+              
+              {/* Organizational Structure */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Blok A */}
+                <div className="bg-white rounded-xl p-6 shadow-[0px_24px_48px_rgba(19,30,25,0.06)]">
+                  <h3 className="text-xl font-bold text-[#003527] mb-4 text-center pb-3 border-b border-emerald-100">
+                    Blok A
+                  </h3>
+                  <div className="space-y-3">
+                    {pengurus.filter(p => p.blok === 'A').map((p) => {
+                      const jabatanLabel = (p as SafeUser & { jabatanLabel?: string }).jabatanLabel || getRoleBadge(p.role).label;
+                      return (
+                        <div key={p.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-emerald-50 transition-colors">
+                          <Avatar className="h-12 w-12">
+                            <AvatarImage src={p.photoUrl || undefined} alt={p.nama} />
+                            <AvatarFallback className="bg-emerald-500 text-white">
+                              {p.nama.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-semibold text-sm truncate">{p.nama}</h4>
+                            <p className="text-xs text-emerald-600">{jabatanLabel}</p>
+                          </div>
+                          <a
+                            href={getWhatsAppLink(p.telepon)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-2 rounded-full hover:bg-green-100 transition-colors"
                           >
-                            <MessageCircle className="h-3 w-3 mr-2" />
-                            WhatsApp
-                          </Button>
-                        </a>
-                      </div>
-                    </div>
-                  );
-                })}
+                            <MessageCircle className="h-4 w-4 text-green-600" />
+                          </a>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+                
+                {/* Blok B */}
+                <div className="bg-white rounded-xl p-6 shadow-[0px_24px_48px_rgba(19,30,25,0.06)]">
+                  <h3 className="text-xl font-bold text-[#003527] mb-4 text-center pb-3 border-b border-emerald-100">
+                    Blok B
+                  </h3>
+                  <div className="space-y-3">
+                    {pengurus.filter(p => p.blok === 'B').map((p) => {
+                      const jabatanLabel = (p as SafeUser & { jabatanLabel?: string }).jabatanLabel || getRoleBadge(p.role).label;
+                      return (
+                        <div key={p.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-emerald-50 transition-colors">
+                          <Avatar className="h-12 w-12">
+                            <AvatarImage src={p.photoUrl || undefined} alt={p.nama} />
+                            <AvatarFallback className="bg-emerald-500 text-white">
+                              {p.nama.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-semibold text-sm truncate">{p.nama}</h4>
+                            <p className="text-xs text-emerald-600">{jabatanLabel}</p>
+                          </div>
+                          <a
+                            href={getWhatsAppLink(p.telepon)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-2 rounded-full hover:bg-green-100 transition-colors"
+                          >
+                            <MessageCircle className="h-4 w-4 text-green-600" />
+                          </a>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+                
+                {/* Bersama (Keamanan, Kebersihan, DKM) */}
+                <div className="bg-[#003527] text-white rounded-xl p-6 shadow-[0px_24px_48px_rgba(19,30,25,0.06)]">
+                  <h3 className="text-xl font-bold mb-4 text-center pb-3 border-b border-emerald-700">
+                    Bersama
+                  </h3>
+                  <p className="text-xs text-emerald-200 text-center mb-4">Sie. Keamanan, Kebersihan & DKM Masjid Al Birr</p>
+                  <div className="space-y-3">
+                    {pengurus.filter(p => {
+                      const jabatan = (p as SafeUser & { jabatan?: string }).jabatan;
+                      return jabatan && ['SIE_KEAMANAN', 'SIE_KEBERSIHAN', 'DKM_MASJID'].includes(jabatan);
+                    }).map((p) => {
+                      const jabatanLabel = (p as SafeUser & { jabatanLabel?: string }).jabatanLabel || getRoleBadge(p.role).label;
+                      return (
+                        <div key={p.id} className="flex items-center gap-3 p-3 rounded-lg bg-emerald-900/30 hover:bg-emerald-900/50 transition-colors">
+                          <Avatar className="h-12 w-12 border-2 border-emerald-400">
+                            <AvatarImage src={p.photoUrl || undefined} alt={p.nama} />
+                            <AvatarFallback className="bg-emerald-600 text-white">
+                              {p.nama.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-semibold text-sm truncate">{p.nama}</h4>
+                            <p className="text-xs text-emerald-300">{jabatanLabel}</p>
+                          </div>
+                          <a
+                            href={getWhatsAppLink(p.telepon)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-2 rounded-full hover:bg-emerald-800 transition-colors"
+                          >
+                            <MessageCircle className="h-4 w-4 text-emerald-300" />
+                          </a>
+                        </div>
+                      );
+                    })}
+                    {pengurus.filter(p => {
+                      const jabatan = (p as SafeUser & { jabatan?: string }).jabatan;
+                      return jabatan && ['SIE_KEAMANAN', 'SIE_KEBERSIHAN', 'DKM_MASJID'].includes(jabatan);
+                    }).length === 0 && (
+                      <p className="text-center text-emerald-300 text-sm py-4">
+                        Pengurus bersama akan ditampilkan di sini
+                      </p>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </section>

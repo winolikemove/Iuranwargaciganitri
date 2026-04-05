@@ -2,6 +2,30 @@
 export type UserRole = 'SUPERADMIN' | 'ADMIN' | 'BENDAHARA' | 'WARGA';
 export type UserStatus = 'PENDING' | 'ACTIVE' | 'REJECTED' | 'BLOCKED';
 
+// Jabatan types
+export type JabatanKey = 'KETUA_RT' | 'WAKIL_KETUA' | 'SEKRETARIS' | 'BENDAHARA' | 'SIE_KEAMANAN' | 'SIE_KEBERSIHAN' | 'DKM_MASJID';
+
+export interface JabatanInfo {
+  label: string;
+  order: number;
+  scope: 'BLOK' | 'SHARED';
+}
+
+export const JABATAN_PER_BLOK: Record<string, JabatanInfo> = {
+  KETUA_RT: { label: 'Ketua RT', order: 1, scope: 'BLOK' },
+  WAKIL_KETUA: { label: 'Wakil Ketua RT', order: 2, scope: 'BLOK' },
+  SEKRETARIS: { label: 'Sekretaris', order: 3, scope: 'BLOK' },
+  BENDAHARA: { label: 'Bendahara', order: 4, scope: 'BLOK' },
+};
+
+export const JABATAN_BERSAMA: Record<string, JabatanInfo> = {
+  SIE_KEAMANAN: { label: 'Sie. Keamanan', order: 10, scope: 'SHARED' },
+  SIE_KEBERSIHAN: { label: 'Sie. Kebersihan', order: 11, scope: 'SHARED' },
+  DKM_MASJID: { label: 'DKM Masjid Al Birr', order: 12, scope: 'SHARED' },
+};
+
+export const ALL_JABATAN: Record<string, JabatanInfo> = { ...JABATAN_PER_BLOK, ...JABATAN_BERSAMA };
+
 export interface User {
   id: string;
   nama: string;
@@ -28,6 +52,8 @@ export interface SafeUser {
   role: UserRole;
   status: UserStatus;
   photoUrl: string | null;
+  jabatan?: string;
+  jabatanLabel?: string;
 }
 
 // Transaction types
@@ -271,4 +297,27 @@ export interface PublicFinanceSummary {
   totalPengeluaranBulanIni: number;
   periodLabel: string;
   lastUpdated: string;
+}
+
+// Struktur Organisasi
+export interface PengurusWithJabatan {
+  id: string;
+  nama: string;
+  blok: string;
+  telepon: string;
+  photoUrl: string;
+  jabatan: string;
+  jabatanLabel: string;
+  order: number;
+}
+
+export interface StrukturBlok {
+  label: string;
+  pengurus: PengurusWithJabatan[];
+}
+
+export interface StrukturOrganisasi {
+  blokA: StrukturBlok;
+  blokB: StrukturBlok;
+  bersama: StrukturBlok;
 }

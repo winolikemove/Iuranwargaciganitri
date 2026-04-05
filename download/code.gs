@@ -6,10 +6,10 @@ const CONFIG = {
   TOKENEXPIRYDAYS: 7,
 };
 
-// ==================== SHEET SCHEMAS (UPDATED v2) ====================
-// Updated: Added 'paymentId' to transactions schema for linking payments to income transactions
+// ==================== SHEET SCHEMAS (UPDATED v3) ====================
+// Updated: Added 'jabatan' to users schema for organizational structure
 const SCHEMAS = {
-  users: ['id', 'nama', 'email', 'passwordHash', 'nik', 'telepon', 'blok', 'nomorRumah', 'role', 'status', 'photoUrl', 'createdAt', 'updatedAt'],
+  users: ['id', 'nama', 'email', 'passwordHash', 'nik', 'telepon', 'blok', 'nomorRumah', 'role', 'status', 'photoUrl', 'jabatan', 'createdAt', 'updatedAt'],
   // UPDATED: Added 'paymentId' column to link transaction to approved payment
   transactions: ['id', 'blok', 'type', 'category', 'amount', 'description', 'date', 'paymentId', 'createdBy', 'createdAt'],
   payments: ['id', 'userId', 'userName', 'blok', 'nomorRumah', 'periods', 'amount', 'buktiUrl', 'status', 'processedBy', 'processedAt', 'rejectReason', 'createdAt'],
@@ -21,6 +21,28 @@ const SCHEMAS = {
   permissions: ['role', 'permissions'],
   saldoawal: ['id', 'blok', 'year', 'amount', 'createdAt'],
 };
+
+// ==================== STRUKTUR ORGANISASI (NEW v3) ====================
+// Jabatan per Blok (A dan B berbeda pengurus)
+const JABATAN_PER_BLOK = {
+  KETUA_RT: { label: 'Ketua RT', order: 1, scope: 'BLOK' },
+  WAKIL_KETUA: { label: 'Wakil Ketua RT', order: 2, scope: 'BLOK' },
+  SEKRETARIS: { label: 'Sekretaris', order: 3, scope: 'BLOK' },
+  BENDAHARA: { label: 'Bendahara', order: 4, scope: 'BLOK' },
+};
+
+// Jabatan Bersama (untuk kedua blok - Keamanan, Kebersihan, DKM Masjid Al Birr)
+const JABATAN_BERSAMA = {
+  SIE_KEAMANAN: { label: 'Sie. Keamanan', order: 10, scope: 'SHARED' },
+  SIE_KEBERSIHAN: { label: 'Sie. Kebersihan', order: 11, scope: 'SHARED' },
+  DKM_MASJID: { label: 'DKM Masjid Al Birr', order: 12, scope: 'SHARED' },
+};
+
+// Gabungan semua jabatan
+const ALL_JABATAN = { ...JABATAN_PER_BLOK, ...JABATAN_BERSAMA };
+
+// Daftar jabatan untuk validasi
+const VALID_JABATAN = Object.keys(ALL_JABATAN);
 
 // ==================== MAIN ENTRY POINTS ====================
 function doPost(e) {
@@ -37,6 +59,7 @@ function doPost(e) {
       'agenda.publicList',
       'info.publicList',
       'pengurus.publicList',
+      'pengurus.strukturOrganisasi',
       'review.publicList',
       'gallery.publicList'
     ];
@@ -65,7 +88,7 @@ function doPost(e) {
 }
 
 function doGet() {
-  return respond({ ok: true, data: { name: 'Pradha-Ciganitri API', version: '5.1.0' } });
+  return respond({ ok: true, data: { name: 'Pradha-Ciganitri API', version: '6.0.0' } });
 }
 
 function respond(data) {
@@ -105,6 +128,7 @@ function routeAction(action, payload, user) {
     'agenda.publicList': () => agendaPublicList(payload),
     'info.publicList': () => infoPublicList(payload),
     'pengurus.publicList': () => pengurusPublicList(),
+    'pengurus.strukturOrganisasi': () => pengurusStrukturOrganisasi(),
     'review.publicList': () => reviewPublicList(payload),
     'gallery.publicList': () => galleryPublicList(payload),
     
@@ -124,6 +148,7 @@ function routeAction(action, payload, user) {
     'user.block': () => userBlock(user, payload),
     'user.unblock': () => userUnblock(user, payload),
     'user.update': () => userUpdate(user, payload),
+    'user.updateJabatan': () => userUpdateJabatan(user, payload),
     
     // Finance
     'finance.summary': () => financeSummary(user, payload),
@@ -183,6 +208,7 @@ function routeAction(action, payload, user) {
     'role.permissions': () => rolePermissions(user),
     'role.allPermissions': () => roleAllPermissions(user),
     'role.updatePermissions': () => roleUpdatePermissions(user, payload),
+    'role.jabatanList': () => ({ ok: true, data: { jabatanPerBlok: JABATAN_PER_BLOK, jabatanBersama: JABATAN_BERSAMA, allJabatan: ALL_JABATAN } }),
     
     // File
     'file.upload': () => fileUpload(user, payload),
@@ -753,7 +779,7 @@ function pengurusPublicList() {
   
   const pengurus = users.filter(u => 
     u.status === 'ACTIVE' && 
-    ['SUPERADMIN', 'ADMIN', 'BENDAHARA'].includes(u.role)
+    (['SUPERADMIN', 'ADMIN', 'BENDAHARA'].includes(u.role) || (u.jabatan && u.jabatan !== ''))
   );
   
   const publicPengurus = pengurus.map(u => ({
@@ -763,12 +789,87 @@ function pengurusPublicList() {
     blok: u.blok,
     telepon: u.telepon,
     photoUrl: u.photoUrl || '',
+    jabatan: u.jabatan || '',
+    jabatanLabel: u.jabatan && ALL_JABATAN[u.jabatan] ? ALL_JABATAN[u.jabatan].label : '',
   }));
   
-  const roleOrder = { 'SUPERADMIN': 0, 'ADMIN': 1, 'BENDAHARA': 2 };
-  publicPengurus.sort((a, b) => roleOrder[a.role] - roleOrder[b.role]);
+  // Sort by jabatan order, then by role
+  publicPengurus.sort((a, b) => {
+    const aJabatanOrder = a.jabatan && ALL_JABATAN[a.jabatan] ? ALL_JABATAN[a.jabatan].order : 100;
+    const bJabatanOrder = b.jabatan && ALL_JABATAN[b.jabatan] ? ALL_JABATAN[b.jabatan].order : 100;
+    
+    if (aJabatanOrder !== bJabatanOrder) {
+      return aJabatanOrder - bJabatanOrder;
+    }
+    
+    const roleOrder = { 'SUPERADMIN': 0, 'ADMIN': 1, 'BENDAHARA': 2, 'WARGA': 3 };
+    return roleOrder[a.role] - roleOrder[b.role];
+  });
   
   return { ok: true, data: publicPengurus };
+}
+
+// ==================== STRUKTUR ORGANISASI (NEW v3) ====================
+function pengurusStrukturOrganisasi() {
+  const users = dbGetAll('users');
+  
+  // Filter only active users with jabatan
+  const pengurusAktif = users.filter(u => 
+    u.status === 'ACTIVE' && u.jabatan && u.jabatan !== ''
+  );
+  
+  // Build structure per blok
+  const struktur = {
+    blokA: {
+      label: 'Blok A',
+      pengurus: []
+    },
+    blokB: {
+      label: 'Blok B',
+      pengurus: []
+    },
+    bersama: {
+      label: 'Bersama',
+      pengurus: []
+    }
+  };
+  
+  for (const u of pengurusAktif) {
+    const jabatanInfo = ALL_JABATAN[u.jabatan];
+    if (!jabatanInfo) continue;
+    
+    const pengurusData = {
+      id: u.id,
+      nama: u.nama,
+      blok: u.blok,
+      telepon: u.telepon,
+      photoUrl: u.photoUrl || '',
+      jabatan: u.jabatan,
+      jabatanLabel: jabatanInfo.label,
+      order: jabatanInfo.order
+    };
+    
+    // Cek apakah jabatan bersama atau per blok
+    if (jabatanInfo.scope === 'SHARED') {
+      // Jabatan bersama (Keamanan, Kebersihan, DKM Masjid)
+      struktur.bersama.pengurus.push(pengurusData);
+    } else {
+      // Jabatan per blok
+      if (u.blok === 'A') {
+        struktur.blokA.pengurus.push(pengurusData);
+      } else if (u.blok === 'B') {
+        struktur.blokB.pengurus.push(pengurusData);
+      }
+    }
+  }
+  
+  // Sort each section by jabatan order
+  const sortByOrder = (a, b) => a.order - b.order;
+  struktur.blokA.pengurus.sort(sortByOrder);
+  struktur.blokB.pengurus.sort(sortByOrder);
+  struktur.bersama.pengurus.sort(sortByOrder);
+  
+  return { ok: true, data: struktur };
 }
 
 function reviewPublicList({ limit }) {
@@ -1031,6 +1132,46 @@ function userUpdate(user, { telepon, nama, photoUrl, nik }) {
   const updated = dbUpdate('users', user.id, updates);
   
   return { ok: true, data: sanitizeUser(updated) };
+}
+
+function userUpdateJabatan(user, { userId, jabatan }) {
+  // Only SUPERADMIN or ADMIN can update jabatan
+  const permCheck = requirePermission(user, 'canChangeUserRole');
+  if (permCheck) return permCheck;
+  
+  const target = dbFindOne('users', { id: userId });
+  if (!target) {
+    return { ok: false, error: 'User tidak ditemukan' };
+  }
+  
+  // Validate jabatan (empty string means remove jabatan)
+  if (jabatan !== '' && !VALID_JABATAN.includes(jabatan)) {
+    return { ok: false, error: 'Jabatan tidak valid. Pilih dari: ' + VALID_JABATAN.join(', ') };
+  }
+  
+  // Check scope - only ADMIN can update users in their blok
+  if (!hasPermission(user, 'canViewAllUsers') && target.blok !== user.blok) {
+    return { ok: false, error: 'Tidak dapat mengubah jabatan user dari blok lain' };
+  }
+  
+  // Check if jabatan is BLOK scope, user must be in correct blok
+  if (jabatan && JABATAN_PER_BLOK[jabatan]) {
+    // For BLOK scope jabatan, user's blok matters
+    // No additional check needed as user already belongs to a blok
+  }
+  
+  dbUpdate('users', userId, { jabatan });
+  
+  const jabatanLabel = jabatan && ALL_JABATAN[jabatan] ? ALL_JABATAN[jabatan].label : '';
+  
+  return { 
+    ok: true, 
+    data: { 
+      message: jabatan ? `Jabatan berhasil diubah menjadi ${jabatanLabel}` : 'Jabatan berhasil dihapus',
+      jabatan,
+      jabatanLabel
+    } 
+  };
 }
 
 // ==================== FINANCE FUNCTIONS ====================
