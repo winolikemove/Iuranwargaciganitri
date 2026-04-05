@@ -78,6 +78,8 @@ const generateDemoData = () => {
       siteName: 'Pradha Ciganitri',
       siteDescription: 'Sistem Manajemen Warga Modern',
       logoUrl: '',
+      bannerUrl: '',
+      primaryColor: '#2563eb',
       monthlyFee: 150000,
       enableRegistration: true,
       enablePaymentSubmission: true,
@@ -90,6 +92,20 @@ const generateDemoData = () => {
       expenseCategories: ['Kebersihan', 'Keamanan', 'Pemeliharaan', 'Kegiatan', 'Lainnya'],
       informationCategories: ['Pengumuman', 'Kegiatan', 'Peringatan', 'Lainnya'],
       bloks: ['A', 'B'],
+      // Bank & Payment
+      bankName: 'BCA',
+      bankAccount: '1234567890',
+      bankHolder: 'RT Pradha Ciganitri',
+      // Contact & Location
+      whatsappAdmin: '081234567890',
+      rtName: 'RT 011',
+      rwName: 'RW 005',
+      address: 'Komplek Pradha Ciganitri',
+      kelurahan: 'Ciganitri',
+      kecamatan: 'Bojongsoang',
+      kota: 'Bandung',
+      googleMapsEmbedUrl: '',
+      socialMediaLinks: [],
     } as AppSettings,
     
     publicFinance: {

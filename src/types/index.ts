@@ -129,6 +129,8 @@ export interface AppSettings {
   siteName: string;
   siteDescription: string;
   logoUrl: string;
+  bannerUrl: string;
+  primaryColor: string;
   monthlyFee: number;
   enableRegistration: boolean;
   enablePaymentSubmission: boolean;
@@ -140,7 +142,21 @@ export interface AppSettings {
   incomeCategories: string[];
   expenseCategories: string[];
   informationCategories: string[];
-  bloks: string[]; // Dynamic blok names from settings
+  bloks: string[];
+  // Bank & Payment
+  bankName?: string;
+  bankAccount?: string;
+  bankHolder?: string;
+  // Contact & Location
+  whatsappAdmin?: string;
+  rtName?: string;
+  rwName?: string;
+  address?: string;
+  kelurahan?: string;
+  kecamatan?: string;
+  kota?: string;
+  googleMapsEmbedUrl?: string;
+  socialMediaLinks?: string[];
   [key: string]: unknown;
 }
 
