@@ -821,6 +821,15 @@ class ApiClient {
       case 'auth.changePassword':
         result = { ok: true, data: { message: 'Password berhasil diubah' } as T };
         break;
+
+      case 'auth.forgotPassword':
+        // Demo mode - simulate password reset
+        if (payload.email) {
+          result = { ok: true, data: { message: 'Link reset password telah dikirim ke email Anda' } as T };
+        } else {
+          result = { ok: false, error: 'Email diperlukan' };
+        }
+        break;
         
       case 'role.permissions':
         // Return permissions based on user's role
@@ -1140,7 +1149,13 @@ class ApiClient {
     CacheManager.remove('auth_me');
     return this.request<{ message: string }>('auth.changePassword', { oldPassword, newPassword });
   }
-  
+
+  async forgotPassword(email: string): Promise<ApiResponse<{ message: string }>> {
+    return this.request<{ message: string }>('auth.forgotPassword', { email }, {
+      requireAuth: false,
+    });
+  }
+
   logout(): void {
     TokenManager.remove();
     CacheManager.clear();

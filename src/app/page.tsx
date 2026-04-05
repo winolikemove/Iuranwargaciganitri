@@ -12,7 +12,7 @@ export default function Home() {
   const { user, isLoading: authLoading } = useAuth();
   const { isLoading: appLoading } = useApp();
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const [authMode, setAuthMode] = useState<'login' | 'register' | 'forgot-password'>('login');
 
   // Show loading screen while checking auth or loading initial data
   if (authLoading || (appLoading && !user)) {

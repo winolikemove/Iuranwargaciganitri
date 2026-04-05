@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { useApp } from '@/context/app-context';
+import { api } from '@/lib/api-client';
 import {
   Dialog,
   DialogContent,
@@ -32,14 +33,15 @@ import {
   Loader2,
   CheckCircle2,
   X,
+  ArrowLeft,
 } from 'lucide-react';
 import type { LoginRequest, RegisterRequest } from '@/types';
 
 interface AuthModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  mode: 'login' | 'register';
-  onModeChange: (mode: 'login' | 'register') => void;
+  mode: 'login' | 'register' | 'forgot-password';
+  onModeChange: (mode: 'login' | 'register' | 'forgot-password') => void;
 }
 
 export function AuthModal({ open, onOpenChange, mode, onModeChange }: AuthModalProps) {
@@ -63,6 +65,9 @@ export function AuthModal({ open, onOpenChange, mode, onModeChange }: AuthModalP
     blok: '',
     nomorRumah: '',
   });
+
+  // Forgot password state
+  const [forgotEmail, setForgotEmail] = useState('');
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -179,11 +184,47 @@ export function AuthModal({ open, onOpenChange, mode, onModeChange }: AuthModalP
     }
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSuccess(null);
+
+    // Validate email
+    if (!forgotEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(forgotEmail)) {
+      setError('Masukkan alamat email yang valid');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const result = await api.forgotPassword(forgotEmail);
+
+      if (result.ok) {
+        setSuccess(result.data?.message || 'Link reset password telah dikirim ke email Anda.');
+        setForgotEmail('');
+      } else {
+        setError(result.error || 'Gagal mengirim link reset password');
+      }
+    } catch (err) {
+      setError('Terjadi kesalahan. Silakan coba lagi.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleTabChange = (newMode: 'login' | 'register') => {
     onModeChange(newMode);
     setError(null);
     setFieldErrors({});
     setSuccess(null);
+  };
+
+  const handleBackToLogin = () => {
+    onModeChange('login');
+    setError(null);
+    setSuccess(null);
+    setForgotEmail('');
   };
 
   return (
@@ -229,30 +270,32 @@ export function AuthModal({ open, onOpenChange, mode, onModeChange }: AuthModalP
               <X className="h-5 w-5 text-gray-400" />
             </button>
 
-            {/* Tab Switcher */}
-            <div className="flex bg-[#eaf7ee] p-1.5 rounded-full mb-8 w-fit mx-auto md:mx-0">
-              <button
-                onClick={() => handleTabChange('login')}
-                className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all duration-300 ${
-                  mode === 'login'
-                    ? 'bg-white text-[#003527] shadow-sm'
-                    : 'text-[#404944] hover:text-[#003527]'
-                }`}
-              >
-                Masuk
-              </button>
-              <button
-                onClick={() => handleTabChange('register')}
-                disabled={!settings?.enableRegistration}
-                className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all duration-300 ${
-                  mode === 'register'
-                    ? 'bg-white text-[#003527] shadow-sm'
-                    : 'text-[#404944] hover:text-[#003527] disabled:opacity-50 disabled:cursor-not-allowed'
-                }`}
-              >
-                Daftar
-              </button>
-            </div>
+            {/* Tab Switcher - Only show for login/register */}
+            {mode !== 'forgot-password' && (
+              <div className="flex bg-[#eaf7ee] p-1.5 rounded-full mb-8 w-fit mx-auto md:mx-0">
+                <button
+                  onClick={() => handleTabChange('login')}
+                  className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all duration-300 ${
+                    mode === 'login'
+                      ? 'bg-white text-[#003527] shadow-sm'
+                      : 'text-[#404944] hover:text-[#003527]'
+                  }`}
+                >
+                  Masuk
+                </button>
+                <button
+                  onClick={() => handleTabChange('register')}
+                  disabled={!settings?.enableRegistration}
+                  className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all duration-300 ${
+                    mode === 'register'
+                      ? 'bg-white text-[#003527] shadow-sm'
+                      : 'text-[#404944] hover:text-[#003527] disabled:opacity-50 disabled:cursor-not-allowed'
+                  }`}
+                >
+                  Daftar
+                </button>
+              </div>
+            )}
 
             {/* Login Section */}
             {mode === 'login' && (
@@ -315,7 +358,11 @@ export function AuthModal({ open, onOpenChange, mode, onModeChange }: AuthModalP
                       />
                       <span className="text-sm text-[#404944] group-hover:text-[#003527]">Ingat saya</span>
                     </label>
-                    <button type="button" className="text-sm font-semibold text-[#003527] hover:underline">
+                    <button
+                      type="button"
+                      onClick={() => onModeChange('forgot-password')}
+                      className="text-sm font-semibold text-[#003527] hover:underline"
+                    >
                       Lupa password?
                     </button>
                   </div>
@@ -335,6 +382,92 @@ export function AuthModal({ open, onOpenChange, mode, onModeChange }: AuthModalP
                     )}
                   </Button>
                 </form>
+              </section>
+            )}
+
+            {/* Forgot Password Section */}
+            {mode === 'forgot-password' && (
+              <section className="space-y-6">
+                <header>
+                  <h3 className="text-2xl font-bold text-[#003527] mb-2">Pulihkan Akses</h3>
+                  <p className="text-[#404944]">
+                    Masukkan alamat email yang terdaftar. Kami akan mengirimkan link aman untuk mereset password Anda.
+                  </p>
+                </header>
+
+                {error && (
+                  <div className="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-lg text-sm">
+                    {error}
+                  </div>
+                )}
+
+                {success && (
+                  <div className="p-4 bg-emerald-50 border-l-4 border-emerald-500 text-emerald-700 rounded-lg text-sm flex items-center gap-3">
+                    <CheckCircle2 className="h-5 w-5 text-emerald-500 flex-shrink-0" />
+                    <div>
+                      <p className="font-semibold">Berhasil!</p>
+                      <p className="text-xs opacity-80">{success}</p>
+                    </div>
+                  </div>
+                )}
+
+                <form onSubmit={handleForgotPassword} className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-[#131e19]">Alamat Email</label>
+                    <div className="relative group">
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-[#003527] transition-colors" />
+                      <Input
+                        type="email"
+                        placeholder="warga@email.com"
+                        value={forgotEmail}
+                        onChange={(e) => setForgotEmail(e.target.value)}
+                        className="w-full pl-12 pr-4 py-4 bg-[#deebe3] border-none rounded-xl focus:ring-2 focus:ring-[#003527]/20 text-[#131e19]"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full py-4 rounded-full bg-gradient-to-br from-[#003527] to-[#064e3b] text-white font-semibold hover:opacity-90 transition-all shadow-lg shadow-[#003527]/20"
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Memproses...
+                      </>
+                    ) : (
+                      'Kirim Link Reset'
+                    )}
+                  </Button>
+                </form>
+
+                {/* Back to Login */}
+                <div className="flex flex-col items-center gap-4 pt-4">
+                  <button
+                    onClick={handleBackToLogin}
+                    className="group flex items-center gap-2 text-[#003527] font-semibold hover:text-[#064e3b] transition-colors"
+                  >
+                    <ArrowLeft className="h-5 w-5 transition-transform group-hover:-translate-x-1" />
+                    <span>Kembali ke Login</span>
+                  </button>
+                </div>
+
+                {/* Help Link */}
+                <div className="mt-6 flex justify-center">
+                  <div className="bg-[#deebe3]/80 px-6 py-3 rounded-full flex items-center gap-3 text-sm">
+                    <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center">
+                      <HelpCircle className="h-4 w-4 text-emerald-700" />
+                    </div>
+                    <p className="text-[#404944]">
+                      Butuh bantuan?{' '}
+                      <span className="underline underline-offset-2 decoration-[#003527]/30 text-[#003527] cursor-pointer hover:text-[#064e3b]">
+                        Hubungi Admin
+                      </span>
+                    </p>
+                  </div>
+                </div>
               </section>
             )}
 
@@ -541,22 +674,24 @@ export function AuthModal({ open, onOpenChange, mode, onModeChange }: AuthModalP
             )}
 
             {/* Support Links */}
-            <div className="mt-8 pt-6 border-t border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-[#404944]">
-              <div className="flex items-center gap-2">
-                <HelpCircle className="h-4 w-4" />
-                <span>Butuh bantuan akses?</span>
+            {mode !== 'forgot-password' && (
+              <div className="mt-8 pt-6 border-t border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-[#404944]">
+                <div className="flex items-center gap-2">
+                  <HelpCircle className="h-4 w-4" />
+                  <span>Butuh bantuan akses?</span>
+                </div>
+                <div className="flex gap-6">
+                  <span className="flex items-center gap-1 hover:text-[#003527] transition-colors cursor-pointer">
+                    <Shield className="h-4 w-4" />
+                    Kebijakan Privasi
+                  </span>
+                  <span className="flex items-center gap-1 hover:text-[#003527] transition-colors cursor-pointer">
+                    <FileText className="h-4 w-4" />
+                    Ketentuan Layanan
+                  </span>
+                </div>
               </div>
-              <div className="flex gap-6">
-                <span className="flex items-center gap-1 hover:text-[#003527] transition-colors cursor-pointer">
-                  <Shield className="h-4 w-4" />
-                  Kebijakan Privasi
-                </span>
-                <span className="flex items-center gap-1 hover:text-[#003527] transition-colors cursor-pointer">
-                  <FileText className="h-4 w-4" />
-                  Ketentuan Layanan
-                </span>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </DialogContent>
