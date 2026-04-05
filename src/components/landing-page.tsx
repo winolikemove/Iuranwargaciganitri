@@ -1,14 +1,16 @@
 'use client';
 
+import { useState } from 'react';
 import { useApp } from '@/context/app-context';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
-  Wallet,
+  Dialog,
+  DialogContent,
+} from '@/components/ui/dialog';
+import {
   Calendar,
-  Bell,
   Users,
   Star,
   ArrowRight,
@@ -24,6 +26,8 @@ import {
   Mail,
   Trophy,
   Landmark,
+  MessageCircle,
+  X,
 } from 'lucide-react';
 
 interface LandingPageProps {
@@ -36,13 +40,13 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
     settings,
     finance,
     agendas,
-    informations,
     galleries,
     reviews,
     pengurus,
     users,
-    isLoading,
   } = useApp();
+
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -64,18 +68,6 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
     }
   };
 
-  const formatDateLong = (dateStr: string) => {
-    try {
-      return new Date(dateStr).toLocaleDateString('id-ID', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-      });
-    } catch {
-      return dateStr;
-    }
-  };
-
   const getRoleBadge = (role: string) => {
     const roleMap: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
       SUPERADMIN: { label: 'Super Admin', variant: 'default' },
@@ -85,37 +77,51 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
     return roleMap[role] || { label: role, variant: 'outline' };
   };
 
+  const getWhatsAppLink = (phone: string) => {
+    const cleanPhone = phone.replace(/\D/g, '');
+    const waNumber = cleanPhone.startsWith('0') ? '62' + cleanPhone.slice(1) : cleanPhone;
+    return `https://wa.me/${waNumber}`;
+  };
+
   // Calculate active residents count
   const activeResidents = users?.filter(u => u.status === 'ACTIVE' && u.role === 'WARGA').length || 0;
   const totalUnits = users?.filter(u => u.role === 'WARGA').length || 0;
+
+  // Scroll to section
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#f0fdf4] text-[#131e19] selection:bg-[#064e3b] selection:text-white">
       {/* TopNavBar */}
       <nav className="fixed top-0 w-full z-50 bg-emerald-50/70 dark:bg-emerald-950/70 backdrop-blur-xl border-b border-emerald-200/30">
-        <div className="flex justify-between items-center px-6 md:px-12 h-20 w-full max-w-screen-2xl mx-auto">
+        <div className="flex justify-between items-center px-6 md:px-12 h-16 w-full max-w-screen-2xl mx-auto">
           <div className="flex items-center gap-3">
             <img
               src={settings?.logoUrl || '/logo.jpg'}
               alt="Logo"
-              className="w-10 h-10 object-contain rounded-lg"
+              className="w-8 h-8 object-contain rounded-lg"
             />
-            <div className="text-xl font-bold tracking-tight text-emerald-900">
+            <div className="text-lg font-bold tracking-tight text-emerald-900">
               {settings?.siteName || 'Pradha Ciganitri'}
             </div>
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm tracking-tight">
-            <a href="#warga" className="text-emerald-800/70 hover:text-emerald-950 transition-colors">Warga</a>
-            <a href="#fasilitas" className="text-emerald-800/70 hover:text-emerald-950 transition-colors">Fasilitas</a>
-            <a href="#keuangan" className="text-emerald-950 font-semibold border-b-2 border-emerald-900 pb-1">Keuangan</a>
-            <a href="#komunitas" className="text-emerald-800/70 hover:text-emerald-950 transition-colors">Komunitas</a>
+            <button onClick={() => scrollToSection('warga')} className="text-emerald-800/70 hover:text-emerald-950 transition-colors">Warga</button>
+            <button onClick={() => scrollToSection('fasilitas')} className="text-emerald-800/70 hover:text-emerald-950 transition-colors">Fasilitas</button>
+            <button onClick={() => scrollToSection('keuangan')} className="text-emerald-950 font-semibold border-b-2 border-emerald-900 pb-1">Keuangan</button>
+            <button onClick={() => scrollToSection('komunitas')} className="text-emerald-800/70 hover:text-emerald-950 transition-colors">Komunitas</button>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             {settings?.enableRegistration && (
               <Button
                 variant="ghost"
                 onClick={onRegisterClick}
-                className="hidden sm:flex hover:bg-emerald-100/50 rounded-full"
+                className="hidden sm:flex hover:bg-emerald-100/50 rounded-full text-sm"
               >
                 <UserPlus className="h-4 w-4 mr-2" />
                 Daftar
@@ -123,7 +129,7 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
             )}
             <Button
               onClick={onLoginClick}
-              className="bg-[#003527] text-white px-6 py-2.5 rounded-full font-semibold text-sm hover:bg-[#064e3b] transition-colors"
+              className="bg-[#003527] text-white px-5 py-2 rounded-full font-semibold text-sm hover:bg-[#064e3b] transition-colors"
             >
               <LogIn className="h-4 w-4 mr-2" />
               Masuk
@@ -132,9 +138,9 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
         </div>
       </nav>
 
-      <main className="pt-20">
+      <main className="pt-16">
         {/* Hero Section */}
-        <section className="relative min-h-[600px] md:min-h-[700px] flex items-center px-6 md:px-12 py-20 overflow-hidden">
+        <section className="relative min-h-[500px] md:min-h-[600px] flex items-center px-6 md:px-12 py-16 overflow-hidden">
           <div className="absolute inset-0 z-0">
             <img
               alt="Banner"
@@ -143,26 +149,26 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
             />
             <div className="absolute inset-0 bg-gradient-to-b from-[#f0fdf4]/0 via-[#f0fdf4]/40 to-[#f0fdf4]"></div>
           </div>
-          <div className="relative z-10 w-full max-w-screen-2xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div className="space-y-8">
-              <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-[#131e19]">
+          <div className="relative z-10 w-full max-w-screen-2xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+            <div className="space-y-6">
+              <h1 className="text-3xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-[#131e19]">
                 Hidup dalam<br />
                 <span className="text-[#003527]">Keselarasan Sempurna.</span>
               </h1>
-              <p className="text-lg text-[#404944] max-w-lg leading-relaxed">
+              <p className="text-base md:text-lg text-[#404944] max-w-lg leading-relaxed">
                 Rasakan tempat perlindungan di mana kehidupan modern bertemu dengan pertumbuhan komunitas yang alami. Kelola, terhubung, dan berkembang di lingkungan digital-first kami.
               </p>
-              <div className="flex flex-wrap gap-4">
+              <div className="flex flex-wrap gap-3">
                 <Button
                   onClick={onLoginClick}
-                  className="bg-gradient-to-br from-[#003527] to-[#064e3b] text-white px-8 py-6 rounded-xl font-bold shadow-xl hover:opacity-90 transition-opacity text-lg"
+                  className="bg-gradient-to-br from-[#003527] to-[#064e3b] text-white px-6 py-3 rounded-xl font-semibold shadow-xl hover:opacity-90 transition-opacity"
                 >
                   Jelajahi Komunitas
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={onRegisterClick}
-                  className="bg-[#deebe3] px-8 py-6 rounded-xl font-bold text-[#003527] hover:bg-[#d9e6dd] transition-colors text-lg border-0"
+                  onClick={() => scrollToSection('keuangan')}
+                  className="bg-[#deebe3] px-6 py-3 rounded-xl font-semibold text-[#003527] hover:bg-[#d9e6dd] transition-colors border-0"
                 >
                   Pelajari Lebih Lanjut
                 </Button>
@@ -171,38 +177,38 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
 
             {/* Community Hub Card */}
             <div className="relative">
-              <div className="bg-white/70 backdrop-blur-xl rounded-xl p-8 border border-white/20 shadow-[0px_24px_48px_rgba(19,30,25,0.06)] relative z-20">
-                <div className="flex items-center justify-between mb-8">
-                  <h3 className="text-xl font-bold">Pusat Komunitas</h3>
+              <div className="bg-white/70 backdrop-blur-xl rounded-xl p-6 border border-white/20 shadow-[0px_24px_48px_rgba(19,30,25,0.06)] relative z-20">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-lg font-bold">Pusat Komunitas</h3>
                   <span className="px-3 py-1 bg-[#003527]/10 text-[#003527] text-xs font-bold rounded-full flex items-center gap-1">
                     <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
                     DATA AKTIF
                   </span>
                 </div>
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <p className="text-[#404944] text-sm">Warga Aktif</p>
-                    <p className="text-3xl font-extrabold text-[#003527]">{activeResidents.toLocaleString('id-ID')}+</p>
+                    <p className="text-[#404944] text-xs">Warga Aktif</p>
+                    <p className="text-xl font-bold text-[#003527]">{activeResidents.toLocaleString('id-ID')}+</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[#404944] text-sm">Total Unit</p>
-                    <p className="text-3xl font-extrabold text-[#003527]">{totalUnits.toLocaleString('id-ID')}+</p>
+                    <p className="text-[#404944] text-xs">Total Unit</p>
+                    <p className="text-xl font-bold text-[#003527]">{totalUnits.toLocaleString('id-ID')}+</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[#404944] text-sm">Fasilitas Tersedia</p>
-                    <p className="text-3xl font-extrabold text-[#003527]">12</p>
+                    <p className="text-[#404944] text-xs">Fasilitas Tersedia</p>
+                    <p className="text-xl font-bold text-[#003527]">12</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[#404944] text-sm">Skor Keamanan</p>
-                    <p className="text-3xl font-extrabold text-[#003527]">9.8</p>
+                    <p className="text-[#404944] text-xs">Skor Keamanan</p>
+                    <p className="text-xl font-bold text-[#003527]">9.8</p>
                   </div>
                 </div>
                 {pengurus.length > 0 && (
-                  <div className="mt-8 pt-8 border-t border-emerald-900/10">
+                  <div className="mt-6 pt-6 border-t border-emerald-900/10">
                     <div className="flex items-center gap-4">
                       <div className="flex -space-x-3">
                         {pengurus.slice(0, 3).map((p) => (
-                          <Avatar key={p.id} className="w-10 h-10 border-2 border-white">
+                          <Avatar key={p.id} className="w-8 h-8 border-2 border-white">
                             <AvatarImage src={p.photoUrl || undefined} alt={p.nama} />
                             <AvatarFallback className="bg-emerald-500 text-white text-xs">
                               {p.nama.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
@@ -226,29 +232,29 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
 
         {/* Finance Preview */}
         {settings?.enablePublicFinance && finance && (
-          <section id="keuangan" className="py-24 px-6 md:px-12 bg-[#eaf7ee]">
+          <section id="keuangan" className="py-16 px-6 md:px-12 bg-[#eaf7ee]">
             <div className="max-w-screen-2xl mx-auto">
-              <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
-                <div className="space-y-4">
-                  <span className="text-[#003527] font-bold tracking-widest text-sm uppercase">Transparansi Keuangan</span>
-                  <h2 className="text-4xl md:text-5xl font-bold tracking-tight">Keuangan Lingkungan</h2>
+              <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-4">
+                <div className="space-y-3">
+                  <span className="text-[#003527] font-bold tracking-widest text-xs uppercase">Transparansi Keuangan</span>
+                  <h2 className="text-3xl md:text-4xl font-bold tracking-tight">Keuangan Lingkungan</h2>
                 </div>
                 <Button
                   variant="ghost"
                   onClick={onLoginClick}
-                  className="text-[#003527] font-bold flex items-center gap-2 hover:underline"
+                  className="text-[#003527] font-semibold flex items-center gap-2 hover:underline"
                 >
                   Lihat Laporan Lengkap <ArrowRight className="h-4 w-4" />
                 </Button>
               </div>
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Balance Card */}
-                <div className="lg:col-span-1 bg-[#003527] text-white p-10 rounded-xl flex flex-col justify-between shadow-[0px_24px_48px_rgba(19,30,25,0.06)]">
+                <div className="lg:col-span-1 bg-[#003527] text-white p-6 rounded-xl flex flex-col justify-between shadow-[0px_24px_48px_rgba(19,30,25,0.06)]">
                   <div className="space-y-2">
-                    <p className="text-emerald-100/70 font-medium">Total Saldo Komunitas</p>
-                    <h3 className="text-4xl font-bold">{formatCurrency(finance.saldoAkhir)}</h3>
+                    <p className="text-emerald-100/70 font-medium text-sm">Total Saldo Komunitas</p>
+                    <h3 className="text-2xl font-bold">{formatCurrency(finance.saldoAkhir)}</h3>
                   </div>
-                  <div className="mt-12 space-y-4">
+                  <div className="mt-8 space-y-3">
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-emerald-100/70">Iuran Terkumpul (Bulan Ini)</span>
                       <span className="font-bold">98.2%</span>
@@ -260,9 +266,9 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                 </div>
 
                 {/* Trend Chart */}
-                <div className="lg:col-span-2 bg-white p-8 rounded-xl shadow-[0px_24px_48px_rgba(19,30,25,0.06)] relative overflow-hidden">
-                  <div className="flex items-center justify-between mb-8">
-                    <h4 className="font-bold text-lg">Ringkasan Arus Kas</h4>
+                <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-[0px_24px_48px_rgba(19,30,25,0.06)] relative overflow-hidden">
+                  <div className="flex items-center justify-between mb-6">
+                    <h4 className="font-bold text-base">Ringkasan Arus Kas</h4>
                     <div className="flex gap-4">
                       <div className="flex items-center gap-2">
                         <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
@@ -279,22 +285,22 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                   <div className="grid grid-cols-2 gap-4 mb-6">
                     <div className="bg-emerald-50 p-4 rounded-lg">
                       <div className="flex items-center gap-2 mb-2">
-                        <TrendingUp className="h-5 w-5 text-emerald-600" />
-                        <span className="text-sm text-[#404944]">Pemasukan Bulan Ini</span>
+                        <TrendingUp className="h-4 w-4 text-emerald-600" />
+                        <span className="text-xs text-[#404944]">Pemasukan Bulan Ini</span>
                       </div>
-                      <p className="text-2xl font-bold text-emerald-600">{formatCurrency(finance.totalPemasukanBulanIni)}</p>
+                      <p className="text-lg font-bold text-emerald-600">{formatCurrency(finance.totalPemasukanBulanIni)}</p>
                     </div>
                     <div className="bg-red-50 p-4 rounded-lg">
                       <div className="flex items-center gap-2 mb-2">
-                        <TrendingDown className="h-5 w-5 text-red-600" />
-                        <span className="text-sm text-[#404944]">Pengeluaran Bulan Ini</span>
+                        <TrendingDown className="h-4 w-4 text-red-600" />
+                        <span className="text-xs text-[#404944]">Pengeluaran Bulan Ini</span>
                       </div>
-                      <p className="text-2xl font-bold text-red-600">{formatCurrency(finance.totalPengeluaranBulanIni)}</p>
+                      <p className="text-lg font-bold text-red-600">{formatCurrency(finance.totalPengeluaranBulanIni)}</p>
                     </div>
                   </div>
 
                   {/* Mockup Graph */}
-                  <div className="h-32 w-full flex items-end justify-between gap-2">
+                  <div className="h-24 w-full flex items-end justify-between gap-2">
                     {[65, 45, 85, 55, 95, 70, 80].map((height, i) => (
                       <div key={i} className="w-full bg-emerald-50 rounded-t-lg relative" style={{ height: `${height}%` }}>
                         <div className="absolute bottom-0 w-full bg-emerald-100 rounded-t-lg" style={{ height: `${Math.random() * 60 + 20}%` }}></div>
@@ -308,53 +314,53 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
         )}
 
         {/* Bento Features */}
-        <section className="py-24 px-6 md:px-12 bg-[#f0fdf4]">
+        <section id="fasilitas" className="py-16 px-6 md:px-12 bg-[#f0fdf4]">
           <div className="max-w-screen-2xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-4 md:grid-rows-2 gap-6 h-auto md:h-[600px]">
+            <div className="grid grid-cols-1 md:grid-cols-4 md:grid-rows-2 gap-4 h-auto md:h-[500px]">
               {/* Finance Portal - Large */}
-              <div className="md:col-span-2 md:row-span-2 bg-[#deebe3] rounded-xl p-10 flex flex-col justify-between hover:scale-[1.02] transition-transform">
+              <div className="md:col-span-2 md:row-span-2 bg-[#deebe3] rounded-xl p-8 flex flex-col justify-between hover:scale-[1.02] transition-transform">
                 <div>
-                  <div className="w-16 h-16 rounded-xl bg-[#003527] flex items-center justify-center mb-6">
-                    <Landmark className="h-8 w-8 text-white" />
+                  <div className="w-12 h-12 rounded-xl bg-[#003527] flex items-center justify-center mb-4">
+                    <Landmark className="h-6 w-6 text-white" />
                   </div>
-                  <h3 className="text-3xl font-bold mb-4">Portal Keuangan</h3>
-                  <p className="text-[#404944] leading-relaxed">
+                  <h3 className="text-2xl font-bold mb-3">Portal Keuangan</h3>
+                  <p className="text-[#404944] leading-relaxed text-sm">
                     Pembayaran yang aman, transparan, dan bebas repot untuk iuran bulanan dan kontribusi proyek khusus Anda.
                   </p>
                 </div>
                 <Button
                   onClick={onLoginClick}
-                  className="w-fit bg-[#003527] text-white px-6 py-3 rounded-full font-bold hover:bg-[#064e3b]"
+                  className="w-fit bg-[#003527] text-white px-5 py-2 rounded-full font-semibold text-sm hover:bg-[#064e3b]"
                 >
                   Buka Portal
                 </Button>
               </div>
 
               {/* Agenda */}
-              <div className="md:col-span-2 md:row-span-1 bg-[#b5ede7]/30 rounded-xl p-8 flex items-center gap-8 hover:scale-[1.02] transition-transform">
-                <div className="bg-white p-4 rounded-xl shadow-[0px_24px_48px_rgba(19,30,25,0.06)]">
-                  <Calendar className="h-10 w-10 text-[#316763]" />
+              <div className="md:col-span-2 md:row-span-1 bg-[#b5ede7]/30 rounded-xl p-6 flex items-center gap-6 hover:scale-[1.02] transition-transform">
+                <div className="bg-white p-3 rounded-xl shadow-[0px_24px_48px_rgba(19,30,25,0.06)]">
+                  <Calendar className="h-8 w-8 text-[#316763]" />
                 </div>
                 <div>
-                  <h4 className="text-xl font-bold mb-2">Agenda Lingkungan</h4>
+                  <h4 className="text-lg font-bold mb-1">Agenda Lingkungan</h4>
                   <p className="text-[#404944] text-sm">Tetap update dengan acara komunitas, rapat, dan jadwal liburan.</p>
                 </div>
               </div>
 
               {/* Information */}
-              <div className="md:col-span-1 md:row-span-1 bg-[#eaf7ee] rounded-xl p-8 flex flex-col justify-between hover:scale-[1.02] transition-transform">
-                <Info className="h-10 w-10 text-[#064e3b]" />
+              <div className="md:col-span-1 md:row-span-1 bg-[#eaf7ee] rounded-xl p-6 flex flex-col justify-between hover:scale-[1.02] transition-transform cursor-pointer" onClick={onLoginClick}>
+                <Info className="h-8 w-8 text-[#064e3b]" />
                 <div>
-                  <h4 className="text-lg font-bold">Informasi</h4>
+                  <h4 className="font-bold">Informasi</h4>
                   <p className="text-[#404944] text-xs mt-1">Pengumuman & peraturan resmi.</p>
                 </div>
               </div>
 
               {/* Directory */}
-              <div className="md:col-span-1 md:row-span-1 bg-[#064e3b] text-white rounded-xl p-8 flex flex-col justify-between hover:scale-[1.02] transition-transform">
-                <Users className="h-10 w-10 text-emerald-100" />
+              <div className="md:col-span-1 md:row-span-1 bg-[#064e3b] text-white rounded-xl p-6 flex flex-col justify-between hover:scale-[1.02] transition-transform cursor-pointer" onClick={() => scrollToSection('warga')}>
+                <Users className="h-8 w-8 text-emerald-100" />
                 <div>
-                  <h4 className="text-lg font-bold">Direktori</h4>
+                  <h4 className="font-bold">Direktori</h4>
                   <p className="text-emerald-100/60 text-xs mt-1">Terhubung dengan tetangga.</p>
                 </div>
               </div>
@@ -364,13 +370,13 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
 
         {/* Agenda Timeline */}
         {settings?.enableAgenda && agendas.length > 0 && (
-          <section id="komunitas" className="py-24 px-6 md:px-12 bg-[#eaf7ee]">
+          <section id="komunitas" className="py-16 px-6 md:px-12 bg-[#eaf7ee]">
             <div className="max-w-3xl mx-auto">
-              <div className="text-center mb-16">
-                <h2 className="text-4xl font-bold mb-4">Agenda Mendatang</h2>
+              <div className="text-center mb-12">
+                <h2 className="text-3xl font-bold mb-3">Agenda Mendatang</h2>
                 <p className="text-[#404944]">Jangan lewatkan kegiatan lingkungan berikut ini</p>
               </div>
-              <div className="space-y-12">
+              <div className="space-y-8">
                 {agendas.slice(0, 3).map((agenda, index) => {
                   const bgColors = [
                     'bg-[#064e3b] text-white',
@@ -378,23 +384,23 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                     'bg-[#d9e6dd] text-[#003527]'
                   ];
                   return (
-                    <div key={agenda.id} className="flex gap-8 group">
+                    <div key={agenda.id} className="flex gap-6 group">
                       <div className="flex flex-col items-center">
-                        <div className={`w-14 h-14 rounded-full ${bgColors[index % 3]} flex items-center justify-center font-bold text-sm`}>
+                        <div className={`w-12 h-12 rounded-full ${bgColors[index % 3]} flex items-center justify-center font-bold text-sm`}>
                           {formatDate(agenda.startDate)}
                         </div>
                         {index < agendas.slice(0, 3).length - 1 && (
                           <div className="w-0.5 h-full bg-[#bfc9c3]/30 mt-4"></div>
                         )}
                       </div>
-                      <div className="pb-8">
-                        <h4 className="text-xl font-bold mb-2 group-hover:text-[#003527] transition-colors">
+                      <div className="pb-6">
+                        <h4 className="text-lg font-bold mb-2 group-hover:text-[#003527] transition-colors">
                           {agenda.title}
                         </h4>
-                        <p className="text-[#404944] text-sm leading-relaxed mb-4">
+                        <p className="text-[#404944] text-sm leading-relaxed mb-3">
                           {agenda.description || 'Kegiatan komunitas untuk semua warga.'}
                         </p>
-                        <div className="flex items-center gap-4 text-xs font-bold text-[#404944]">
+                        <div className="flex items-center gap-4 text-xs font-semibold text-[#404944]">
                           <span className="flex items-center gap-1">
                             <Clock className="h-3 w-3" /> {agenda.startTime || '07:00'}
                           </span>
@@ -415,37 +421,37 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
 
         {/* Testimonials */}
         {settings?.enableReviews && reviews.length > 0 && (
-          <section className="py-24 px-6 md:px-12">
+          <section className="py-16 px-6 md:px-12">
             <div className="max-w-screen-2xl mx-auto">
-              <h2 className="text-4xl font-bold text-center mb-16">Kisah Warga</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <h2 className="text-3xl font-bold text-center mb-12">Kisah Warga</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {reviews.slice(0, 3).map((review, index) => {
                   const isMiddle = index === 1 && reviews.length >= 3;
                   return (
                     <div
                       key={review.id}
-                      className={`${isMiddle ? 'bg-[#003527] text-white scale-105 relative z-10' : 'bg-[#eaf7ee]'} p-10 rounded-xl space-y-6 shadow-[0px_24px_48px_rgba(19,30,25,0.06)]`}
+                      className={`${isMiddle ? 'bg-[#003527] text-white scale-105 relative z-10' : 'bg-[#eaf7ee]'} p-6 rounded-xl space-y-4 shadow-[0px_24px_48px_rgba(19,30,25,0.06)]`}
                     >
                       <div className="flex text-amber-400">
                         {[1, 2, 3, 4, 5].map((star) => (
                           <Star
                             key={star}
-                            className={`h-5 w-5 ${star <= review.rating ? 'fill-current' : ''}`}
+                            className={`h-4 w-4 ${star <= review.rating ? 'fill-current' : ''}`}
                           />
                         ))}
                       </div>
-                      <p className={`italic ${isMiddle ? 'text-emerald-50' : 'text-[#404944]'} leading-relaxed text-lg`}>
+                      <p className={`italic ${isMiddle ? 'text-emerald-50' : 'text-[#404944]'} leading-relaxed`}>
                         &quot;{review.comment}&quot;
                       </p>
-                      <div className="flex items-center gap-4">
-                        <Avatar className={`w-12 h-12 ${isMiddle ? 'border-2 border-white/20' : ''}`}>
+                      <div className="flex items-center gap-3">
+                        <Avatar className={`w-10 h-10 ${isMiddle ? 'border-2 border-white/20' : ''}`}>
                           <AvatarImage src={review.userPhotoUrl || undefined} alt={review.userName} />
                           <AvatarFallback>
                             {review.userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <h5 className={`font-bold ${isMiddle ? 'text-white' : ''}`}>{review.userName}</h5>
+                          <h5 className={`font-semibold text-sm ${isMiddle ? 'text-white' : ''}`}>{review.userName}</h5>
                           <p className={`text-xs ${isMiddle ? 'text-emerald-100/70' : 'text-[#404944]'}`}>Warga</p>
                         </div>
                       </div>
@@ -459,21 +465,25 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
 
         {/* Gallery */}
         {settings?.enableGallery && galleries.length > 0 && (
-          <section className="py-24 px-6 md:px-12 bg-white">
+          <section className="py-16 px-6 md:px-12 bg-white">
             <div className="max-w-screen-2xl mx-auto">
-              <div className="text-center mb-16 space-y-4">
-                <h2 className="text-4xl font-bold">Kehidupan Komunitas</h2>
-                <p className="text-[#404944] max-w-2xl mx-auto">
+              <div className="text-center mb-12 space-y-3">
+                <h2 className="text-3xl font-bold">Kehidupan Komunitas</h2>
+                <p className="text-[#404944] max-w-2xl mx-auto text-sm">
                   Sekilas momen sehari-hari dan pengalaman bersama di dalam tempat perlindungan kami.
                 </p>
               </div>
-              <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
+              <div className="columns-1 md:columns-2 lg:columns-3 gap-4 space-y-4">
                 {galleries.slice(0, 6).map((gallery) => (
-                  <div key={gallery.id} className="rounded-xl overflow-hidden shadow-[0px_24px_48px_rgba(19,30,25,0.06)]">
+                  <div 
+                    key={gallery.id} 
+                    className="rounded-xl overflow-hidden shadow-[0px_24px_48px_rgba(19,30,25,0.06)] cursor-pointer"
+                    onClick={() => setSelectedImage(gallery.imageUrl)}
+                  >
                     <img
                       src={gallery.thumbnailUrl || gallery.imageUrl}
                       alt={gallery.title}
-                      className="w-full hover:scale-110 transition-transform duration-700"
+                      className="w-full hover:scale-105 transition-transform duration-500"
                     />
                   </div>
                 ))}
@@ -482,32 +492,63 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
           </section>
         )}
 
+        {/* Image Zoom Dialog */}
+        <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
+          <DialogContent className="max-w-4xl p-0 bg-transparent border-0 shadow-none">
+            <button
+              onClick={() => setSelectedImage(null)}
+              className="absolute top-2 right-2 z-50 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            {selectedImage && (
+              <img
+                src={selectedImage}
+                alt="Gallery"
+                className="w-full h-auto rounded-lg"
+              />
+            )}
+          </DialogContent>
+        </Dialog>
+
         {/* Pengurus Section */}
         {pengurus.length > 0 && (
-          <section id="warga" className="py-24 px-6 md:px-12 bg-[#eaf7ee]">
+          <section id="warga" className="py-16 px-6 md:px-12 bg-[#eaf7ee]">
             <div className="max-w-screen-2xl mx-auto">
-              <div className="text-center mb-16">
-                <h2 className="text-4xl font-bold mb-4">Tim Pengurus</h2>
+              <div className="text-center mb-12">
+                <h2 className="text-3xl font-bold mb-3">Tim Pengurus</h2>
                 <p className="text-[#404944]">Pengurus yang siap membantu kebutuhan warga</p>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {pengurus.map((p) => {
                   const badge = getRoleBadge(p.role);
                   return (
-                    <div key={p.id} className="bg-white p-6 rounded-xl shadow-[0px_24px_48px_rgba(19,30,25,0.06)] hover:scale-[1.02] transition-transform">
+                    <div key={p.id} className="bg-white p-5 rounded-xl shadow-[0px_24px_48px_rgba(19,30,25,0.06)] hover:scale-[1.02] transition-transform">
                       <div className="flex flex-col items-center text-center">
-                        <Avatar className="h-16 w-16 mb-4">
+                        <Avatar className="h-14 w-14 mb-3">
                           <AvatarImage src={p.photoUrl || undefined} alt={p.nama} />
-                          <AvatarFallback className="bg-emerald-500 text-white text-lg">
+                          <AvatarFallback className="bg-emerald-500 text-white">
                             {p.nama.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
                           </AvatarFallback>
                         </Avatar>
-                        <h4 className="font-semibold">{p.nama}</h4>
-                        <Badge variant="secondary" className="mt-1">{badge.label}</Badge>
-                        <div className="flex items-center gap-1 text-sm text-[#404944] mt-2">
-                          <Phone className="h-3 w-3" />
-                          <span>{p.telepon}</span>
-                        </div>
+                        <h4 className="font-semibold text-sm">{p.nama}</h4>
+                        <Badge variant="secondary" className="mt-1 text-xs">{badge.label}</Badge>
+                        
+                        {/* WhatsApp Button */}
+                        <a
+                          href={getWhatsAppLink(p.telepon)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-3 w-full"
+                        >
+                          <Button
+                            variant="outline"
+                            className="w-full bg-green-50 hover:bg-green-100 text-green-700 border-green-200 text-xs py-2"
+                          >
+                            <MessageCircle className="h-3 w-3 mr-2" />
+                            WhatsApp
+                          </Button>
+                        </a>
                       </div>
                     </div>
                   );
@@ -518,94 +559,94 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
         )}
 
         {/* CTA Section */}
-        <section className="py-24 px-6 md:px-12">
-          <div className="max-w-5xl mx-auto bg-gradient-to-br from-[#003527] to-[#064e3b] rounded-xl p-12 md:p-20 text-center text-white relative overflow-hidden shadow-[0px_24px_48px_rgba(19,30,25,0.06)]">
-            <div className="relative z-10 space-y-8">
-              <h2 className="text-4xl md:text-6xl font-extrabold tracking-tight">
+        <section className="py-16 px-6 md:px-12">
+          <div className="max-w-4xl mx-auto bg-gradient-to-br from-[#003527] to-[#064e3b] rounded-xl p-10 md:p-16 text-center text-white relative overflow-hidden shadow-[0px_24px_48px_rgba(19,30,25,0.06)]">
+            <div className="relative z-10 space-y-6">
+              <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight">
                 Siap bergabung<br />dengan komunitas?
               </h2>
-              <p className="text-emerald-100 text-lg max-w-xl mx-auto">
+              <p className="text-emerald-100 max-w-lg mx-auto">
                 Rasakan masa depan kehidupan perumahan. Daftarkan unit Anda hari ini dan buka pengalaman komunitas yang lengkap.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+              <div className="flex flex-col sm:flex-row gap-3 justify-center pt-3">
                 {settings?.enableRegistration ? (
                   <Button
                     onClick={onRegisterClick}
-                    className="bg-white text-[#003527] px-10 py-5 rounded-xl font-bold text-lg hover:bg-emerald-50 transition-colors"
+                    className="bg-white text-[#003527] px-8 py-4 rounded-xl font-semibold hover:bg-emerald-50 transition-colors"
                   >
                     Daftar Sekarang
                   </Button>
                 ) : (
                   <Button
                     onClick={onLoginClick}
-                    className="bg-white text-[#003527] px-10 py-5 rounded-xl font-bold text-lg hover:bg-emerald-50 transition-colors"
+                    className="bg-white text-[#003527] px-8 py-4 rounded-xl font-semibold hover:bg-emerald-50 transition-colors"
                   >
                     Masuk ke Portal
                   </Button>
                 )}
                 <Button
                   variant="outline"
-                  onClick={onLoginClick}
-                  className="bg-transparent border-2 border-white/30 text-white px-10 py-5 rounded-xl font-bold text-lg hover:bg-white/10 transition-colors"
+                  onClick={() => scrollToSection('warga')}
+                  className="bg-transparent border-2 border-white/30 text-white px-8 py-4 rounded-xl font-semibold hover:bg-white/10 transition-colors"
                 >
                   Hubungi Admin
                 </Button>
               </div>
             </div>
             {/* Abstract BG circles */}
-            <div className="absolute -top-20 -left-20 w-80 h-80 bg-white/5 rounded-full blur-3xl"></div>
-            <div className="absolute -bottom-20 -right-20 w-80 h-80 bg-white/5 rounded-full blur-3xl"></div>
+            <div className="absolute -top-20 -left-20 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
+            <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
           </div>
         </section>
       </main>
 
       {/* Footer */}
-      <footer className="w-full rounded-t-[3rem] mt-20 bg-emerald-950">
-        <div className="flex flex-col md:flex-row justify-between items-center px-6 md:px-16 py-20 w-full text-emerald-50 text-sm font-light">
-          <div className="flex flex-col items-center md:items-start gap-6 mb-12 md:mb-0">
+      <footer className="w-full rounded-t-[2rem] mt-16 bg-emerald-950">
+        <div className="flex flex-col md:flex-row justify-between items-center px-6 md:px-12 py-12 w-full text-emerald-50 text-sm font-light">
+          <div className="flex flex-col items-center md:items-start gap-4 mb-8 md:mb-0">
             <div className="flex items-center gap-3">
               <img
                 src={settings?.logoUrl || '/logo.jpg'}
                 alt="Logo"
-                className="w-8 h-8 object-contain rounded-lg"
+                className="w-6 h-6 object-contain rounded"
               />
-              <span className="text-xl font-bold text-emerald-50">
+              <span className="text-lg font-bold text-emerald-50">
                 {settings?.siteName || 'Pradha Ciganitri'}
               </span>
             </div>
-            <p className="text-emerald-200/60 max-w-xs text-center md:text-left">
+            <p className="text-emerald-200/60 max-w-xs text-center md:text-left text-xs">
               {settings?.siteDescription || 'Tempat perlindungan untuk kehidupan yang mengalir, di mana komunitas bertemu dengan inovasi digital.'}
             </p>
-            <p className="text-emerald-200/60">
+            <p className="text-emerald-200/60 text-xs">
               © {new Date().getFullYear()} {settings?.siteName || 'Pradha Ciganitri'}. Hak cipta dilindungi.
             </p>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-12 md:gap-24">
-            <div className="flex flex-col gap-4">
-              <span className="font-bold text-emerald-100 mb-2">Portal</span>
-              <a href="#" onClick={onLoginClick} className="text-emerald-200/60 hover:text-emerald-50 transition-colors">Portal Warga</a>
-              <a href="#" onClick={onLoginClick} className="text-emerald-200/60 hover:text-emerald-50 transition-colors">Login Keuangan</a>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-16">
+            <div className="flex flex-col gap-3">
+              <span className="font-semibold text-emerald-100 mb-1 text-xs">Portal</span>
+              <button onClick={onLoginClick} className="text-emerald-200/60 hover:text-emerald-50 transition-colors text-xs text-left">Portal Warga</button>
+              <button onClick={onLoginClick} className="text-emerald-200/60 hover:text-emerald-50 transition-colors text-xs text-left">Login Keuangan</button>
+            </div>
+            <div className="flex flex-col gap-3">
+              <span className="font-semibold text-emerald-100 mb-1 text-xs">Legal</span>
+              <span className="text-emerald-200/60 text-xs">Kebijakan Privasi</span>
+              <span className="text-emerald-200/60 text-xs">Ketentuan Layanan</span>
+            </div>
+            <div className="flex flex-col gap-3">
+              <span className="font-semibold text-emerald-100 mb-1 text-xs">Bantuan</span>
+              <span className="text-emerald-200/60 text-xs">Hubungi Bantuan</span>
+              <span className="text-emerald-200/60 text-xs">Info Darurat</span>
             </div>
             <div className="flex flex-col gap-4">
-              <span className="font-bold text-emerald-100 mb-2">Legal</span>
-              <a href="#" className="text-emerald-200/60 hover:text-emerald-50 transition-colors">Kebijakan Privasi</a>
-              <a href="#" className="text-emerald-200/60 hover:text-emerald-50 transition-colors">Ketentuan Layanan</a>
-            </div>
-            <div className="flex flex-col gap-4">
-              <span className="font-bold text-emerald-100 mb-2">Bantuan</span>
-              <a href="#" className="text-emerald-200/60 hover:text-emerald-50 transition-colors">Hubungi Bantuan</a>
-              <a href="#" className="text-emerald-200/60 hover:text-emerald-50 transition-colors">Info Darurat</a>
-            </div>
-            <div className="flex flex-col gap-6">
-              <div className="flex gap-4">
+              <div className="flex gap-3">
                 <a href="#" className="hover:opacity-80 transition-opacity">
-                  <Trophy className="h-5 w-5" />
+                  <Trophy className="h-4 w-4" />
                 </a>
                 <a href="#" className="hover:opacity-80 transition-opacity">
-                  <Globe className="h-5 w-5" />
+                  <Globe className="h-4 w-4" />
                 </a>
                 <a href="#" className="hover:opacity-80 transition-opacity">
-                  <Mail className="h-5 w-5" />
+                  <Mail className="h-4 w-4" />
                 </a>
               </div>
             </div>
