@@ -978,15 +978,22 @@ export function SettingsPage() {
                           }>
                             {role}
                           </Badge>
+                          {role === 'SUPERADMIN' && (
+                            <Badge variant="outline" className="text-xs text-muted-foreground">
+                              Fixed - Tidak dapat diubah
+                            </Badge>
+                          )}
                         </CardTitle>
                       </div>
-                      <Button
-                        size="sm"
-                        onClick={() => handleSavePermissions(role, rolePermissions[role])}
-                        disabled={isSubmitting}
-                      >
-                        Simpan
-                      </Button>
+                      {role !== 'SUPERADMIN' && (
+                        <Button
+                          size="sm"
+                          onClick={() => handleSavePermissions(role, rolePermissions[role])}
+                          disabled={isSubmitting}
+                        >
+                          Simpan
+                        </Button>
+                      )}
                     </div>
                   </CardHeader>
                   <CardContent>
@@ -997,8 +1004,12 @@ export function SettingsPage() {
                             id={`${role}-${perm}`}
                             checked={rolePermissions[role]?.[perm] || false}
                             onCheckedChange={(checked) => updatePermission(role, perm, checked)}
+                            disabled={role === 'SUPERADMIN'}
                           />
-                          <Label htmlFor={`${role}-${perm}`} className="text-sm">
+                          <Label 
+                            htmlFor={`${role}-${perm}`} 
+                            className={`text-sm ${role === 'SUPERADMIN' ? 'text-muted-foreground' : ''}`}
+                          >
                             {permissionLabels[perm]}
                           </Label>
                         </div>
