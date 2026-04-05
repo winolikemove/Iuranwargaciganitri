@@ -882,30 +882,134 @@ class ApiClient {
         break;
         
       case 'pengurus.strukturOrganisasi':
+        // Return proper dummy data for struktur organisasi
         result = { 
           ok: true, 
           data: {
             blokA: {
               label: 'Blok A',
-              pengurus: this.demoData.pengurus.filter((p: SafeUser) => p.blok === 'A').map((p: SafeUser) => ({
-                ...p,
-                jabatan: p.role === 'ADMIN' ? 'KETUA_RT' : p.role === 'BENDAHARA' ? 'BENDAHARA' : '',
-                jabatanLabel: p.role === 'ADMIN' ? 'Ketua RT' : p.role === 'BENDAHARA' ? 'Bendahara' : '',
-                order: p.role === 'ADMIN' ? 1 : p.role === 'BENDAHARA' ? 4 : 100,
-              }))
+              pengurus: [
+                {
+                  id: 'dummy-1',
+                  nama: 'Bpk Afip',
+                  blok: 'A',
+                  telepon: '087364848848',
+                  photoUrl: '',
+                  jabatan: 'KETUA_RT',
+                  jabatanLabel: 'Ketua RT',
+                  order: 1
+                },
+                {
+                  id: 'dummy-2',
+                  nama: 'Bpk Dedi',
+                  blok: 'A',
+                  telepon: '081321654987',
+                  photoUrl: '',
+                  jabatan: 'WAKIL_KETUA',
+                  jabatanLabel: 'Wakil Ketua RT',
+                  order: 2
+                },
+                {
+                  id: 'dummy-3',
+                  nama: 'Ibu Siti',
+                  blok: 'A',
+                  telepon: '085678912345',
+                  photoUrl: '',
+                  jabatan: 'SEKRETARIS',
+                  jabatanLabel: 'Sekretaris',
+                  order: 3
+                },
+                {
+                  id: 'dummy-4',
+                  nama: 'Bpk Hendra',
+                  blok: 'A',
+                  telepon: '082198765432',
+                  photoUrl: '',
+                  jabatan: 'BENDAHARA',
+                  jabatanLabel: 'Bendahara',
+                  order: 4
+                }
+              ]
             },
             blokB: {
               label: 'Blok B',
-              pengurus: this.demoData.pengurus.filter((p: SafeUser) => p.blok === 'B').map((p: SafeUser) => ({
-                ...p,
-                jabatan: p.role === 'ADMIN' ? 'KETUA_RT' : p.role === 'BENDAHARA' ? 'BENDAHARA' : '',
-                jabatanLabel: p.role === 'ADMIN' ? 'Ketua RT' : p.role === 'BENDAHARA' ? 'Bendahara' : '',
-                order: p.role === 'ADMIN' ? 1 : p.role === 'BENDAHARA' ? 4 : 100,
-              }))
+              pengurus: [
+                {
+                  id: 'dummy-5',
+                  nama: 'Bpk Risan',
+                  blok: 'B',
+                  telepon: '08122495879',
+                  photoUrl: '',
+                  jabatan: 'KETUA_RT',
+                  jabatanLabel: 'Ketua RT',
+                  order: 1
+                },
+                {
+                  id: 'dummy-6',
+                  nama: 'Bpk Ahmad',
+                  blok: 'B',
+                  telepon: '085712345678',
+                  photoUrl: '',
+                  jabatan: 'WAKIL_KETUA',
+                  jabatanLabel: 'Wakil Ketua RT',
+                  order: 2
+                },
+                {
+                  id: 'dummy-7',
+                  nama: 'Ibu Ratna',
+                  blok: 'B',
+                  telepon: '081234567891',
+                  photoUrl: '',
+                  jabatan: 'SEKRETARIS',
+                  jabatanLabel: 'Sekretaris',
+                  order: 3
+                },
+                {
+                  id: 'dummy-8',
+                  nama: 'Bpk Yanto',
+                  blok: 'B',
+                  telepon: '087812345678',
+                  photoUrl: '',
+                  jabatan: 'BENDAHARA',
+                  jabatanLabel: 'Bendahara',
+                  order: 4
+                }
+              ]
             },
             bersama: {
               label: 'Bersama',
-              pengurus: []
+              pengurus: [
+                {
+                  id: 'dummy-9',
+                  nama: 'Bpk Karim',
+                  blok: 'A',
+                  telepon: '085612345678',
+                  photoUrl: '',
+                  jabatan: 'SIE_KEAMANAN',
+                  jabatanLabel: 'Sie. Keamanan',
+                  order: 10
+                },
+                {
+                  id: 'dummy-10',
+                  nama: 'Bpk Dani',
+                  blok: 'B',
+                  telepon: '082112345678',
+                  photoUrl: '',
+                  jabatan: 'SIE_KEBERSIHAN',
+                  jabatanLabel: 'Sie. Kebersihan',
+                  order: 11
+                },
+                {
+                  id: 'dummy-11',
+                  nama: 'Bpk Basir',
+                  blok: 'B',
+                  telepon: '085220590365',
+                  photoUrl: '',
+                  jabatan: 'DKM_MASJID',
+                  jabatanLabel: 'DKM Masjid Al Birr',
+                  order: 12
+                }
+              ]
             }
           } as T 
         };
