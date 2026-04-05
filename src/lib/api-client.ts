@@ -913,6 +913,18 @@ class ApiClient {
         result = { ok: true, data: { message: 'Transaksi berhasil dibuat', id: 'txn-' + Date.now() } as T };
         break;
         
+      case 'finance.update':
+        result = { ok: true, data: { message: 'Transaksi berhasil diperbarui' } as T };
+        break;
+        
+      case 'finance.delete':
+        result = { ok: true, data: { message: 'Transaksi berhasil dihapus' } as T };
+        break;
+        
+      case 'finance.setSaldoAwal':
+        result = { ok: true, data: { message: 'Saldo awal berhasil diatur' } as T };
+        break;
+        
       // Users
       case 'user.list':
         // Include all demo users in the list
@@ -968,6 +980,10 @@ class ApiClient {
         result = { ok: true, data: { message: 'Agenda berhasil diperbarui' } as T };
         break;
         
+      case 'agenda.updateStatus':
+        result = { ok: true, data: { message: 'Status agenda berhasil diubah' } as T };
+        break;
+        
       case 'agenda.delete':
         result = { ok: true, data: { message: 'Agenda berhasil dihapus' } as T };
         break;
@@ -983,6 +999,10 @@ class ApiClient {
         
       case 'info.update':
         result = { ok: true, data: { message: 'Informasi berhasil diperbarui' } as T };
+        break;
+        
+      case 'info.togglePin':
+        result = { ok: true, data: { message: 'Status pin berhasil diubah' } as T };
         break;
         
       case 'info.delete':
