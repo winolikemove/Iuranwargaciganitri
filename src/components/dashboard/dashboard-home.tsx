@@ -251,20 +251,25 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             
             {/* Welcome Card - Large (2x2 on desktop) */}
-            <Card 
+            <Card
               className="md:col-span-2 md:row-span-2 cursor-pointer hover:shadow-md transition-shadow relative overflow-hidden group"
               onClick={() => navigateTo('profile')}
             >
-              {/* Background Image */}
+              {/* Background Image with Higher Visibility */}
               <div className="absolute inset-0">
                 <img
                   src={settings?.bannerUrl || '/banner.jpg'}
                   alt="Banner"
-                  className="w-full h-full object-cover opacity-20 group-hover:opacity-30 transition-opacity"
+                  className="w-full h-full object-cover opacity-60 group-hover:opacity-70 transition-opacity"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                  }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-br from-card via-card/95 to-card/90"></div>
+                {/* Higher transparency overlay - text remains readable */}
+                <div className="absolute inset-0 bg-gradient-to-br from-background/85 via-background/75 to-background/70"></div>
               </div>
-              
+
               <CardHeader className="relative z-10">
                 <CardDescription>{getGreeting()}</CardDescription>
                 <CardTitle className="text-2xl">{user?.nama}</CardTitle>
@@ -280,21 +285,21 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
                   <div className="space-y-1">
                     <p className="text-muted-foreground">Blok {user?.blok} • No. {user?.nomorRumah}</p>
                     <Badge variant="secondary">
-                      {user?.role === 'SUPERADMIN' ? 'Super Admin' : 
-                       user?.role === 'ADMIN' ? 'Admin' : 
+                      {user?.role === 'SUPERADMIN' ? 'Super Admin' :
+                       user?.role === 'ADMIN' ? 'Admin' :
                        user?.role === 'BENDAHARA' ? 'Bendahara' : 'Warga'}
                     </Badge>
                   </div>
                 </div>
-                
+
                 {/* Quick Actions inside Welcome Card */}
                 <div className="grid grid-cols-2 gap-2 pt-2">
                   {quickActions.filter(a => a.show).slice(0, 2).map((action) => (
-                    <Button 
+                    <Button
                       key={action.id}
-                      variant="outline" 
-                      size="sm" 
-                      className="justify-start"
+                      variant="outline"
+                      size="sm"
+                      className="justify-start bg-background/50 backdrop-blur-sm"
                       onClick={(e) => {
                         e.stopPropagation();
                         navigateTo(action.page);
