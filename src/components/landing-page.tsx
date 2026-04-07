@@ -468,23 +468,25 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
         )
         }
 
-        {/* Agenda Detail Modal */}
+        {/* Agenda Detail Modal - Unified Style */}
         <Dialog open={!!selectedAgenda} onOpenChange={() => setSelectedAgenda(null)}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 bg-white border-0">
+          <DialogContent className="sm:max-w-2xl p-0 overflow-hidden bg-transparent border-0 shadow-none">
             {selectedAgenda && (
-              <div className="relative">
-                {/* Close button */}
-                <button
-                  onClick={() => setSelectedAgenda(null)}
-                  className="absolute top-4 right-4 z-50 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-colors"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-                
-                {/* Header with status */}
-                <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 p-6 text-white">
-                  <div className="flex items-center justify-between">
-                    <DialogTitle className="text-xl font-bold">{selectedAgenda.title}</DialogTitle>
+              <div className="w-full bg-[#f0fdf4]/70 backdrop-blur-xl rounded-xl shadow-[0px_24px_48px_rgba(19,30,25,0.06)] overflow-hidden">
+                {/* Header with gradient */}
+                <div className="bg-gradient-to-br from-[#003527] to-[#064e3b] p-6 md:p-8 text-white relative">
+                  {/* Close button */}
+                  <button
+                    onClick={() => setSelectedAgenda(null)}
+                    className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                  >
+                    <X className="h-5 w-5 text-white" />
+                  </button>
+                  
+                  <span className="text-emerald-200 font-bold tracking-widest text-xs uppercase">Agenda</span>
+                  <h3 className="text-2xl font-bold mt-2">{selectedAgenda.title}</h3>
+                  
+                  <div className="flex flex-wrap gap-2 mt-4">
                     <Badge className={
                       selectedAgenda.status === 'UPCOMING' ? 'bg-blue-500' :
                       selectedAgenda.status === 'ONGOING' ? 'bg-green-500' :
@@ -495,36 +497,36 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                        selectedAgenda.status === 'ONGOING' ? 'Berlangsung' :
                        selectedAgenda.status === 'COMPLETED' ? 'Selesai' : 'Dibatalkan'}
                     </Badge>
+                    <Badge variant="outline" className="bg-white/20 text-white border-white/30">
+                      {selectedAgenda.targetBlok === 'ALL' ? 'Semua Blok' : `Blok ${selectedAgenda.targetBlok}`}
+                    </Badge>
                   </div>
-                  <Badge variant="outline" className="mt-2 bg-white/20 text-white border-white/30">
-                    {selectedAgenda.targetBlok === 'ALL' ? 'Semua Blok' : `Blok ${selectedAgenda.targetBlok}`}
-                  </Badge>
                 </div>
                 
                 {/* Details Section */}
-                <div className="p-6 space-y-4">
-                  {/* Meta Info Grid */}
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {/* Start Date */}
-                    <div className="flex items-center gap-2">
-                      <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
-                        <Calendar className="h-5 w-5 text-emerald-600" />
+                <div className="p-6 md:p-8 bg-white space-y-4">
+                  {/* Meta Info */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Date */}
+                    <div className="flex items-center gap-3 p-4 bg-[#eaf7ee] rounded-xl">
+                      <div className="w-12 h-12 rounded-full bg-[#003527] flex items-center justify-center">
+                        <Calendar className="h-6 w-6 text-white" />
                       </div>
                       <div>
-                        <p className="text-gray-500 text-xs">Tanggal</p>
-                        <p className="font-medium text-sm">{formatFullDate(selectedAgenda.startDate)}</p>
+                        <p className="text-[#404944] text-xs">Tanggal</p>
+                        <p className="font-semibold text-[#003527]">{formatFullDate(selectedAgenda.startDate)}</p>
                       </div>
                     </div>
                     
                     {/* Time */}
                     {(selectedAgenda.startTime || selectedAgenda.endTime) && (
-                      <div className="flex items-center gap-2">
-                        <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
-                          <Clock className="h-5 w-5 text-amber-600" />
+                      <div className="flex items-center gap-3 p-4 bg-[#eaf7ee] rounded-xl">
+                        <div className="w-12 h-12 rounded-full bg-[#003527] flex items-center justify-center">
+                          <Clock className="h-6 w-6 text-white" />
                         </div>
                         <div>
-                          <p className="text-gray-500 text-xs">Waktu</p>
-                          <p className="font-medium text-sm">
+                          <p className="text-[#404944] text-xs">Waktu</p>
+                          <p className="font-semibold text-[#003527]">
                             {selectedAgenda.startTime || '-'}
                             {selectedAgenda.endTime && ` - ${selectedAgenda.endTime}`}
                           </p>
@@ -534,26 +536,26 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                     
                     {/* Location */}
                     {selectedAgenda.location && (
-                      <div className="flex items-center gap-2">
-                        <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
-                          <MapPin className="h-5 w-5 text-purple-600" />
+                      <div className="flex items-center gap-3 p-4 bg-[#eaf7ee] rounded-xl">
+                        <div className="w-12 h-12 rounded-full bg-[#003527] flex items-center justify-center">
+                          <MapPin className="h-6 w-6 text-white" />
                         </div>
                         <div>
-                          <p className="text-gray-500 text-xs">Lokasi</p>
-                          <p className="font-medium text-sm">{selectedAgenda.location}</p>
+                          <p className="text-[#404944] text-xs">Lokasi</p>
+                          <p className="font-semibold text-[#003527]">{selectedAgenda.location}</p>
                         </div>
                       </div>
                     )}
                     
                     {/* Created By */}
                     {selectedAgenda.createdBy && (
-                      <div className="flex items-center gap-2">
-                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                          <User className="h-5 w-5 text-blue-600" />
+                      <div className="flex items-center gap-3 p-4 bg-[#eaf7ee] rounded-xl">
+                        <div className="w-12 h-12 rounded-full bg-[#003527] flex items-center justify-center">
+                          <User className="h-6 w-6 text-white" />
                         </div>
                         <div>
-                          <p className="text-gray-500 text-xs">Dibuat oleh</p>
-                          <p className="font-medium text-sm">{selectedAgenda.createdBy}</p>
+                          <p className="text-[#404944] text-xs">Dibuat oleh</p>
+                          <p className="font-semibold text-[#003527]">{selectedAgenda.createdBy}</p>
                         </div>
                       </div>
                     )}
@@ -561,9 +563,9 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                   
                   {/* Description */}
                   {selectedAgenda.description && (
-                    <div className="pt-4 border-t">
-                      <h4 className="font-medium mb-2">Deskripsi</h4>
-                      <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">
+                    <div className="pt-4 border-t border-gray-100">
+                      <h4 className="font-semibold text-[#003527] mb-2">Deskripsi</h4>
+                      <p className="text-[#404944] whitespace-pre-wrap leading-relaxed text-sm">
                         {selectedAgenda.description}
                       </p>
                     </div>
@@ -622,110 +624,249 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
         {settings?.enableGallery && galleries.length > 0 && (
           <section className="py-16 px-6 md:px-12 bg-white">
             <div className="max-w-screen-2xl mx-auto">
-              <div className="text-center mb-12 space-y-3">
-                <h2 className="text-3xl font-bold">Momen Kebersamaan</h2>
-                <p className="text-[#404944] max-w-2xl mx-auto text-sm">
-                  Dokumentasi kegiatan dan momen kebersamaan warga Pradha Ciganitri dalam membangun harmoni lingkungan.
-                </p>
+              <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-4">
+                <div className="space-y-3">
+                  <span className="text-[#003527] font-bold tracking-widest text-xs uppercase">Dokumentasi</span>
+                  <h2 className="text-3xl md:text-4xl font-bold">Momen Kebersamaan</h2>
+                </div>
+                {galleries.length > 6 && (
+                  <Button
+                    variant="outline"
+                    onClick={onLoginClick}
+                    className="text-[#003527] font-semibold flex items-center gap-2 hover:underline border-[#003527]/20"
+                  >
+                    Lihat Lainnya <ArrowRight className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
-              <div className="columns-1 md:columns-2 lg:columns-3 gap-4 space-y-4">
-                {galleries.slice(0, 6).map((gallery) => (
+              
+              {/* Bento Grid Gallery */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                {/* First Image - Large (2x2) */}
+                {galleries[0] && (
                   <div 
-                    key={gallery.id} 
-                    className="rounded-xl overflow-hidden shadow-[0px_24px_48px_rgba(19,30,25,0.06)] cursor-pointer group relative"
-                    onClick={() => setSelectedImage(gallery)}
+                    className="col-span-2 row-span-2 rounded-xl overflow-hidden shadow-lg cursor-pointer group relative aspect-square md:aspect-auto"
+                    onClick={() => setSelectedImage(galleries[0])}
                   >
                     <img
-                      src={gallery.thumbnailUrl || gallery.imageUrl}
-                      alt={gallery.title}
-                      className="w-full hover:scale-105 transition-transform duration-500"
+                      src={galleries[0].thumbnailUrl || galleries[0].imageUrl}
+                      alt={galleries[0].title}
+                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
                     />
-                    {/* Overlay with title */}
-                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <p className="text-white font-medium text-sm truncate">{gallery.title}</p>
-                      {gallery.takenAt && (
-                        <p className="text-white/70 text-xs flex items-center gap-1 mt-1">
-                          <Calendar className="h-3 w-3" />
-                          {formatFullDate(gallery.takenAt)}
-                        </p>
-                      )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="absolute bottom-4 left-4 right-4">
+                        <p className="text-white font-semibold truncate">{galleries[0].title}</p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <div className="px-2 py-1 bg-white/20 backdrop-blur-sm text-white text-xs rounded-full flex items-center gap-1">
+                            <Camera className="h-3 w-3" />
+                            Lihat di sini
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                ))}
+                )}
+                
+                {/* Second Image - Tall (1x2) */}
+                {galleries[1] && (
+                  <div 
+                    className="col-span-1 row-span-2 rounded-xl overflow-hidden shadow-lg cursor-pointer group relative"
+                    onClick={() => setSelectedImage(galleries[1])}
+                  >
+                    <img
+                      src={galleries[1].thumbnailUrl || galleries[1].imageUrl}
+                      alt={galleries[1].title}
+                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="absolute bottom-3 left-3 right-3">
+                        <p className="text-white font-medium text-sm truncate">{galleries[1].title}</p>
+                        <div className="px-2 py-0.5 bg-white/20 backdrop-blur-sm text-white text-xs rounded-full inline-flex items-center gap-1 mt-1">
+                          <Camera className="h-3 w-3" />
+                          Lihat
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Third Image - Wide (2x1) */}
+                {galleries[2] && (
+                  <div 
+                    className="col-span-1 md:col-span-2 rounded-xl overflow-hidden shadow-lg cursor-pointer group relative aspect-video"
+                    onClick={() => setSelectedImage(galleries[2])}
+                  >
+                    <img
+                      src={galleries[2].thumbnailUrl || galleries[2].imageUrl}
+                      alt={galleries[2].title}
+                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="absolute bottom-3 left-3 right-3">
+                        <p className="text-white font-medium text-sm truncate">{galleries[2].title}</p>
+                        <div className="px-2 py-0.5 bg-white/20 backdrop-blur-sm text-white text-xs rounded-full inline-flex items-center gap-1 mt-1">
+                          <Camera className="h-3 w-3" />
+                          Lihat di sini
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Fourth Image - Small */}
+                {galleries[3] && (
+                  <div 
+                    className="col-span-1 rounded-xl overflow-hidden shadow-lg cursor-pointer group relative aspect-square"
+                    onClick={() => setSelectedImage(galleries[3])}
+                  >
+                    <img
+                      src={galleries[3].thumbnailUrl || galleries[3].imageUrl}
+                      alt={galleries[3].title}
+                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="absolute bottom-2 left-2 right-2">
+                        <div className="px-2 py-0.5 bg-white/20 backdrop-blur-sm text-white text-xs rounded-full inline-flex items-center gap-1">
+                          <Camera className="h-3 w-3" />
+                          Lihat
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Fifth Image - Small */}
+                {galleries[4] && (
+                  <div 
+                    className="col-span-1 rounded-xl overflow-hidden shadow-lg cursor-pointer group relative aspect-square"
+                    onClick={() => setSelectedImage(galleries[4])}
+                  >
+                    <img
+                      src={galleries[4].thumbnailUrl || galleries[4].imageUrl}
+                      alt={galleries[4].title}
+                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="absolute bottom-2 left-2 right-2">
+                        <div className="px-2 py-0.5 bg-white/20 backdrop-blur-sm text-white text-xs rounded-full inline-flex items-center gap-1">
+                          <Camera className="h-3 w-3" />
+                          Lihat
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Sixth Image or "View More" Card */}
+                {galleries.length > 5 ? (
+                  galleries[5] && (
+                    <div 
+                      className="col-span-2 rounded-xl overflow-hidden shadow-lg cursor-pointer group relative aspect-video"
+                      onClick={() => setSelectedImage(galleries[5])}
+                    >
+                      <img
+                        src={galleries[5].thumbnailUrl || galleries[5].imageUrl}
+                        alt={galleries[5].title}
+                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                      />
+                      {galleries.length > 6 && (
+                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                          <div className="text-center">
+                            <p className="text-white text-2xl font-bold">+{galleries.length - 6}</p>
+                            <p className="text-white/80 text-sm">foto lainnya</p>
+                          </div>
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="absolute bottom-3 left-3 right-3">
+                          <p className="text-white font-medium text-sm truncate">{galleries[5].title}</p>
+                          <div className="px-2 py-0.5 bg-white/20 backdrop-blur-sm text-white text-xs rounded-full inline-flex items-center gap-1 mt-1">
+                            <Camera className="h-3 w-3" />
+                            Lihat di sini
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                ) : null}
               </div>
             </div>
           </section>
         )}
 
-        {/* Image Zoom Dialog with Details */}
+        {/* Image Zoom Dialog with Details - Unified Style */}
         <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 bg-white border-0">
+          <DialogContent className="sm:max-w-4xl p-0 overflow-hidden bg-transparent border-0 shadow-none">
             {selectedImage && (
-              <div className="relative">
-                {/* Close button */}
-                <button
-                  onClick={() => setSelectedImage(null)}
-                  className="absolute top-4 right-4 z-50 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-colors"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-                
-                {/* Image */}
-                <div className="aspect-video relative bg-black">
+              <div className="w-full grid md:grid-cols-12 bg-[#f0fdf4]/70 backdrop-blur-xl rounded-xl shadow-[0px_24px_48px_rgba(19,30,25,0.06)] overflow-hidden">
+                {/* Left Image Column */}
+                <div className="md:col-span-7 relative bg-black min-h-[300px] md:min-h-[500px]">
                   <img
                     src={selectedImage.imageUrl}
                     alt={selectedImage.title}
                     className="w-full h-full object-contain"
                   />
+                  {/* Close button */}
+                  <button
+                    onClick={() => setSelectedImage(null)}
+                    className="absolute top-4 right-4 md:hidden bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-colors"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
                 </div>
                 
-                {/* Details Section */}
-                <div className="p-6 space-y-4">
-                  <DialogHeader>
-                    <DialogTitle className="text-xl font-bold">{selectedImage.title}</DialogTitle>
-                    {selectedImage.description && (
-                      <DialogDescription className="text-base text-gray-600">
-                        {selectedImage.description}
-                      </DialogDescription>
-                    )}
-                  </DialogHeader>
+                {/* Right Details Column */}
+                <div className="col-span-12 md:col-span-5 bg-white p-6 md:p-8 relative">
+                  {/* Close button - Desktop */}
+                  <button
+                    onClick={() => setSelectedImage(null)}
+                    className="hidden md:flex absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 transition-colors"
+                  >
+                    <X className="h-5 w-5 text-gray-400" />
+                  </button>
                   
-                  {/* Meta Info Grid */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t">
-                    {/* Date Taken */}
+                  {/* Header */}
+                  <div className="mb-6">
+                    <span className="text-[#003527] font-bold tracking-widest text-xs uppercase">Galeri</span>
+                    <h3 className="text-2xl font-bold text-[#003527] mt-2">{selectedImage.title}</h3>
+                    {selectedImage.description && (
+                      <p className="text-[#404944] mt-2 text-sm leading-relaxed">{selectedImage.description}</p>
+                    )}
+                  </div>
+                  
+                  {/* Meta Info */}
+                  <div className="space-y-4">
                     {selectedImage.takenAt && (
-                      <div className="flex items-center gap-2">
-                        <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
-                          <Camera className="h-5 w-5 text-emerald-600" />
+                      <div className="flex items-center gap-3 p-3 bg-[#eaf7ee] rounded-xl">
+                        <div className="w-10 h-10 rounded-full bg-[#003527] flex items-center justify-center">
+                          <Camera className="h-5 w-5 text-white" />
                         </div>
                         <div>
-                          <p className="text-gray-500 text-xs">Tanggal Foto</p>
-                          <p className="font-medium text-sm">{formatFullDate(selectedImage.takenAt)}</p>
+                          <p className="text-[#404944] text-xs">Tanggal Foto</p>
+                          <p className="font-semibold text-sm text-[#003527]">{formatFullDate(selectedImage.takenAt)}</p>
                         </div>
                       </div>
                     )}
                     
-                    {/* Uploaded By */}
                     {selectedImage.uploadedBy && (
-                      <div className="flex items-center gap-2">
-                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                          <User className="h-5 w-5 text-blue-600" />
+                      <div className="flex items-center gap-3 p-3 bg-[#eaf7ee] rounded-xl">
+                        <div className="w-10 h-10 rounded-full bg-[#003527] flex items-center justify-center">
+                          <User className="h-5 w-5 text-white" />
                         </div>
                         <div>
-                          <p className="text-gray-500 text-xs">Diupload oleh</p>
-                          <p className="font-medium text-sm">{selectedImage.uploadedBy}</p>
+                          <p className="text-[#404944] text-xs">Diupload oleh</p>
+                          <p className="font-semibold text-sm text-[#003527]">{selectedImage.uploadedBy}</p>
                         </div>
                       </div>
                     )}
                     
-                    {/* Upload Date */}
-                    <div className="flex items-center gap-2">
-                      <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                        <Clock className="h-5 w-5 text-gray-600" />
+                    <div className="flex items-center gap-3 p-3 bg-[#eaf7ee] rounded-xl">
+                      <div className="w-10 h-10 rounded-full bg-[#003527] flex items-center justify-center">
+                        <Clock className="h-5 w-5 text-white" />
                       </div>
                       <div>
-                        <p className="text-gray-500 text-xs">Ditambahkan</p>
-                        <p className="font-medium text-sm">{formatDateTime(selectedImage.createdAt)}</p>
+                        <p className="text-[#404944] text-xs">Ditambahkan</p>
+                        <p className="font-semibold text-sm text-[#003527]">{formatDateTime(selectedImage.createdAt)}</p>
                       </div>
                     </div>
                   </div>
@@ -799,15 +940,20 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                     <h4 className="text-lg font-bold text-emerald-900">Blok B</h4>
                     <p className="text-emerald-700/70 text-sm truncate">Pengurus RT Blok B yang melayani warga dengan penuh dedikasi.</p>
                   </div>
-                  <div className="flex -space-x-2 shrink-0">
-                    {strukturOrganisasi?.blokB?.pengurus?.slice(0, 3).map((p) => (
-                      <Avatar key={p.id} className="w-7 h-7 border-2 border-white shadow-sm">
-                        <AvatarImage src={p.photoUrl || undefined} alt={p.nama} />
-                        <AvatarFallback className="bg-emerald-500 text-white text-xs">
-                          {p.nama.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                        </AvatarFallback>
-                      </Avatar>
-                    ))}
+                  <div className="flex items-center gap-3 shrink-0">
+                    <div className="flex -space-x-2">
+                      {strukturOrganisasi?.blokB?.pengurus?.slice(0, 3).map((p) => (
+                        <Avatar key={p.id} className="w-7 h-7 border-2 border-white shadow-sm">
+                          <AvatarImage src={p.photoUrl || undefined} alt={p.nama} />
+                          <AvatarFallback className="bg-emerald-500 text-white text-xs">
+                            {p.nama.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                          </AvatarFallback>
+                        </Avatar>
+                      ))}
+                    </div>
+                    <div className="px-3 py-1 bg-emerald-600 text-white text-xs font-medium rounded-full">
+                      Lihat di sini
+                    </div>
                   </div>
                 </div>
 
@@ -820,6 +966,9 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                   <div>
                     <h4 className="font-bold">Bersama</h4>
                     <p className="text-emerald-200/60 text-xs mt-1">Keamanan, Kebersihan, DKM</p>
+                    <div className="mt-2 inline-block px-2 py-0.5 bg-emerald-500/30 text-emerald-200 text-xs rounded-full">
+                      Lihat di sini
+                    </div>
                   </div>
                 </div>
 
@@ -836,31 +985,32 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
           </section>
         )}
 
-        {/* Blok Detail Modal */}
+        {/* Blok Detail Modal - Unified Style */}
         <Dialog open={!!selectedBlok} onOpenChange={() => setSelectedBlok(null)}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 bg-white border-0">
+          <DialogContent className="sm:max-w-2xl p-0 overflow-hidden bg-transparent border-0 shadow-none">
             {selectedBlok && (
-              <div className="relative">
-                {/* Close button */}
-                <button
-                  onClick={() => setSelectedBlok(null)}
-                  className="absolute top-4 right-4 z-50 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-colors"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-                
-                {/* Header */}
-                <div className={`p-6 text-white ${
-                  selectedBlok.key === 'A' ? 'bg-gradient-to-r from-blue-600 to-blue-700' :
-                  selectedBlok.key === 'B' ? 'bg-gradient-to-r from-emerald-600 to-emerald-700' :
-                  'bg-gradient-to-r from-[#003527] to-[#064e3b]'
+              <div className="w-full bg-[#f0fdf4]/70 backdrop-blur-xl rounded-xl shadow-[0px_24px_48px_rgba(19,30,25,0.06)] overflow-hidden max-h-[90vh] flex flex-col">
+                {/* Header with gradient */}
+                <div className={`p-6 md:p-8 text-white relative shrink-0 ${
+                  selectedBlok.key === 'A' ? 'bg-gradient-to-br from-blue-600 to-blue-700' :
+                  selectedBlok.key === 'B' ? 'bg-gradient-to-br from-emerald-600 to-emerald-700' :
+                  'bg-gradient-to-br from-[#003527] to-[#064e3b]'
                 }`}>
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
-                      <Building2 className="h-6 w-6 text-white" />
+                  {/* Close button */}
+                  <button
+                    onClick={() => setSelectedBlok(null)}
+                    className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                  >
+                    <X className="h-5 w-5 text-white" />
+                  </button>
+                  
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center">
+                      <Building2 className="h-7 w-7 text-white" />
                     </div>
                     <div>
-                      <DialogTitle className="text-xl font-bold">{selectedBlok.label}</DialogTitle>
+                      <span className="text-white/70 text-xs uppercase tracking-wider">Struktur Organisasi</span>
+                      <h3 className="text-2xl font-bold">{selectedBlok.label}</h3>
                       <p className="text-white/70 text-sm mt-1">
                         {selectedBlok.key === 'BERSAMA' ? 'Sie. Keamanan, Kebersihan & DKM Masjid Al Birr' : 'Pengurus RT'}
                       </p>
@@ -868,82 +1018,88 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                   </div>
                 </div>
                 
-                {/* Kontak RT */}
-                {selectedBlok.data.kontakRT && (
-                  <div className="p-4 border-b bg-gray-50">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                          <Phone className="h-5 w-5 text-green-600" />
+                {/* Content - Scrollable */}
+                <div className="flex-1 overflow-y-auto">
+                  {/* Kontak RT */}
+                  {selectedBlok.data.kontakRT && (
+                    <div className="p-4 md:p-6 bg-white border-b">
+                      <div className="flex items-center justify-between p-4 bg-[#eaf7ee] rounded-xl">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-full bg-[#003527] flex items-center justify-center">
+                            <Phone className="h-6 w-6 text-white" />
+                          </div>
+                          <div>
+                            <p className="text-[#404944] text-xs">Kontak RT {selectedBlok.label}</p>
+                            <p className="font-semibold text-[#003527]">{selectedBlok.data.kontakRT.nama}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-xs text-gray-500">Kontak RT {selectedBlok.label}</p>
-                          <p className="font-medium">{selectedBlok.data.kontakRT.nama}</p>
-                        </div>
+                        {selectedBlok.data.kontakRT.telepon && (
+                          <a
+                            href={getWhatsAppLink(selectedBlok.data.kontakRT.telepon)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 px-4 py-2 rounded-full bg-green-500 hover:bg-green-600 text-white text-sm font-medium transition-colors"
+                          >
+                            <MessageCircle className="h-4 w-4" />
+                            WhatsApp
+                          </a>
+                        )}
                       </div>
-                      {selectedBlok.data.kontakRT.telepon && (
-                        <a
-                          href={getWhatsAppLink(selectedBlok.data.kontakRT.telepon)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-2 px-4 py-2 rounded-full bg-green-500 hover:bg-green-600 text-white text-sm font-medium transition-colors"
-                        >
-                          <MessageCircle className="h-4 w-4" />
-                          WhatsApp
-                        </a>
-                      )}
                     </div>
-                  </div>
-                )}
-                
-                {/* Pengurus List */}
-                <div className="p-6 space-y-3">
-                  <h4 className="font-semibold text-gray-900 mb-4">Daftar Pengurus</h4>
-                  {selectedBlok.data.pengurus?.sort((a, b) => a.order - b.order).map((p) => (
-                    <div key={p.id} className="flex items-center gap-4 p-4 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors">
-                      <Avatar className="h-14 w-14">
-                        <AvatarImage src={p.photoUrl || undefined} alt={p.nama} />
-                        <AvatarFallback className={`text-white ${
-                          selectedBlok.key === 'A' ? 'bg-blue-500' :
-                          selectedBlok.key === 'B' ? 'bg-emerald-500' :
-                          'bg-[#003527]'
-                        }`}>
-                          {p.nama.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <h5 className="font-semibold text-gray-900">{p.nama}</h5>
-                        <p className="text-sm text-gray-500">{p.jabatanLabel}</p>
-                        <div className="flex items-center gap-3 mt-1">
-                          {p.nomorRumah && (
-                            <span className="flex items-center gap-1 text-xs text-gray-400">
-                              <Home className="h-3 w-3" />
-                              No. {p.nomorRumah}
-                            </span>
-                          )}
-                          {p.telepon && (
-                            <span className="text-xs text-gray-400">{p.telepon}</span>
-                          )}
-                        </div>
-                      </div>
-                      {p.telepon && (
-                        <a
-                          href={getWhatsAppLink(p.telepon)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-2 px-4 py-2 rounded-full bg-green-500 hover:bg-green-600 text-white text-sm font-medium transition-colors"
-                        >
-                          <MessageCircle className="h-4 w-4" />
-                          WhatsApp
-                        </a>
-                      )}
-                    </div>
-                  ))}
-                  {(!selectedBlok.data.pengurus || selectedBlok.data.pengurus.length === 0) && (
-                    <p className="text-center text-gray-500 py-8">
-                      Belum ada data pengurus
-                    </p>
                   )}
+                  
+                  {/* Pengurus List */}
+                  <div className="p-4 md:p-6 bg-white space-y-3">
+                    <h4 className="font-bold text-[#003527] mb-4 flex items-center gap-2">
+                      <Users className="h-5 w-5" />
+                      Daftar Pengurus
+                    </h4>
+                    {selectedBlok.data.pengurus?.sort((a, b) => a.order - b.order).map((p) => (
+                      <div key={p.id} className="flex items-center gap-4 p-4 rounded-xl bg-[#f0fdf4] hover:bg-[#eaf7ee] transition-colors">
+                        <Avatar className="h-14 w-14 border-2 border-white shadow-md">
+                          <AvatarImage src={p.photoUrl || undefined} alt={p.nama} />
+                          <AvatarFallback className={`text-white ${
+                            selectedBlok.key === 'A' ? 'bg-blue-500' :
+                            selectedBlok.key === 'B' ? 'bg-emerald-500' :
+                            'bg-[#003527]'
+                          }`}>
+                            {p.nama.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <h5 className="font-semibold text-[#003527]">{p.nama}</h5>
+                          <p className="text-sm text-[#404944]">{p.jabatanLabel}</p>
+                          <div className="flex items-center gap-3 mt-1">
+                            {p.nomorRumah && (
+                              <span className="flex items-center gap-1 text-xs text-[#404944]/60">
+                                <Home className="h-3 w-3" />
+                                No. {p.nomorRumah}
+                              </span>
+                            )}
+                            {p.telepon && (
+                              <span className="text-xs text-[#404944]/60">{p.telepon}</span>
+                            )}
+                          </div>
+                        </div>
+                        {p.telepon && (
+                          <a
+                            href={getWhatsAppLink(p.telepon)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 px-4 py-2 rounded-full bg-green-500 hover:bg-green-600 text-white text-sm font-medium transition-colors"
+                          >
+                            <MessageCircle className="h-4 w-4" />
+                            WhatsApp
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                    {(!selectedBlok.data.pengurus || selectedBlok.data.pengurus.length === 0) && (
+                      <p className="text-center text-[#404944] py-8">
+                        Belum ada data pengurus
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
