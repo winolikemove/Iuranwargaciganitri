@@ -294,61 +294,93 @@ function dbInsert(sheetName, data) {
 
 function dbUpdate(sheetName, id, data) {
   const sheet = getSheet(sheetName);
-  const allData = sheet.getDataRange().getValues();
-  const headers = allData[0];
-  const idIdx = headers.indexOf('id');
-  const updatedAtIdx = headers.indexOf('updatedAt');
-  
   const lock = LockService.getScriptLock();
+  
   try {
-    lock.waitLock(4000);
+    // 1. Tunggu lock hingga 5 detik (meningkatkan peluang antrean berhasil)
+    lock.waitLock(5000); 
+
+    // 2. KRUSIAL: Ambil data TERBARU setelah mendapatkan lock
+    const allData = sheet.getDataRange().getValues();
+    const headers = allData[0];
+    const idIdx = headers.indexOf('id');
+    const updatedAtIdx = headers.indexOf('updatedAt');
+
+    if (idIdx === -1) throw new Error('Kolom ID tidak ditemukan');
+
+    // Cari baris berdasarkan ID
+    let rowIndex = -1;
     for (let i = 1; i < allData.length; i++) {
-      if (allData[i][idIdx] === id) {
-        const rowRange = sheet.getRange(i + 1, 1, 1, headers.length);
-        const rowValues = rowRange.getValues()[0];
-        
-        headers.forEach((h, colIdx) => {
-          if (data[h] !== undefined && h !== 'id' && h !== 'createdAt') {
-            rowValues[colIdx] = data[h];
-          }
-        });
-        
-        if (updatedAtIdx >= 0) {
-          rowValues[updatedAtIdx] = new Date().toISOString();
-        }
-        
-        rowRange.setValues([rowValues]);
+      if (allData[i][idIdx].toString() === id.toString()) {
+        rowIndex = i + 1; // Konversi ke index baris spreadsheet (1-based)
         break;
       }
     }
+
+    if (rowIndex === -1) throw new Error(`Data dengan ID ${id} tidak ditemukan`);
+
+    // Update data pada baris tersebut
+    Object.keys(data).forEach(key => {
+      const colIdx = headers.indexOf(key);
+      if (colIdx > -1 && key !== 'id') {
+        sheet.getRange(rowIndex, colIdx + 1).setValue(data[key]);
+      }
+    });
+
+    // Otomatis update kolom updatedAt jika ada
+    if (updatedAtIdx > -1) {
+      sheet.getRange(rowIndex, updatedAtIdx + 1).setValue(new Date());
+    }
+
+    // Pastikan semua perubahan tertulis sebelum lock dilepas
+    SpreadsheetApp.flush();
+    return true;
+
+  } catch (error) {
+    Logger.log(`Error di dbUpdate: ${error.message}`);
+    throw error;
   } finally {
+    // Selalu lepaskan lock
     lock.releaseLock();
   }
-  
-  return dbFindOne(sheetName, { id });
 }
 
 function dbDelete(sheetName, id) {
   const sheet = getSheet(sheetName);
-  const allData = sheet.getDataRange().getValues();
-  const headers = allData[0];
-  const idIdx = headers.indexOf('id');
-  
   const lock = LockService.getScriptLock();
+  
   try {
-    lock.waitLock(4000);
-    
+    lock.waitLock(5000);
+
+    // Ambil data terbaru setelah lock
+    const allData = sheet.getDataRange().getValues();
+    const headers = allData[0];
+    const idIdx = headers.indexOf('id');
+
+    if (idIdx === -1) throw new Error('Kolom ID tidak ditemukan');
+
+    let rowIndex = -1;
     for (let i = 1; i < allData.length; i++) {
-      if (allData[i][idIdx] === id) {
-        sheet.deleteRow(i + 1);
-        return true;
+      if (allData[i][idIdx].toString() === id.toString()) {
+        rowIndex = i + 1;
+        break;
       }
     }
+
+    if (rowIndex === -1) throw new Error(`Data dengan ID ${id} tidak ditemukan`);
+
+    // Hapus baris
+    sheet.deleteRow(rowIndex);
+    
+    SpreadsheetApp.flush();
+    return true;
+
+  } catch (error) {
+    Logger.log(`Error di dbDelete: ${error.message}`);
+    throw error;
   } finally {
     lock.releaseLock();
   }
-  
-  return false;
 }
 
 // ==================== AUTH FUNCTIONS ====================
