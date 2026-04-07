@@ -145,12 +145,20 @@ export function Dashboard() {
       <Sidebar className="border-r">
         <SidebarHeader>
           <div className="flex items-center gap-2 px-2 py-2">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 flex items-center justify-center">
-              <span className="text-white font-bold text-sm">P</span>
-            </div>
+            {settings?.logoUrl ? (
+              <img
+                src={settings.logoUrl}
+                alt={settings.siteName || 'Logo'}
+                className="w-10 h-10 rounded-lg object-cover"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 flex items-center justify-center shadow-sm">
+                <span className="text-white font-bold text-sm">P</span>
+              </div>
+            )}
             <div className="flex-1 min-w-0">
-              <h2 className="font-semibold text-sm truncate">{settings?.siteName || 'Pradha'}</h2>
-              <p className="text-xs text-muted-foreground truncate">Manajemen Warga</p>
+              <h2 className="font-semibold text-sm truncate">{settings?.siteName || 'Pradha Ciganitri'}</h2>
+              <p className="text-xs text-muted-foreground truncate">{settings?.siteDescription || 'Manajemen Warga'}</p>
             </div>
           </div>
         </SidebarHeader>

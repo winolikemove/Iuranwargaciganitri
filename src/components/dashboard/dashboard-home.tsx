@@ -172,22 +172,52 @@ export function DashboardHome() {
       {/* Welcome Section */}
       {!isLoading && (
         <>
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold">{getGreeting()}, {user?.nama}!</h2>
-          <p className="text-muted-foreground">
-            Blok {user?.blok} - No. {user?.nomorRumah}
-          </p>
+      {/* Banner Section - Show if bannerUrl exists */}
+      {settings?.bannerUrl && (
+        <div className="relative w-full h-32 md:h-48 rounded-xl overflow-hidden shadow-lg">
+          <img
+            src={settings.bannerUrl}
+            alt="Banner"
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-emerald-900/70 to-transparent flex items-center">
+            <div className="px-6">
+              <h2 className="text-xl md:text-2xl font-bold text-white">{getGreeting()}, {user?.nama}!</h2>
+              <p className="text-emerald-100 text-sm md:text-base mt-1">
+                Blok {user?.blok} - No. {user?.nomorRumah}
+              </p>
+            </div>
+          </div>
+          <div className="absolute bottom-4 right-4 hidden md:block">
+            <Avatar className="h-14 w-14 border-2 border-white shadow-lg">
+              <AvatarImage src={user?.photoUrl || undefined} />
+              <AvatarFallback className="bg-emerald-500 text-white">
+                {user?.nama?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+              </AvatarFallback>
+            </Avatar>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Avatar className="h-12 w-12">
-            <AvatarImage src={user?.photoUrl || undefined} />
-            <AvatarFallback className="bg-emerald-500 text-white">
-              {user?.nama?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-            </AvatarFallback>
-          </Avatar>
+      )}
+
+      {/* Welcome Section without banner */}
+      {!settings?.bannerUrl && (
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-bold">{getGreeting()}, {user?.nama}!</h2>
+            <p className="text-muted-foreground">
+              Blok {user?.blok} - No. {user?.nomorRumah}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Avatar className="h-12 w-12">
+              <AvatarImage src={user?.photoUrl || undefined} />
+              <AvatarFallback className="bg-emerald-500 text-white">
+                {user?.nama?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+              </AvatarFallback>
+            </Avatar>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

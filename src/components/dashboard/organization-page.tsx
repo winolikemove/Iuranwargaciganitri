@@ -246,10 +246,11 @@ export function OrganizationPage() {
               href={getWhatsAppLink(pengurus.telepon)}
               target="_blank"
               rel="noopener noreferrer"
-              className="p-2 rounded-full hover:bg-green-100 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-500 hover:bg-green-600 text-white text-xs font-medium transition-colors shadow-sm"
               onClick={(e) => e.stopPropagation()}
             >
-              <MessageCircle className="h-4 w-4 text-green-600" />
+              <MessageCircle className="h-3.5 w-3.5" />
+              <span>WhatsApp</span>
             </a>
           )}
           {canManageJabatan && showEdit && (
