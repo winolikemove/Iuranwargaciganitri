@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
   DialogContent,
@@ -34,6 +36,7 @@ import {
   User,
   Phone,
   Shield,
+  AlertCircle,
 } from 'lucide-react';
 import type { StrukturOrganisasi, PengurusWithJabatan, JabatanInfo, SafeUser, JabatanKey } from '@/types';
 
@@ -46,11 +49,13 @@ interface JabatanListResponse {
 export function OrganizationPage() {
   const { user, permissions } = useAuth();
   const { strukturOrganisasi, refreshStrukturOrganisasi } = useApp();
+  const { toast } = useToast();
   
   const [jabatanList, setJabatanList] = useState<JabatanListResponse | null>(null);
   const [users, setUsers] = useState<SafeUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
   // Dialog states
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -62,6 +67,7 @@ export function OrganizationPage() {
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
+      setError(null);
       try {
         const [jabatanResult, usersResult] = await Promise.all([
           api.getJabatanList(),
@@ -70,25 +76,52 @@ export function OrganizationPage() {
         
         if (jabatanResult.ok && jabatanResult.data) {
           setJabatanList(jabatanResult.data);
+        } else if (!jabatanResult.ok) {
+          throw new Error('Gagal memuat data jabatan');
         }
         
         if (usersResult.ok && usersResult.data) {
           setUsers(usersResult.data);
+        } else if (!usersResult.ok) {
+          throw new Error('Gagal memuat data pengguna');
         }
-      } catch (error) {
-        console.error('Failed to load organization data:', error);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Terjadi kesalahan saat memuat data organisasi';
+        console.error('Failed to load organization data:', err);
+        setError(errorMessage);
+        toast({
+          variant: 'destructive',
+          title: 'Gagal Memuat Data',
+          description: errorMessage,
+        });
       } finally {
         setLoading(false);
       }
     };
     
     loadData();
-  }, []);
+  }, [toast]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await refreshStrukturOrganisasi();
-    setRefreshing(false);
+    setError(null);
+    try {
+      await refreshStrukturOrganisasi();
+      toast({
+        title: 'Berhasil',
+        description: 'Data struktur organisasi berhasil diperbarui',
+      });
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Gagal memperbarui data';
+      setError(errorMessage);
+      toast({
+        variant: 'destructive',
+        title: 'Gagal Memperbarui',
+        description: errorMessage,
+      });
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const handleEditClick = (pengurus: PengurusWithJabatan) => {
@@ -299,6 +332,32 @@ export function OrganizationPage() {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
+      </div>
+    );
+  }
+
+  // Error state with retry option
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <Alert variant="destructive" className="bg-red-50 border-red-200">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="flex items-center justify-between">
+            <div>
+              <p className="font-medium">Gagal Memuat Data</p>
+              <p className="text-sm">{error}</p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.location.reload()}
+              className="ml-4 bg-white hover:bg-red-50 border-red-300"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Coba Lagi
+            </Button>
+          </AlertDescription>
+        </Alert>
       </div>
     );
   }

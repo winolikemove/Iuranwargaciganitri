@@ -26,6 +26,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useToast } from '@/hooks/use-toast';
 import {
   Calendar,
   Plus,
@@ -48,6 +49,8 @@ export function AgendaPage() {
   
   const [agendas, setAgendas] = useState<Agenda[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [selectedAgenda, setSelectedAgenda] = useState<Agenda | null>(null);
@@ -83,13 +86,23 @@ export function AgendaPage() {
 
   const loadData = async () => {
     setIsLoading(true);
+    setError(null);
     
     try {
       const res = await api.getAgenda();
       if (res.ok && res.data) {
         setAgendas(res.data);
+      } else {
+        throw new Error('Gagal memuat data agenda');
       }
     } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Terjadi kesalahan saat memuat data';
+      setError(errorMessage);
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
+      });
       console.error('Failed to load agendas:', err);
     } finally {
       setIsLoading(false);
@@ -376,6 +389,18 @@ export function AgendaPage() {
           </Dialog>
         )}
       </div>
+
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="flex items-center justify-between">
+            <span>{error}</span>
+            <Button variant="outline" size="sm" onClick={loadData}>
+              Coba Lagi
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {isLoading ? (
         <div className="flex items-center justify-center py-8">

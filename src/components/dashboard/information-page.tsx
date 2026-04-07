@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { useApp } from '@/context/app-context';
+import { useToast } from '@/hooks/use-toast';
 import { api } from '@/lib/api-client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -47,9 +48,11 @@ import type { Information } from '@/types';
 export function InformationPage() {
   const { user, permissions } = useAuth();
   const { settings } = useApp();
+  const { toast } = useToast();
   
   const [informations, setInformations] = useState<Information[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -80,14 +83,30 @@ export function InformationPage() {
 
   const loadData = async () => {
     setIsLoading(true);
+    setError(null);
     
     try {
       const res = await api.getInfo();
       if (res.ok && res.data) {
         setInformations(res.data);
+      } else {
+        const errorMsg = 'Gagal memuat data informasi';
+        setError(errorMsg);
+        toast({
+          title: 'Error',
+          description: errorMsg,
+          variant: 'destructive',
+        });
       }
     } catch (err) {
       console.error('Failed to load information:', err);
+      const errorMsg = 'Terjadi kesalahan saat memuat data informasi';
+      setError(errorMsg);
+      toast({
+        title: 'Error',
+        description: errorMsg,
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
@@ -339,6 +358,23 @@ export function InformationPage() {
           </Dialog>
         )}
       </div>
+
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="flex items-center justify-between">
+            <span>{error}</span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => loadData()}
+              className="ml-4"
+            >
+              Coba Lagi
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {isLoading ? (
         <div className="flex items-center justify-center py-8">

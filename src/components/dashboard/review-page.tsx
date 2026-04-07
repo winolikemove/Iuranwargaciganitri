@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { useApp } from '@/context/app-context';
 import { api } from '@/lib/api-client';
+import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -32,6 +33,9 @@ export function ReviewPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('my');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  const { toast } = useToast();
   
   const [formData, setFormData] = useState({
     rating: 5,
@@ -44,6 +48,7 @@ export function ReviewPage() {
 
   const loadData = async () => {
     setIsLoading(true);
+    setError(null);
     
     try {
       if (activeTab === 'my') {
@@ -68,6 +73,13 @@ export function ReviewPage() {
       }
     } catch (err) {
       console.error('Failed to load reviews:', err);
+      const errorMessage = 'Gagal memuat data testimoni. Silakan coba lagi.';
+      setError(errorMessage);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: errorMessage,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -205,6 +217,23 @@ export function ReviewPage() {
         <h2 className="text-2xl font-bold">Testimoni</h2>
         <p className="text-muted-foreground">Bagikan pengalaman Anda</p>
       </div>
+
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="flex items-center justify-between">
+            <span>{error}</span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={loadData}
+              className="ml-4"
+            >
+              Coba Lagi
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>

@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Wallet,
   Calendar,
@@ -20,9 +21,11 @@ import {
   XCircle,
   UserCheck,
   FileText,
+  AlertCircle,
 } from 'lucide-react';
 import { api, CacheManager } from '@/lib/api-client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useToast } from '@/hooks/use-toast';
 import type { FinanceSummary, SafeUser } from '@/types';
 
 export function DashboardHome() {
@@ -31,32 +34,88 @@ export function DashboardHome() {
   const [finance, setFinance] = useState<FinanceSummary | null>(null);
   const [pendingUsers, setPendingUsers] = useState<SafeUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
+  
+  // Use ref to track if we've already loaded data
+  const hasLoadedRef = useRef(false);
+
+  // Memoized load function
+  const loadData = useCallback(async () => {
+    // Prevent duplicate loads
+    if (hasLoadedRef.current) return;
+    hasLoadedRef.current = true;
+    
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      // Use Promise.all for parallel requests - more efficient
+      const promises: Promise<unknown>[] = [];
+      
+      if (permissions?.canViewFinance) {
+        promises.push(api.getFinanceSummary());
+      }
+      
+      if (permissions?.canApproveUsers) {
+        promises.push(api.getPendingUsers());
+      }
+      
+      // Execute all requests in parallel
+      const results = await Promise.allSettled(promises);
+      
+      let resultIndex = 0;
+      
+      // Process finance result
+      if (permissions?.canViewFinance) {
+        const financeResult = results[resultIndex];
+        if (financeResult.status === 'fulfilled') {
+          const res = financeResult.value as { ok: boolean; data?: FinanceSummary; error?: string };
+          if (res.ok && res.data) {
+            setFinance(res.data);
+          } else {
+            console.error('Failed to load finance:', res.error);
+          }
+        }
+        resultIndex++;
+      }
+      
+      // Process pending users result
+      if (permissions?.canApproveUsers) {
+        const pendingResult = results[resultIndex];
+        if (pendingResult.status === 'fulfilled') {
+          const res = pendingResult.value as { ok: boolean; data?: SafeUser[]; error?: string };
+          if (res.ok && res.data) {
+            setPendingUsers(res.data);
+          } else {
+            console.error('Failed to load pending users:', res.error);
+          }
+        }
+        resultIndex++;
+      }
+      
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Terjadi kesalahan saat memuat data';
+      setError(errorMsg);
+      toast({
+        title: "Error",
+        description: errorMsg,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [permissions?.canViewFinance, permissions?.canApproveUsers, toast]);
 
   useEffect(() => {
-    const loadData = async () => {
-      setIsLoading(true);
-      
-      // Load finance summary
-      if (permissions?.canViewFinance) {
-        const financeRes = await api.getFinanceSummary();
-        if (financeRes.ok && financeRes.data) {
-          setFinance(financeRes.data);
-        }
-      }
-      
-      // Load pending users
-      if (permissions?.canApproveUsers) {
-        const pendingRes = await api.getPendingUsers();
-        if (pendingRes.ok && pendingRes.data) {
-          setPendingUsers(pendingRes.data);
-        }
-      }
-      
-      setIsLoading(false);
-    };
-    
     loadData();
-  }, [permissions]);
+  }, [loadData]);
+
+  // Refresh function for manual reload
+  const refreshData = useCallback(() => {
+    hasLoadedRef.current = false;
+    loadData();
+  }, [loadData]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -89,7 +148,30 @@ export function DashboardHome() {
 
   return (
     <div className="space-y-6">
+      {/* Error Alert */}
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="flex items-center justify-between">
+            <span>{error}</span>
+            <Button variant="outline" size="sm" onClick={refreshData}>
+              Coba Lagi
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      {/* Loading State */}
+      {isLoading && (
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
+          <span className="ml-2 text-muted-foreground">Memuat data...</span>
+        </div>
+      )}
+      
       {/* Welcome Section */}
+      {!isLoading && (
+        <>
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold">{getGreeting()}, {user?.nama}!</h2>
@@ -330,6 +412,8 @@ export function DashboardHome() {
           </div>
         </CardContent>
       </Card>
+        </>
+      )}
     </div>
   );
 }

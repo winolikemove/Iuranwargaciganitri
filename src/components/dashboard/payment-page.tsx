@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { useApp } from '@/context/app-context';
 import { api } from '@/lib/api-client';
+import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -43,6 +44,8 @@ export function PaymentPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('my');
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   // Generate available periods (last 12 months + current + next 3 months)
   const generateAvailablePeriods = () => {
@@ -99,6 +102,7 @@ export function PaymentPage() {
 
   const loadData = async () => {
     setIsLoading(true);
+    setError(null);
     
     try {
       if (activeTab === 'my' && permissions?.canSubmitPayment) {
@@ -130,6 +134,13 @@ export function PaymentPage() {
         }
       }
     } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Gagal memuat data pembayaran. Silakan coba lagi.';
+      setError(errorMessage);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: errorMessage,
+      });
       console.error('Failed to load payments:', err);
     } finally {
       setIsLoading(false);
@@ -274,6 +285,24 @@ export function PaymentPage() {
 
   return (
     <div className="space-y-6">
+      {/* Error Alert */}
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="flex items-center justify-between">
+            <span>{error}</span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => loadData()}
+              className="ml-4"
+            >
+              Coba Lagi
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+      
       {/* Payment Summary Cards */}
       <div className="grid gap-4 md:grid-cols-4">
         <Card className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white">

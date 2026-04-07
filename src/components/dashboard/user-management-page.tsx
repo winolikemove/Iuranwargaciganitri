@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { useApp } from '@/context/app-context';
 import { api } from '@/lib/api-client';
+import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -50,9 +51,12 @@ export function UserManagementPage() {
   const { user, permissions } = useAuth();
   const { settings } = useApp();
   
+  const { toast } = useToast();
+  
   const [users, setUsers] = useState<SafeUser[]>([]);
   const [pendingUsers, setPendingUsers] = useState<SafeUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('all');
   
   // Filters
@@ -66,12 +70,15 @@ export function UserManagementPage() {
 
   const loadData = async () => {
     setIsLoading(true);
+    setError(null);
     
     try {
       if (activeTab === 'pending') {
         const res = await api.getPendingUsers();
         if (res.ok && res.data) {
           setPendingUsers(res.data);
+        } else {
+          throw new Error('Gagal memuat data pengguna pending');
         }
       } else {
         const res = await api.getUsers({
@@ -80,10 +87,18 @@ export function UserManagementPage() {
         });
         if (res.ok && res.data) {
           setUsers(res.data);
+        } else {
+          throw new Error('Gagal memuat data warga');
         }
       }
     } catch (err) {
-      console.error('Failed to load users:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Terjadi kesalahan saat memuat data';
+      setError(errorMessage);
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
@@ -271,6 +286,18 @@ export function UserManagementPage() {
 
   return (
     <div className="space-y-6">
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="flex items-center justify-between">
+            <span>{error}</span>
+            <Button variant="outline" size="sm" onClick={loadData}>
+              Coba Lagi
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+      
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="all">

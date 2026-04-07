@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { useApp } from '@/context/app-context';
 import { api } from '@/lib/api-client';
+import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -47,7 +48,9 @@ export function GalleryPage() {
   const [selectedImage, setSelectedImage] = useState<Gallery | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
   
   const [formData, setFormData] = useState({
     title: '',
@@ -68,14 +71,30 @@ export function GalleryPage() {
 
   const loadData = async () => {
     setIsLoading(true);
+    setError(null);
     
     try {
       const res = await api.getGallery();
       if (res.ok && res.data) {
         setGalleries(res.data);
+      } else {
+        const errorMessage = res.error || 'Gagal memuat data galeri';
+        setError(errorMessage);
+        toast({
+          title: 'Error',
+          description: errorMessage,
+          variant: 'destructive',
+        });
       }
     } catch (err) {
       console.error('Failed to load gallery:', err);
+      const errorMessage = 'Terjadi kesalahan saat memuat data galeri';
+      setError(errorMessage);
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
@@ -418,6 +437,16 @@ export function GalleryPage() {
         <div className="flex items-center justify-center py-8">
           <Loader2 className="h-6 w-6 animate-spin" />
         </div>
+      ) : error ? (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="flex items-center justify-between">
+            <span>{error}</span>
+            <Button variant="outline" size="sm" onClick={loadData}>
+              Coba Lagi
+            </Button>
+          </AlertDescription>
+        </Alert>
       ) : galleries.length === 0 ? (
         <Card>
           <CardContent className="py-8 text-center text-muted-foreground">
