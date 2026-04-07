@@ -264,70 +264,103 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
       
       {!isLoading && (
         <>
-          {/* Welcome Banner - Bento Style */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            {/* Main Welcome Card */}
-            <Card className="lg:col-span-2 bg-gradient-to-br from-emerald-500 to-teal-600 text-white border-0 overflow-hidden relative">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
-              <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2"></div>
-              <CardHeader className="relative z-10">
-                <CardDescription className="text-emerald-100">{getGreeting()}</CardDescription>
-                <CardTitle className="text-2xl md:text-3xl font-bold">{user?.nama}</CardTitle>
-              </CardHeader>
-              <CardContent className="relative z-10">
-                <div className="flex items-center gap-4">
-                  <Avatar className="h-16 w-16 border-2 border-white/50">
-                    <AvatarImage src={user?.photoUrl || undefined} />
-                    <AvatarFallback className="bg-white/20 text-white text-xl">
-                      {user?.nama?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="text-emerald-100">Blok {user?.blok} • No. {user?.nomorRumah}</p>
-                    <Badge className="mt-1 bg-white/20 text-white border-0">
-                      {user?.role === 'SUPERADMIN' ? 'Super Admin' : 
-                       user?.role === 'ADMIN' ? 'Admin' : 
-                       user?.role === 'BENDAHARA' ? 'Bendahara' : 'Warga'}
-                    </Badge>
-                  </div>
+          {/* Banner Section - Show if bannerUrl exists or fallback to default */}
+          {(settings?.bannerUrl || true) && (
+            <div className="relative w-full h-32 md:h-48 rounded-xl overflow-hidden shadow-lg">
+              <img
+                src={settings?.bannerUrl || '/banner.jpg'}
+                alt="Banner"
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-emerald-900/70 to-transparent flex items-center">
+                <div className="px-6">
+                  <h2 className="text-xl md:text-2xl font-bold text-white">{getGreeting()}, {user?.nama}!</h2>
+                  <p className="text-emerald-100 text-sm md:text-base mt-1">
+                    Blok {user?.blok} - No. {user?.nomorRumah}
+                  </p>
+                  <Badge className="mt-2 bg-white/20 text-white border-0">
+                    {user?.role === 'SUPERADMIN' ? 'Super Admin' : 
+                     user?.role === 'ADMIN' ? 'Admin' : 
+                     user?.role === 'BENDAHARA' ? 'Bendahara' : 'Warga'}
+                  </Badge>
+                </div>
+              </div>
+              <div className="absolute bottom-4 right-4 hidden md:block">
+                <Avatar className="h-14 w-14 border-2 border-white shadow-lg">
+                  <AvatarImage src={user?.photoUrl || undefined} />
+                  <AvatarFallback className="bg-emerald-500 text-white">
+                    {user?.nama?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                  </AvatarFallback>
+                </Avatar>
+              </div>
+            </div>
+          )}
+
+          {/* Quick Stats Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {/* Monthly Fee Card */}
+            <Card 
+              className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0 cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => navigateTo('payment')}
+            >
+              <CardContent className="p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-blue-100 text-sm">Iuran Bulanan</p>
+                  <p className="text-xl font-bold">{formatCurrency(settings?.monthlyFee || 0)}</p>
+                </div>
+                <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center">
+                  <Wallet className="h-5 w-5" />
                 </div>
               </CardContent>
             </Card>
 
-            {/* Quick Stats Mini Cards */}
-            <div className="grid grid-rows-2 gap-4">
-              {/* Monthly Fee Card */}
-              <Card 
-                className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0 cursor-pointer hover:shadow-lg transition-shadow"
-                onClick={() => navigateTo('payment')}
-              >
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div>
-                    <p className="text-blue-100 text-sm">Iuran Bulanan</p>
-                    <p className="text-xl font-bold">{formatCurrency(settings?.monthlyFee || 0)}</p>
-                  </div>
-                  <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center">
-                    <Wallet className="h-5 w-5" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Pending Tasks Card */}
-              <Card 
-                className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 cursor-pointer hover:shadow-lg transition-shadow"
-                onClick={() => navigateTo('users')}
-              >
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div>
-                    <p className="text-amber-100 text-sm">Tugas Pending</p>
-                    <p className="text-xl font-bold">{pendingUsers.length + pendingPayments.length}</p>
-                  </div>
-                  <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center">
-                    <Activity className="h-5 w-5" />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            {/* Pending Tasks Card */}
+            <Card 
+              className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => navigateTo('users')}
+            >
+              <CardContent className="p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-amber-100 text-sm">Tugas Pending</p>
+                  <p className="text-xl font-bold">{pendingUsers.length + pendingPayments.length}</p>
+                </div>
+                <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center">
+                  <Activity className="h-5 w-5" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Agenda Count Card */}
+            <Card 
+              className="bg-gradient-to-r from-purple-500 to-violet-600 text-white border-0 cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => navigateTo('agenda')}
+            >
+              <CardContent className="p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-purple-100 text-sm">Agenda</p>
+                  <p className="text-xl font-bold">{agendas.length}</p>
+                </div>
+                <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center">
+                  <Calendar className="h-5 w-5" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Gallery Count Card */}
+            <Card 
+              className="bg-gradient-to-r from-pink-500 to-rose-600 text-white border-0 cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => navigateTo('gallery')}
+            >
+              <CardContent className="p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-pink-100 text-sm">Galeri</p>
+                  <p className="text-xl font-bold">{galleries.length}</p>
+                </div>
+                <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center">
+                  <ImageIcon className="h-5 w-5" />
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Quick Actions - Bento Grid */}
