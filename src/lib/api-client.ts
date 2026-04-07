@@ -716,16 +716,41 @@ class ApiClient {
           token,
           payload,
         }),
+        redirect: 'follow', // Wajib untuk GAS yang mengembalikan 302 redirect
         signal: controller.signal,
       });
       
       clear();
       
+      // Handle HTTP errors
       if (!response.ok) {
         return { ok: false, error: `HTTP error: ${response.status}` };
       }
       
-      const result = await response.json() as ApiResponse<T>;
+      // Get response text first to handle non-JSON responses
+      const responseText = await response.text();
+      
+      // Try to parse as JSON
+      let result: ApiResponse<T>;
+      try {
+        result = JSON.parse(responseText) as ApiResponse<T>;
+      } catch (parseError) {
+        // If parsing fails, it's likely an HTML error page from GAS
+        console.error('Failed to parse response as JSON:', responseText.substring(0, 500));
+        return { 
+          ok: false, 
+          error: 'Server mengembalikan respons yang tidak valid. Silakan coba lagi nanti.' 
+        };
+      }
+      
+      // Validate response structure
+      if (typeof result.ok !== 'boolean') {
+        console.error('Invalid response structure:', result);
+        return { 
+          ok: false, 
+          error: 'Format respons server tidak valid.' 
+        };
+      }
       
       // Cache successful response
       if (useCache && cacheKey && result.ok) {
@@ -739,6 +764,10 @@ class ApiClient {
       if (error instanceof Error) {
         if (error.name === 'AbortError' || error.message === 'Request timeout') {
           return { ok: false, error: 'Request timeout. Silakan coba lagi.' };
+        }
+        // Handle network errors
+        if (error.message.includes('fetch') || error.message.includes('network')) {
+          return { ok: false, error: 'Kesalahan jaringan. Periksa koneksi internet Anda.' };
         }
         return { ok: false, error: error.message };
       }
