@@ -229,7 +229,7 @@ export function AuthModal({ open, onOpenChange, mode, onModeChange }: AuthModalP
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-4xl p-0 overflow-hidden bg-transparent border-0 shadow-none">
+      <DialogContent showCloseButton={false} className="sm:max-w-4xl p-0 overflow-hidden bg-transparent border-0 shadow-none">
         <div className="w-full grid md:grid-cols-12 bg-[#f0fdf4]/70 backdrop-blur-xl rounded-xl shadow-[0px_24px_48px_rgba(19,30,25,0.06)] overflow-hidden">
           {/* Left Branding Column (Hidden on mobile) */}
           <div className="hidden md:flex md:col-span-5 flex-col justify-between p-8 bg-gradient-to-br from-[#003527] to-[#064e3b] text-white">

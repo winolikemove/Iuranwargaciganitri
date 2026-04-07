@@ -60,6 +60,7 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
   const [selectedImage, setSelectedImage] = useState<Gallery | null>(null);
   const [selectedAgenda, setSelectedAgenda] = useState<Agenda | null>(null);
   const [selectedBlok, setSelectedBlok] = useState<{ key: string; label: string; data: StrukturBlok } | null>(null);
+  const [showReviewsModal, setShowReviewsModal] = useState(false);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -470,7 +471,7 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
 
         {/* Agenda Detail Modal - Unified Style */}
         <Dialog open={!!selectedAgenda} onOpenChange={() => setSelectedAgenda(null)}>
-          <DialogContent className="sm:max-w-2xl p-0 overflow-hidden bg-transparent border-0 shadow-none">
+          <DialogContent showCloseButton={false} className="sm:max-w-2xl p-0 overflow-hidden bg-transparent border-0 shadow-none">
             {selectedAgenda && (
               <div className="w-full bg-[#f0fdf4]/70 backdrop-blur-xl rounded-xl shadow-[0px_24px_48px_rgba(19,30,25,0.06)] overflow-hidden">
                 {/* Header with gradient */}
@@ -580,14 +581,26 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
         {settings?.enableReviews && reviews.length > 0 && (
           <section className="py-16 px-6 md:px-12">
             <div className="max-w-screen-2xl mx-auto">
-              <h2 className="text-3xl font-bold text-center mb-12">Kisah Warga</h2>
+              <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-4">
+                <h2 className="text-3xl font-bold text-center md:text-left">Kisah Warga</h2>
+                {reviews.length > 3 && (
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowReviewsModal(true)}
+                    className="text-[#003527] font-semibold flex items-center gap-2 hover:underline border-[#003527]/20"
+                  >
+                    Lihat Semua Ulasan <ArrowRight className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {reviews.slice(0, 3).map((review, index) => {
                   const isMiddle = index === 1 && reviews.length >= 3;
                   return (
                     <div
                       key={review.id}
-                      className={`${isMiddle ? 'bg-[#003527] text-white scale-105 relative z-10' : 'bg-[#eaf7ee]'} p-6 rounded-xl space-y-4 shadow-[0px_24px_48px_rgba(19,30,25,0.06)]`}
+                      className={`${isMiddle ? 'bg-[#003527] text-white scale-105 relative z-10' : 'bg-[#eaf7ee]'} p-6 rounded-xl space-y-4 shadow-[0px_24px_48px_rgba(19,30,25,0.06)] cursor-pointer hover:scale-[1.02] transition-transform`}
+                      onClick={() => setShowReviewsModal(true)}
                     >
                       <div className="flex text-amber-400">
                         {[1, 2, 3, 4, 5].map((star) => (
@@ -612,6 +625,9 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                           <p className={`text-xs ${isMiddle ? 'text-emerald-100/70' : 'text-[#404944]'}`}>Warga</p>
                         </div>
                       </div>
+                      <div className={`pt-2 text-xs ${isMiddle ? 'text-emerald-200/60' : 'text-[#404944]/60'}`}>
+                        Klik untuk lihat ulasan lainnya
+                      </div>
                     </div>
                   );
                 })}
@@ -619,6 +635,79 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
             </div>
           </section>
         )}
+
+        {/* Reviews Modal - Unified Style */}
+        <Dialog open={showReviewsModal} onOpenChange={setShowReviewsModal}>
+          <DialogContent showCloseButton={false} className="sm:max-w-2xl p-0 overflow-hidden bg-transparent border-0 shadow-none">
+            <div className="w-full bg-[#f0fdf4]/70 backdrop-blur-xl rounded-xl shadow-[0px_24px_48px_rgba(19,30,25,0.06)] overflow-hidden max-h-[90vh] flex flex-col">
+              {/* Header with gradient */}
+              <div className="bg-gradient-to-br from-[#003527] to-[#064e3b] p-6 md:p-8 text-white relative shrink-0">
+                {/* Close button */}
+                <button
+                  onClick={() => setShowReviewsModal(false)}
+                  className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                >
+                  <X className="h-5 w-5 text-white" />
+                </button>
+                
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center">
+                    <MessageCircle className="h-7 w-7 text-white" />
+                  </div>
+                  <div>
+                    <span className="text-white/70 text-xs uppercase tracking-wider">Testimoni</span>
+                    <h3 className="text-2xl font-bold">Kisah Warga</h3>
+                    <p className="text-white/70 text-sm mt-1">
+                      {reviews.length} ulasan dari warga Pradha Ciganitri
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Content - Scrollable */}
+              <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-white">
+                <div className="space-y-4">
+                  {reviews.map((review, index) => (
+                    <div 
+                      key={review.id} 
+                      className={`p-4 rounded-xl ${index % 2 === 0 ? 'bg-[#f0fdf4]' : 'bg-[#eaf7ee]'} hover:shadow-md transition-shadow`}
+                    >
+                      <div className="flex items-start gap-4">
+                        <Avatar className="w-12 h-12 border-2 border-white shadow-sm shrink-0">
+                          <AvatarImage src={review.userPhotoUrl || undefined} alt={review.userName} />
+                          <AvatarFallback className="bg-[#003527] text-white">
+                            {review.userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2 mb-2">
+                            <h5 className="font-semibold text-[#003527]">{review.userName}</h5>
+                            <div className="flex text-amber-400 shrink-0">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <Star
+                                  key={star}
+                                  className={`h-3.5 w-3.5 ${star <= review.rating ? 'fill-current' : 'opacity-30'}`}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                          <p className="text-[#404944] text-sm leading-relaxed italic">
+                            &quot;{review.comment}&quot;
+                          </p>
+                          {review.createdAt && (
+                            <p className="text-[#404944]/50 text-xs mt-2">
+                              {formatDateTime(review.createdAt)}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Gallery */}
         {settings?.enableGallery && galleries.length > 0 && (
@@ -659,7 +748,7 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                         <div className="flex items-center gap-2 mt-2">
                           <div className="px-2 py-1 bg-white/20 backdrop-blur-sm text-white text-xs rounded-full flex items-center gap-1">
                             <Camera className="h-3 w-3" />
-                            Lihat di sini
+                            Lihat detail
                           </div>
                         </div>
                       </div>
@@ -683,7 +772,7 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                         <p className="text-white font-medium text-sm truncate">{galleries[1].title}</p>
                         <div className="px-2 py-0.5 bg-white/20 backdrop-blur-sm text-white text-xs rounded-full inline-flex items-center gap-1 mt-1">
                           <Camera className="h-3 w-3" />
-                          Lihat
+                          Lihat detail
                         </div>
                       </div>
                     </div>
@@ -706,7 +795,7 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                         <p className="text-white font-medium text-sm truncate">{galleries[2].title}</p>
                         <div className="px-2 py-0.5 bg-white/20 backdrop-blur-sm text-white text-xs rounded-full inline-flex items-center gap-1 mt-1">
                           <Camera className="h-3 w-3" />
-                          Lihat di sini
+                          Lihat detail
                         </div>
                       </div>
                     </div>
@@ -728,7 +817,7 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                       <div className="absolute bottom-2 left-2 right-2">
                         <div className="px-2 py-0.5 bg-white/20 backdrop-blur-sm text-white text-xs rounded-full inline-flex items-center gap-1">
                           <Camera className="h-3 w-3" />
-                          Lihat
+                          Lihat detail
                         </div>
                       </div>
                     </div>
@@ -750,7 +839,7 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                       <div className="absolute bottom-2 left-2 right-2">
                         <div className="px-2 py-0.5 bg-white/20 backdrop-blur-sm text-white text-xs rounded-full inline-flex items-center gap-1">
                           <Camera className="h-3 w-3" />
-                          Lihat
+                          Lihat detail
                         </div>
                       </div>
                     </div>
@@ -782,7 +871,7 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                           <p className="text-white font-medium text-sm truncate">{galleries[5].title}</p>
                           <div className="px-2 py-0.5 bg-white/20 backdrop-blur-sm text-white text-xs rounded-full inline-flex items-center gap-1 mt-1">
                             <Camera className="h-3 w-3" />
-                            Lihat di sini
+                            Lihat detail
                           </div>
                         </div>
                       </div>
@@ -796,17 +885,17 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
 
         {/* Image Zoom Dialog with Details - Unified Style */}
         <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
-          <DialogContent className="sm:max-w-4xl p-0 overflow-hidden bg-transparent border-0 shadow-none">
+          <DialogContent showCloseButton={false} className="sm:max-w-4xl p-0 overflow-hidden bg-transparent border-0 shadow-none">
             {selectedImage && (
-              <div className="w-full grid md:grid-cols-12 bg-[#f0fdf4]/70 backdrop-blur-xl rounded-xl shadow-[0px_24px_48px_rgba(19,30,25,0.06)] overflow-hidden">
+              <div className="w-full flex flex-col md:grid md:grid-cols-12 bg-[#f0fdf4]/70 backdrop-blur-xl rounded-xl shadow-[0px_24px_48px_rgba(19,30,25,0.06)] overflow-hidden max-h-[90vh]">
                 {/* Left Image Column */}
-                <div className="md:col-span-7 relative bg-black min-h-[300px] md:min-h-[500px]">
+                <div className="md:col-span-7 relative bg-black aspect-[4/3] md:aspect-auto md:min-h-[500px] shrink-0">
                   <img
                     src={selectedImage.imageUrl}
                     alt={selectedImage.title}
                     className="w-full h-full object-contain"
                   />
-                  {/* Close button */}
+                  {/* Close button - Mobile */}
                   <button
                     onClick={() => setSelectedImage(null)}
                     className="absolute top-4 right-4 md:hidden bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-colors"
@@ -816,7 +905,7 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                 </div>
                 
                 {/* Right Details Column */}
-                <div className="col-span-12 md:col-span-5 bg-white p-6 md:p-8 relative">
+                <div className="md:col-span-5 bg-white p-6 md:p-8 relative overflow-y-auto flex-1">
                   {/* Close button - Desktop */}
                   <button
                     onClick={() => setSelectedImage(null)}
@@ -952,7 +1041,7 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                       ))}
                     </div>
                     <div className="px-3 py-1 bg-emerald-600 text-white text-xs font-medium rounded-full">
-                      Lihat di sini
+                      Lihat detail
                     </div>
                   </div>
                 </div>
@@ -967,7 +1056,7 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                     <h4 className="font-bold">Bersama</h4>
                     <p className="text-emerald-200/60 text-xs mt-1">Keamanan, Kebersihan, DKM</p>
                     <div className="mt-2 inline-block px-2 py-0.5 bg-emerald-500/30 text-emerald-200 text-xs rounded-full">
-                      Lihat di sini
+                      Lihat detail
                     </div>
                   </div>
                 </div>
@@ -987,7 +1076,7 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
 
         {/* Blok Detail Modal - Unified Style */}
         <Dialog open={!!selectedBlok} onOpenChange={() => setSelectedBlok(null)}>
-          <DialogContent className="sm:max-w-2xl p-0 overflow-hidden bg-transparent border-0 shadow-none">
+          <DialogContent showCloseButton={false} className="sm:max-w-2xl p-0 overflow-hidden bg-transparent border-0 shadow-none">
             {selectedBlok && (
               <div className="w-full bg-[#f0fdf4]/70 backdrop-blur-xl rounded-xl shadow-[0px_24px_48px_rgba(19,30,25,0.06)] overflow-hidden max-h-[90vh] flex flex-col">
                 {/* Header with gradient */}
