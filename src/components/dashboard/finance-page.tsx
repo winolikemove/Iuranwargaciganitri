@@ -249,11 +249,11 @@ export function FinancePage() {
     <div className="space-y-6">
       {/* Blok Selector (for superadmin) */}
       {canViewAllBloks && (
-        <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 border-blue-200 dark:border-blue-800">
+        <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <Building2 className="h-5 w-5 text-blue-600" />
+                <Building2 className="h-5 w-5 text-muted-foreground" />
                 <div>
                   <p className="font-medium">Lihat Keuangan Blok</p>
                   <p className="text-sm text-muted-foreground">Pilih blok untuk melihat data keuangan</p>
@@ -266,7 +266,6 @@ export function FinancePage() {
                     variant={filterBlok === blok ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => setFilterBlok(blok)}
-                    className={filterBlok === blok ? 'bg-blue-600 hover:bg-blue-700' : ''}
                   >
                     Blok {blok}
                   </Button>
@@ -279,7 +278,7 @@ export function FinancePage() {
 
       {/* Summary Cards - Bento Style */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="border-l-4 border-l-blue-500">
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => {}}>
           <CardHeader className="pb-2 pt-4">
             <CardDescription className="flex items-center gap-2 text-xs">
               <Wallet className="h-3 w-3" />
@@ -291,7 +290,7 @@ export function FinancePage() {
           </CardContent>
         </Card>
         
-        <Card className="border-l-4 border-l-green-500 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950">
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => {}}>
           <CardHeader className="pb-2 pt-4">
             <CardDescription className="flex items-center gap-2 text-xs">
               <TrendingUp className="h-3 w-3" />
@@ -299,11 +298,11 @@ export function FinancePage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="pb-4">
-            <p className="text-xl md:text-2xl font-bold text-green-600">{formatCurrency(summary?.totalPemasukan || 0)}</p>
+            <p className="text-xl md:text-2xl font-bold text-emerald-600">{formatCurrency(summary?.totalPemasukan || 0)}</p>
           </CardContent>
         </Card>
         
-        <Card className="border-l-4 border-l-red-500 bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-950 dark:to-rose-950">
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => {}}>
           <CardHeader className="pb-2 pt-4">
             <CardDescription className="flex items-center gap-2 text-xs">
               <TrendingDown className="h-3 w-3" />
@@ -311,11 +310,11 @@ export function FinancePage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="pb-4">
-            <p className="text-xl md:text-2xl font-bold text-red-600">{formatCurrency(summary?.totalPengeluaran || 0)}</p>
+            <p className="text-xl md:text-2xl font-bold text-destructive">{formatCurrency(summary?.totalPengeluaran || 0)}</p>
           </CardContent>
         </Card>
         
-        <Card className="border-l-4 border-l-emerald-500 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950 dark:to-teal-950">
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => {}}>
           <CardHeader className="pb-2 pt-4">
             <CardDescription className="flex items-center gap-2 text-xs">
               <Wallet className="h-3 w-3" />
@@ -323,7 +322,7 @@ export function FinancePage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="pb-4">
-            <p className="text-xl md:text-2xl font-bold text-emerald-600">{formatCurrency(summary?.saldoAkhir || 0)}</p>
+            <p className="text-xl md:text-2xl font-bold">{formatCurrency(summary?.saldoAkhir || 0)}</p>
             <p className="text-xs text-muted-foreground mt-1">{summary?.periodLabel}</p>
           </CardContent>
         </Card>
