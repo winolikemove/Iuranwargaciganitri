@@ -342,111 +342,178 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                     <h4 className="font-bold text-base">Ringkasan Arus Kas</h4>
                     <div className="flex gap-4">
                       <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-gradient-to-t from-emerald-600 to-emerald-400"></div>
-                        <span className="text-xs font-medium">Pemasukan</span>
+                        <div className="w-3 h-3 rounded-full bg-teal-400"></div>
+                        <span className="text-xs font-medium text-gray-600">Pemasukan</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-gradient-to-t from-rose-500 to-rose-300"></div>
-                        <span className="text-xs font-medium">Pengeluaran</span>
+                        <div className="w-3 h-3 rounded-full bg-orange-300"></div>
+                        <span className="text-xs font-medium text-gray-600">Pengeluaran</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Stats Cards */}
                   <div className="grid grid-cols-2 gap-4 mb-6">
-                    <div className="bg-gradient-to-br from-emerald-50 to-emerald-100/50 p-4 rounded-xl border border-emerald-200/30">
+                    <div className="bg-gradient-to-br from-teal-50 to-teal-100/30 p-4 rounded-xl border border-teal-100">
                       <div className="flex items-center gap-2 mb-2">
-                        <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center">
+                        <div className="w-8 h-8 rounded-lg bg-teal-400 flex items-center justify-center">
                           <TrendingUp className="h-4 w-4 text-white" />
                         </div>
-                        <span className="text-xs text-[#404944]">Pemasukan Bulan Ini</span>
+                        <span className="text-xs text-gray-500">Pemasukan Bulan Ini</span>
                       </div>
-                      <p className="text-lg font-bold text-emerald-600">{formatCurrency(finance.totalPemasukanBulanIni)}</p>
+                      <p className="text-lg font-bold text-teal-600">{formatCurrency(finance.totalPemasukanBulanIni)}</p>
                     </div>
-                    <div className="bg-gradient-to-br from-rose-50 to-rose-100/50 p-4 rounded-xl border border-rose-200/30">
+                    <div className="bg-gradient-to-br from-orange-50 to-orange-100/30 p-4 rounded-xl border border-orange-100">
                       <div className="flex items-center gap-2 mb-2">
-                        <div className="w-8 h-8 rounded-lg bg-rose-500 flex items-center justify-center">
+                        <div className="w-8 h-8 rounded-lg bg-orange-300 flex items-center justify-center">
                           <TrendingDown className="h-4 w-4 text-white" />
                         </div>
-                        <span className="text-xs text-[#404944]">Pengeluaran Bulan Ini</span>
+                        <span className="text-xs text-gray-500">Pengeluaran Bulan Ini</span>
                       </div>
-                      <p className="text-lg font-bold text-rose-600">{formatCurrency(finance.totalPengeluaranBulanIni)}</p>
+                      <p className="text-lg font-bold text-orange-500">{formatCurrency(finance.totalPengeluaranBulanIni)}</p>
                     </div>
                   </div>
 
-                  {/* Modern Graph with Background Lines */}
-                  <div className="relative h-40 w-full">
+                  {/* Modern Line Chart */}
+                  <div className="relative h-44 w-full">
                     {/* Background grid lines */}
-                    <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
+                    <div className="absolute inset-0 flex flex-col justify-between pointer-events-none pb-6">
                       {[...Array(5)].map((_, i) => (
-                        <div key={i} className="w-full h-px bg-gray-100"></div>
+                        <div key={i} className="w-full h-px bg-gray-50"></div>
                       ))}
                     </div>
 
-                    {/* Bars container */}
-                    <div className="relative h-full flex items-end justify-between gap-3 px-1">
+                    {/* SVG Line Chart */}
+                    <svg className="w-full h-full" viewBox="0 0 600 160" preserveAspectRatio="none">
+                      <defs>
+                        {/* Gradient for income line */}
+                        <linearGradient id="incomeGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                          <stop offset="0%" stopColor="#5eead4" stopOpacity="0.3" />
+                          <stop offset="100%" stopColor="#5eead4" stopOpacity="0" />
+                        </linearGradient>
+                        {/* Gradient for expense line */}
+                        <linearGradient id="expenseGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                          <stop offset="0%" stopColor="#fdba74" stopOpacity="0.3" />
+                          <stop offset="100%" stopColor="#fdba74" stopOpacity="0" />
+                        </linearGradient>
+                      </defs>
+
+                      {/* Income area fill */}
+                      <path
+                        d={`
+                          M 50,${140 - (monthlyFinanceData[0].pemasukan / 5500000) * 120}
+                          ${monthlyFinanceData.map((d, i) => {
+                            if (i === 0) return '';
+                            const x = 50 + i * 100;
+                            const y = 140 - (d.pemasukan / 5500000) * 120;
+                            return `L ${x},${y}`;
+                          }).join(' ')}
+                          L 550,140 L 50,140 Z
+                        `}
+                        fill="url(#incomeGradient)"
+                      />
+
+                      {/* Expense area fill */}
+                      <path
+                        d={`
+                          M 50,${140 - (monthlyFinanceData[0].pengeluaran / 5500000) * 120}
+                          ${monthlyFinanceData.map((d, i) => {
+                            if (i === 0) return '';
+                            const x = 50 + i * 100;
+                            const y = 140 - (d.pengeluaran / 5500000) * 120;
+                            return `L ${x},${y}`;
+                          }).join(' ')}
+                          L 550,140 L 50,140 Z
+                        `}
+                        fill="url(#expenseGradient)"
+                      />
+
+                      {/* Income line */}
+                      <path
+                        d={`
+                          M 50,${140 - (monthlyFinanceData[0].pemasukan / 5500000) * 120}
+                          ${monthlyFinanceData.map((d, i) => {
+                            if (i === 0) return '';
+                            const x = 50 + i * 100;
+                            const y = 140 - (d.pemasukan / 5500000) * 120;
+                            return `L ${x},${y}`;
+                          }).join(' ')}
+                        `}
+                        fill="none"
+                        stroke="#5eead4"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+
+                      {/* Expense line */}
+                      <path
+                        d={`
+                          M 50,${140 - (monthlyFinanceData[0].pengeluaran / 5500000) * 120}
+                          ${monthlyFinanceData.map((d, i) => {
+                            if (i === 0) return '';
+                            const x = 50 + i * 100;
+                            const y = 140 - (d.pengeluaran / 5500000) * 120;
+                            return `L ${x},${y}`;
+                          }).join(' ')}
+                        `}
+                        fill="none"
+                        stroke="#fdba74"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+
+                    {/* Interactive Data Points */}
+                    <div className="absolute inset-0 flex justify-between items-end pb-6">
                       {monthlyFinanceData.map((data, i) => {
-                        const maxValue = Math.max(...monthlyFinanceData.map(d => Math.max(d.pemasukan, d.pengeluaran)));
-                        const pemasukanHeight = (data.pemasukan / maxValue) * 100;
-                        const pengeluaranHeight = (data.pengeluaran / maxValue) * 100;
+                        const maxValue = 5500000;
+                        const incomeY = 140 - (data.pemasukan / maxValue) * 120;
+                        const expenseY = 140 - (data.pengeluaran / maxValue) * 120;
                         return (
                           <div
                             key={i}
-                            className="flex-1 flex flex-col items-center gap-2 relative group"
+                            className="relative w-[100px] h-full flex flex-col items-center justify-end"
                             onMouseEnter={() => setHoveredBar(i)}
                             onMouseLeave={() => setHoveredBar(null)}
                           >
-                            {/* Modern Tooltip */}
+                            {/* Tooltip */}
                             {hoveredBar === i && (
-                              <div className="absolute -top-28 left-1/2 -translate-x-1/2 z-20">
-                                <div className="bg-gradient-to-br from-[#003527] to-[#064e3b] text-white p-4 rounded-xl shadow-xl min-w-[160px] border border-white/10">
-                                  <p className="font-bold mb-3 text-center text-sm">{data.fullName}</p>
-                                  <div className="space-y-2">
-                                    <div className="flex items-center justify-between gap-3">
-                                      <div className="flex items-center gap-2">
-                                        <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
-                                        <span className="text-xs text-white/70">Masuk</span>
+                              <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 z-20">
+                                <div className="bg-white/95 backdrop-blur-sm text-gray-700 p-3 rounded-lg shadow-lg border border-gray-100 min-w-[140px]">
+                                  <p className="font-semibold mb-2 text-center text-sm text-gray-800">{data.fullName}</p>
+                                  <div className="space-y-1.5">
+                                    <div className="flex items-center justify-between gap-2">
+                                      <div className="flex items-center gap-1.5">
+                                        <div className="w-2 h-2 rounded-full bg-teal-400"></div>
+                                        <span className="text-xs text-gray-500">Masuk</span>
                                       </div>
-                                      <span className="text-xs font-semibold">{formatCurrency(data.pemasukan)}</span>
+                                      <span className="text-xs font-medium text-teal-600">{formatCurrency(data.pemasukan)}</span>
                                     </div>
-                                    <div className="flex items-center justify-between gap-3">
-                                      <div className="flex items-center gap-2">
-                                        <div className="w-2 h-2 rounded-full bg-rose-400"></div>
-                                        <span className="text-xs text-white/70">Keluar</span>
+                                    <div className="flex items-center justify-between gap-2">
+                                      <div className="flex items-center gap-1.5">
+                                        <div className="w-2 h-2 rounded-full bg-orange-300"></div>
+                                        <span className="text-xs text-gray-500">Keluar</span>
                                       </div>
-                                      <span className="text-xs font-semibold">{formatCurrency(data.pengeluaran)}</span>
+                                      <span className="text-xs font-medium text-orange-500">{formatCurrency(data.pengeluaran)}</span>
                                     </div>
                                   </div>
-                                  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-[#064e3b] rotate-45 rounded-sm"></div>
+                                  <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-r border-b border-gray-100 rotate-45 rounded-sm"></div>
                                 </div>
                               </div>
                             )}
 
-                            {/* Bars with gradient and shadow */}
-                            <div className="w-full flex gap-1 h-28 items-end">
-                              {/* Income bar */}
-                              <div
-                                className="flex-1 rounded-t-lg transition-all duration-300 cursor-pointer relative overflow-hidden group/b bar"
-                                style={{ height: `${pemasukanHeight}%` }}
-                              >
-                                <div className="absolute inset-0 bg-gradient-to-t from-emerald-600 via-emerald-500 to-emerald-400"></div>
-                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover/b:opacity-100 transition-opacity"></div>
-                                <div className="absolute bottom-0 left-0 right-0 h-1 bg-emerald-300/50"></div>
-                              </div>
-
-                              {/* Expense bar */}
-                              <div
-                                className="flex-1 rounded-t-lg transition-all duration-300 cursor-pointer relative overflow-hidden group/b bar"
-                                style={{ height: `${pengeluaranHeight}%` }}
-                              >
-                                <div className="absolute inset-0 bg-gradient-to-t from-rose-500 via-rose-400 to-rose-300"></div>
-                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover/b:opacity-100 transition-opacity"></div>
-                                <div className="absolute bottom-0 left-0 right-0 h-1 bg-rose-200/50"></div>
-                              </div>
+                            {/* Data points */}
+                            <div className="absolute" style={{ bottom: `${(data.pemasukan / maxValue) * 75}%` }}>
+                              <div className={`w-3 h-3 rounded-full bg-teal-400 border-2 border-white shadow-sm transition-transform ${hoveredBar === i ? 'scale-125' : ''}`}></div>
+                            </div>
+                            <div className="absolute" style={{ bottom: `${(data.pengeluaran / maxValue) * 75}%` }}>
+                              <div className={`w-3 h-3 rounded-full bg-orange-300 border-2 border-white shadow-sm transition-transform ${hoveredBar === i ? 'scale-125' : ''}`}></div>
                             </div>
 
                             {/* Month label */}
-                            <span className={`text-xs font-medium transition-colors ${hoveredBar === i ? 'text-[#003527] font-bold' : 'text-[#404944]'}`}>
+                            <span className={`text-xs font-medium transition-colors ${hoveredBar === i ? 'text-teal-600 font-semibold' : 'text-gray-400'}`}>
                               {data.month}
                             </span>
                           </div>
@@ -580,26 +647,29 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                   })}
                 </div>
 
-                {/* Navigation Buttons */}
+                {/* Navigation Buttons - Up button top right, Down button bottom right */}
                 {agendas.length > 3 && (
-                  <div className="absolute right-0 bottom-0 flex flex-col gap-2">
+                  <>
+                    {/* Up Button - Top Right */}
                     <button
                       onClick={() => setAgendaIndex(prev => Math.max(0, prev - 1))}
                       disabled={agendaIndex === 0}
-                      className="p-2 rounded-full bg-[#003527] text-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#064e3b] transition-colors shadow-lg"
+                      className="absolute right-0 top-0 p-2.5 rounded-full bg-[#064e3b]/80 text-white/90 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[#064e3b] hover:text-white transition-all duration-300 shadow-md backdrop-blur-sm"
                       title="Agenda sebelumnya"
                     >
-                      <ChevronUp className="h-5 w-5" />
+                      <ChevronUp className="h-4 w-4" />
                     </button>
+
+                    {/* Down Button - Bottom Right */}
                     <button
                       onClick={() => setAgendaIndex(prev => Math.min(agendas.length - 3, prev + 1))}
                       disabled={agendaIndex >= agendas.length - 3}
-                      className="p-2 rounded-full bg-[#003527] text-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#064e3b] transition-colors shadow-lg"
+                      className="absolute right-0 bottom-0 p-2.5 rounded-full bg-[#064e3b]/80 text-white/90 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[#064e3b] hover:text-white transition-all duration-300 shadow-md backdrop-blur-sm"
                       title="Agenda selanjutnya"
                     >
-                      <ChevronDown className="h-5 w-5" />
+                      <ChevronDown className="h-4 w-4" />
                     </button>
-                  </div>
+                  </>
                 )}
               </div>
 
@@ -1030,169 +1100,127 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                   <h2 className="text-3xl md:text-4xl font-bold">Momen Kebersamaan</h2>
                 </div>
               </div>
-              
-              {/* Bento Grid Gallery with Navigation */}
+
+              {/* Bento Grid Gallery - Max 6 Cards */}
               <div className="relative">
-                {/* Gallery Grid - Clean Bento Layout */}
                 {(() => {
-                  const itemsPerPage = 6;
-                  const startIndex = galleryPage * itemsPerPage;
-                  const currentGalleries = galleries.slice(startIndex, startIndex + itemsPerPage);
-                  
+                  const displayGalleries = galleries.slice(0, 6);
+
                   return (
-                    <div className="grid grid-cols-2 md:grid-cols-6 md:grid-rows-2 gap-3 md:gap-4 h-auto md:h-[480px]">
-                      {/* First Image - Large (2 cols x 2 rows) */}
-                      {currentGalleries[0] && (
-                        <div 
-                          className="col-span-2 row-span-2 rounded-xl overflow-hidden shadow-lg cursor-pointer group relative"
-                          onClick={() => setSelectedImage(currentGalleries[0])}
+                    <div className="grid grid-cols-2 md:grid-cols-3 md:grid-rows-2 gap-3 md:gap-4 h-auto md:h-[420px]">
+                      {/* First Image - Large (2 cols x 1 row on desktop, full width on mobile) */}
+                      {displayGalleries[0] && (
+                        <div
+                          className="col-span-2 md:col-span-2 md:row-span-2 rounded-xl overflow-hidden shadow-lg cursor-pointer group relative"
+                          onClick={() => setSelectedImage(displayGalleries[0])}
                         >
                           <img
-                            src={currentGalleries[0].thumbnailUrl || currentGalleries[0].imageUrl}
-                            alt={currentGalleries[0].title}
-                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                            src={displayGalleries[0].thumbnailUrl || displayGalleries[0].imageUrl}
+                            alt={displayGalleries[0].title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                            <div className="absolute bottom-4 left-4 right-4">
-                              <p className="text-white font-semibold truncate">{currentGalleries[0].title}</p>
-                              <div className="px-2 py-1 bg-white/20 backdrop-blur-sm text-white text-xs rounded-full inline-flex items-center gap-1 mt-2">
-                                <Camera className="h-3 w-3" />
-                                Lihat detail
-                              </div>
+                          {/* Permanent Caption Overlay */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent">
+                            <div className="absolute bottom-0 left-0 right-0 p-4">
+                              <p className="text-white font-semibold text-base mb-1">{displayGalleries[0].title}</p>
+                              {displayGalleries[0].description && (
+                                <p className="text-white/80 text-xs line-clamp-2">{displayGalleries[0].description}</p>
+                              )}
                             </div>
                           </div>
                         </div>
                       )}
-                      
-                      {/* Second Image - Medium Wide (2 cols x 1 row) */}
-                      {currentGalleries[1] && (
-                        <div 
-                          className="col-span-2 row-span-1 rounded-xl overflow-hidden shadow-lg cursor-pointer group relative"
-                          onClick={() => setSelectedImage(currentGalleries[1])}
+
+                      {/* Second Image - Small Square */}
+                      {displayGalleries[1] && (
+                        <div
+                          className="col-span-1 row-span-1 rounded-xl overflow-hidden shadow-lg cursor-pointer group relative"
+                          onClick={() => setSelectedImage(displayGalleries[1])}
                         >
                           <img
-                            src={currentGalleries[1].thumbnailUrl || currentGalleries[1].imageUrl}
-                            alt={currentGalleries[1].title}
-                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                            src={displayGalleries[1].thumbnailUrl || displayGalleries[1].imageUrl}
+                            alt={displayGalleries[1].title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                            <div className="absolute bottom-3 left-3 right-3">
-                              <p className="text-white font-medium text-sm truncate">{currentGalleries[1].title}</p>
-                              <div className="px-2 py-0.5 bg-white/20 backdrop-blur-sm text-white text-xs rounded-full inline-flex items-center gap-1 mt-1">
-                                <Camera className="h-3 w-3" />
-                                Lihat detail
-                              </div>
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent">
+                            <div className="absolute bottom-0 left-0 right-0 p-3">
+                              <p className="text-white font-medium text-sm truncate">{displayGalleries[1].title}</p>
                             </div>
                           </div>
                         </div>
                       )}
-                      
+
                       {/* Third Image - Small Square */}
-                      {currentGalleries[2] && (
-                        <div 
+                      {displayGalleries[2] && (
+                        <div
                           className="col-span-1 row-span-1 rounded-xl overflow-hidden shadow-lg cursor-pointer group relative"
-                          onClick={() => setSelectedImage(currentGalleries[2])}
+                          onClick={() => setSelectedImage(displayGalleries[2])}
                         >
                           <img
-                            src={currentGalleries[2].thumbnailUrl || currentGalleries[2].imageUrl}
-                            alt={currentGalleries[2].title}
-                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                            src={displayGalleries[2].thumbnailUrl || displayGalleries[2].imageUrl}
+                            alt={displayGalleries[2].title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                            <div className="absolute bottom-2 left-2 right-2">
-                              <div className="px-2 py-0.5 bg-white/20 backdrop-blur-sm text-white text-xs rounded-full inline-flex items-center gap-1">
-                                <Camera className="h-3 w-3" />
-                                Lihat detail
-                              </div>
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent">
+                            <div className="absolute bottom-0 left-0 right-0 p-2">
+                              <p className="text-white font-medium text-xs truncate">{displayGalleries[2].title}</p>
                             </div>
                           </div>
                         </div>
                       )}
-                      
-                      {/* Fourth Image - Small Square */}
-                      {currentGalleries[3] && (
-                        <div 
+
+                      {/* Fourth Image - Medium (2 cols on mobile, 1 col on desktop) */}
+                      {displayGalleries[3] && (
+                        <div
                           className="col-span-1 row-span-1 rounded-xl overflow-hidden shadow-lg cursor-pointer group relative"
-                          onClick={() => setSelectedImage(currentGalleries[3])}
+                          onClick={() => setSelectedImage(displayGalleries[3])}
                         >
                           <img
-                            src={currentGalleries[3].thumbnailUrl || currentGalleries[3].imageUrl}
-                            alt={currentGalleries[3].title}
-                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                            src={displayGalleries[3].thumbnailUrl || displayGalleries[3].imageUrl}
+                            alt={displayGalleries[3].title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                            <div className="absolute bottom-2 left-2 right-2">
-                              <div className="px-2 py-0.5 bg-white/20 backdrop-blur-sm text-white text-xs rounded-full inline-flex items-center gap-1">
-                                <Camera className="h-3 w-3" />
-                                Lihat detail
-                              </div>
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent">
+                            <div className="absolute bottom-0 left-0 right-0 p-2">
+                              <p className="text-white font-medium text-xs truncate">{displayGalleries[3].title}</p>
                             </div>
                           </div>
                         </div>
                       )}
-                      
-                      {/* Fifth Image - Medium Wide (2 cols x 1 row) */}
-                      {currentGalleries[4] && (
-                        <div 
-                          className="col-span-2 row-span-1 rounded-xl overflow-hidden shadow-lg cursor-pointer group relative"
-                          onClick={() => setSelectedImage(currentGalleries[4])}
+
+                      {/* Fifth Image - Small Square */}
+                      {displayGalleries[4] && (
+                        <div
+                          className="col-span-1 row-span-1 rounded-xl overflow-hidden shadow-lg cursor-pointer group relative"
+                          onClick={() => setSelectedImage(displayGalleries[4])}
                         >
                           <img
-                            src={currentGalleries[4].thumbnailUrl || currentGalleries[4].imageUrl}
-                            alt={currentGalleries[4].title}
-                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                            src={displayGalleries[4].thumbnailUrl || displayGalleries[4].imageUrl}
+                            alt={displayGalleries[4].title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                            <div className="absolute bottom-3 left-3 right-3">
-                              <p className="text-white font-medium text-sm truncate">{currentGalleries[4].title}</p>
-                              <div className="px-2 py-0.5 bg-white/20 backdrop-blur-sm text-white text-xs rounded-full inline-flex items-center gap-1 mt-1">
-                                <Camera className="h-3 w-3" />
-                                Lihat detail
-                              </div>
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent">
+                            <div className="absolute bottom-0 left-0 right-0 p-2">
+                              <p className="text-white font-medium text-xs truncate">{displayGalleries[4].title}</p>
                             </div>
                           </div>
                         </div>
                       )}
-                      
+
                       {/* Sixth Image - Small Square */}
-                      {currentGalleries[5] && (
-                        <div 
+                      {displayGalleries[5] && (
+                        <div
                           className="col-span-1 row-span-1 rounded-xl overflow-hidden shadow-lg cursor-pointer group relative"
-                          onClick={() => setSelectedImage(currentGalleries[5])}
+                          onClick={() => setSelectedImage(displayGalleries[5])}
                         >
                           <img
-                            src={currentGalleries[5].thumbnailUrl || currentGalleries[5].imageUrl}
-                            alt={currentGalleries[5].title}
-                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                            src={displayGalleries[5].thumbnailUrl || displayGalleries[5].imageUrl}
+                            alt={displayGalleries[5].title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                            <div className="absolute bottom-2 left-2 right-2">
-                              <div className="px-2 py-0.5 bg-white/20 backdrop-blur-sm text-white text-xs rounded-full inline-flex items-center gap-1">
-                                <Camera className="h-3 w-3" />
-                                Lihat detail
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                      
-                      {/* Seventh Image - Small Square */}
-                      {currentGalleries[6] && (
-                        <div 
-                          className="col-span-1 row-span-1 rounded-xl overflow-hidden shadow-lg cursor-pointer group relative"
-                          onClick={() => setSelectedImage(currentGalleries[6])}
-                        >
-                          <img
-                            src={currentGalleries[6].thumbnailUrl || currentGalleries[6].imageUrl}
-                            alt={currentGalleries[6].title}
-                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                            <div className="absolute bottom-2 left-2 right-2">
-                              <div className="px-2 py-0.5 bg-white/20 backdrop-blur-sm text-white text-xs rounded-full inline-flex items-center gap-1">
-                                <Camera className="h-3 w-3" />
-                                Lihat detail
-                              </div>
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent">
+                            <div className="absolute bottom-0 left-0 right-0 p-2">
+                              <p className="text-white font-medium text-xs truncate">{displayGalleries[5].title}</p>
                             </div>
                           </div>
                         </div>
@@ -1200,31 +1228,6 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                     </div>
                   );
                 })()}
-                
-                {/* Navigation Buttons */}
-                {galleries.length > 6 && (
-                  <div className="flex items-center justify-end gap-3 mt-6">
-                    <span className="text-sm text-[#404944]">
-                      Halaman {galleryPage + 1} dari {Math.ceil(galleries.length / 6)}
-                    </span>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => setGalleryPage(prev => Math.max(0, prev - 1))}
-                        disabled={galleryPage === 0}
-                        className="p-2 rounded-full bg-[#003527] text-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#064e3b] transition-colors"
-                      >
-                        <ChevronLeft className="h-5 w-5" />
-                      </button>
-                      <button
-                        onClick={() => setGalleryPage(prev => Math.min(Math.ceil(galleries.length / 6) - 1, prev + 1))}
-                        disabled={galleryPage >= Math.ceil(galleries.length / 6) - 1}
-                        className="p-2 rounded-full bg-[#003527] text-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#064e3b] transition-colors"
-                      >
-                        <ChevronRight className="h-5 w-5" />
-                      </button>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           </section>
