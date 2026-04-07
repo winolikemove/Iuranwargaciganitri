@@ -47,6 +47,8 @@ import {
   Siren,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
+  ChevronDown,
 } from 'lucide-react';
 import type { Gallery, Agenda, PengurusWithJabatan, StrukturBlok } from '@/types';
 
@@ -72,6 +74,7 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
   const [showReviewsModal, setShowReviewsModal] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [galleryPage, setGalleryPage] = useState(0);
+  const [agendaIndex, setAgendaIndex] = useState(0);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -339,11 +342,11 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                     <h4 className="font-bold text-base">Ringkasan Arus Kas</h4>
                     <div className="flex gap-4">
                       <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
+                        <div className="w-3 h-3 rounded-full bg-gradient-to-t from-emerald-600 to-emerald-400"></div>
                         <span className="text-xs font-medium">Pemasukan</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-red-400"></div>
+                        <div className="w-3 h-3 rounded-full bg-gradient-to-t from-rose-500 to-rose-300"></div>
                         <span className="text-xs font-medium">Pengeluaran</span>
                       </div>
                     </div>
@@ -351,66 +354,105 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
 
                   {/* Stats Cards */}
                   <div className="grid grid-cols-2 gap-4 mb-6">
-                    <div className="bg-emerald-50 p-4 rounded-lg">
+                    <div className="bg-gradient-to-br from-emerald-50 to-emerald-100/50 p-4 rounded-xl border border-emerald-200/30">
                       <div className="flex items-center gap-2 mb-2">
-                        <TrendingUp className="h-4 w-4 text-emerald-600" />
+                        <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center">
+                          <TrendingUp className="h-4 w-4 text-white" />
+                        </div>
                         <span className="text-xs text-[#404944]">Pemasukan Bulan Ini</span>
                       </div>
                       <p className="text-lg font-bold text-emerald-600">{formatCurrency(finance.totalPemasukanBulanIni)}</p>
                     </div>
-                    <div className="bg-red-50 p-4 rounded-lg">
+                    <div className="bg-gradient-to-br from-rose-50 to-rose-100/50 p-4 rounded-xl border border-rose-200/30">
                       <div className="flex items-center gap-2 mb-2">
-                        <TrendingDown className="h-4 w-4 text-red-600" />
+                        <div className="w-8 h-8 rounded-lg bg-rose-500 flex items-center justify-center">
+                          <TrendingDown className="h-4 w-4 text-white" />
+                        </div>
                         <span className="text-xs text-[#404944]">Pengeluaran Bulan Ini</span>
                       </div>
-                      <p className="text-lg font-bold text-red-600">{formatCurrency(finance.totalPengeluaranBulanIni)}</p>
+                      <p className="text-lg font-bold text-rose-600">{formatCurrency(finance.totalPengeluaranBulanIni)}</p>
                     </div>
                   </div>
 
-                  {/* Interactive Graph */}
-                  <div className="h-32 w-full flex items-end justify-between gap-2 relative">
-                    {monthlyFinanceData.map((data, i) => {
-                      const maxValue = Math.max(...monthlyFinanceData.map(d => Math.max(d.pemasukan, d.pengeluaran)));
-                      const pemasukanHeight = (data.pemasukan / maxValue) * 100;
-                      const pengeluaranHeight = (data.pengeluaran / maxValue) * 100;
-                      return (
-                        <div 
-                          key={i} 
-                          className="flex-1 flex flex-col items-center gap-1 relative"
-                          onMouseEnter={() => setHoveredBar(i)}
-                          onMouseLeave={() => setHoveredBar(null)}
-                        >
-                          {/* Tooltip */}
-                          {hoveredBar === i && (
-                            <div className="absolute -top-24 left-1/2 -translate-x-1/2 bg-[#003527] text-white p-3 rounded-lg shadow-lg z-10 min-w-[140px] text-xs">
-                              <p className="font-bold mb-2 text-center">{data.fullName}</p>
-                              <div className="flex items-center gap-2 mb-1">
-                                <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
-                                <span>Pemasukan: {formatCurrency(data.pemasukan)}</span>
+                  {/* Modern Graph with Background Lines */}
+                  <div className="relative h-40 w-full">
+                    {/* Background grid lines */}
+                    <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
+                      {[...Array(5)].map((_, i) => (
+                        <div key={i} className="w-full h-px bg-gray-100"></div>
+                      ))}
+                    </div>
+
+                    {/* Bars container */}
+                    <div className="relative h-full flex items-end justify-between gap-3 px-1">
+                      {monthlyFinanceData.map((data, i) => {
+                        const maxValue = Math.max(...monthlyFinanceData.map(d => Math.max(d.pemasukan, d.pengeluaran)));
+                        const pemasukanHeight = (data.pemasukan / maxValue) * 100;
+                        const pengeluaranHeight = (data.pengeluaran / maxValue) * 100;
+                        return (
+                          <div
+                            key={i}
+                            className="flex-1 flex flex-col items-center gap-2 relative group"
+                            onMouseEnter={() => setHoveredBar(i)}
+                            onMouseLeave={() => setHoveredBar(null)}
+                          >
+                            {/* Modern Tooltip */}
+                            {hoveredBar === i && (
+                              <div className="absolute -top-28 left-1/2 -translate-x-1/2 z-20">
+                                <div className="bg-gradient-to-br from-[#003527] to-[#064e3b] text-white p-4 rounded-xl shadow-xl min-w-[160px] border border-white/10">
+                                  <p className="font-bold mb-3 text-center text-sm">{data.fullName}</p>
+                                  <div className="space-y-2">
+                                    <div className="flex items-center justify-between gap-3">
+                                      <div className="flex items-center gap-2">
+                                        <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
+                                        <span className="text-xs text-white/70">Masuk</span>
+                                      </div>
+                                      <span className="text-xs font-semibold">{formatCurrency(data.pemasukan)}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between gap-3">
+                                      <div className="flex items-center gap-2">
+                                        <div className="w-2 h-2 rounded-full bg-rose-400"></div>
+                                        <span className="text-xs text-white/70">Keluar</span>
+                                      </div>
+                                      <span className="text-xs font-semibold">{formatCurrency(data.pengeluaran)}</span>
+                                    </div>
+                                  </div>
+                                  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-[#064e3b] rotate-45 rounded-sm"></div>
+                                </div>
                               </div>
-                              <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full bg-red-400"></div>
-                                <span>Pengeluaran: {formatCurrency(data.pengeluaran)}</span>
+                            )}
+
+                            {/* Bars with gradient and shadow */}
+                            <div className="w-full flex gap-1 h-28 items-end">
+                              {/* Income bar */}
+                              <div
+                                className="flex-1 rounded-t-lg transition-all duration-300 cursor-pointer relative overflow-hidden group/b bar"
+                                style={{ height: `${pemasukanHeight}%` }}
+                              >
+                                <div className="absolute inset-0 bg-gradient-to-t from-emerald-600 via-emerald-500 to-emerald-400"></div>
+                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover/b:opacity-100 transition-opacity"></div>
+                                <div className="absolute bottom-0 left-0 right-0 h-1 bg-emerald-300/50"></div>
                               </div>
-                              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 rotate-45 w-2 h-2 bg-[#003527]"></div>
+
+                              {/* Expense bar */}
+                              <div
+                                className="flex-1 rounded-t-lg transition-all duration-300 cursor-pointer relative overflow-hidden group/b bar"
+                                style={{ height: `${pengeluaranHeight}%` }}
+                              >
+                                <div className="absolute inset-0 bg-gradient-to-t from-rose-500 via-rose-400 to-rose-300"></div>
+                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover/b:opacity-100 transition-opacity"></div>
+                                <div className="absolute bottom-0 left-0 right-0 h-1 bg-rose-200/50"></div>
+                              </div>
                             </div>
-                          )}
-                          {/* Bars */}
-                          <div className="w-full flex gap-0.5 h-24 items-end">
-                            <div 
-                              className="flex-1 bg-emerald-400 rounded-t-sm transition-all duration-200 hover:bg-emerald-500 cursor-pointer" 
-                              style={{ height: `${pemasukanHeight}%` }}
-                            ></div>
-                            <div 
-                              className="flex-1 bg-red-300 rounded-t-sm transition-all duration-200 hover:bg-red-400 cursor-pointer" 
-                              style={{ height: `${pengeluaranHeight}%` }}
-                            ></div>
+
+                            {/* Month label */}
+                            <span className={`text-xs font-medium transition-colors ${hoveredBar === i ? 'text-[#003527] font-bold' : 'text-[#404944]'}`}>
+                              {data.month}
+                            </span>
                           </div>
-                          {/* Month Label */}
-                          <span className="text-[10px] text-[#404944] font-medium">{data.month}</span>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -490,49 +532,85 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                 <h2 className="text-3xl font-bold mb-3">Agenda Mendatang</h2>
                 <p className="text-[#404944]">Jangan lewatkan kegiatan lingkungan berikut ini</p>
               </div>
-              <div className="space-y-8">
-                {agendas.slice(0, 3).map((agenda, index) => {
-                  const bgColors = [
-                    'bg-[#064e3b] text-white',
-                    'bg-[#b5ede7] text-[#316763]',
-                    'bg-[#d9e6dd] text-[#003527]'
-                  ];
-                  return (
-                    <div 
-                      key={agenda.id} 
-                      className="flex gap-6 group cursor-pointer"
-                      onClick={() => setSelectedAgenda(agenda)}
-                    >
-                      <div className="flex flex-col items-center">
-                        <div className={`w-12 h-12 rounded-full ${bgColors[index % 3]} flex items-center justify-center font-bold text-sm`}>
-                          {formatDate(agenda.startDate)}
-                        </div>
-                        {index < agendas.slice(0, 3).length - 1 && (
-                          <div className="w-0.5 h-full bg-[#bfc9c3]/30 mt-4"></div>
-                        )}
-                      </div>
-                      <div className="pb-6 flex-1">
-                        <h4 className="text-lg font-bold mb-2 group-hover:text-[#003527] transition-colors">
-                          {agenda.title}
-                        </h4>
-                        <p className="text-[#404944] text-sm leading-relaxed mb-3">
-                          {agenda.description || 'Kegiatan komunitas untuk semua warga.'}
-                        </p>
-                        <div className="flex items-center gap-4 text-xs font-semibold text-[#404944]">
-                          <span className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" /> {agenda.startTime || '07:00'}
-                          </span>
-                          {agenda.location && (
-                            <span className="flex items-center gap-1">
-                              <MapPin className="h-3 w-3" /> {agenda.location}
-                            </span>
+
+              {/* Agenda List with Navigation */}
+              <div className="relative">
+                <div className="space-y-8">
+                  {agendas.slice(agendaIndex, agendaIndex + 3).map((agenda, index) => {
+                    const bgColors = [
+                      'bg-[#064e3b] text-white',
+                      'bg-[#b5ede7] text-[#316763]',
+                      'bg-[#d9e6dd] text-[#003527]'
+                    ];
+                    const visibleCount = Math.min(3, agendas.length - agendaIndex);
+                    return (
+                      <div
+                        key={agenda.id}
+                        className="flex gap-6 group cursor-pointer"
+                        onClick={() => setSelectedAgenda(agenda)}
+                      >
+                        <div className="flex flex-col items-center">
+                          <div className={`w-12 h-12 rounded-full ${bgColors[index % 3]} flex items-center justify-center font-bold text-sm`}>
+                            {formatDate(agenda.startDate)}
+                          </div>
+                          {index < visibleCount - 1 && (
+                            <div className="w-0.5 h-full bg-[#bfc9c3]/30 mt-4"></div>
                           )}
                         </div>
+                        <div className="pb-6 flex-1">
+                          <h4 className="text-lg font-bold mb-2 group-hover:text-[#003527] transition-colors">
+                            {agenda.title}
+                          </h4>
+                          <p className="text-[#404944] text-sm leading-relaxed mb-3">
+                            {agenda.description || 'Kegiatan komunitas untuk semua warga.'}
+                          </p>
+                          <div className="flex items-center gap-4 text-xs font-semibold text-[#404944]">
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" /> {agenda.startTime || '07:00'}
+                            </span>
+                            {agenda.location && (
+                              <span className="flex items-center gap-1">
+                                <MapPin className="h-3 w-3" /> {agenda.location}
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
+
+                {/* Navigation Buttons */}
+                {agendas.length > 3 && (
+                  <div className="absolute right-0 bottom-0 flex flex-col gap-2">
+                    <button
+                      onClick={() => setAgendaIndex(prev => Math.max(0, prev - 1))}
+                      disabled={agendaIndex === 0}
+                      className="p-2 rounded-full bg-[#003527] text-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#064e3b] transition-colors shadow-lg"
+                      title="Agenda sebelumnya"
+                    >
+                      <ChevronUp className="h-5 w-5" />
+                    </button>
+                    <button
+                      onClick={() => setAgendaIndex(prev => Math.min(agendas.length - 3, prev + 1))}
+                      disabled={agendaIndex >= agendas.length - 3}
+                      className="p-2 rounded-full bg-[#003527] text-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#064e3b] transition-colors shadow-lg"
+                      title="Agenda selanjutnya"
+                    >
+                      <ChevronDown className="h-5 w-5" />
+                    </button>
+                  </div>
+                )}
               </div>
+
+              {/* Page indicator */}
+              {agendas.length > 3 && (
+                <div className="flex items-center justify-center gap-2 mt-6">
+                  <span className="text-sm text-[#404944]">
+                    {agendaIndex + 1}-{Math.min(agendaIndex + 3, agendas.length)} dari {agendas.length} agenda
+                  </span>
+                </div>
+              )}
             </div>
           </section>
         )
