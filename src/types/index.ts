@@ -335,6 +335,7 @@ export interface PengurusWithJabatan {
   jabatan: string;
   jabatanLabel: string;
   order: number;
+  nomorRumah?: string;
 }
 
 export interface StrukturBlok {

@@ -34,8 +34,12 @@ import {
   Camera,
   User,
   CalendarDays,
+  Building2,
+  Shield,
+  Sparkles,
+  Home,
 } from 'lucide-react';
-import type { Gallery, Agenda, PengurusWithJabatan } from '@/types';
+import type { Gallery, Agenda, PengurusWithJabatan, StrukturBlok } from '@/types';
 
 interface LandingPageProps {
   onLoginClick: () => void;
@@ -55,6 +59,7 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
 
   const [selectedImage, setSelectedImage] = useState<Gallery | null>(null);
   const [selectedAgenda, setSelectedAgenda] = useState<Agenda | null>(null);
+  const [selectedBlok, setSelectedBlok] = useState<{ key: string; label: string; data: StrukturBlok } | null>(null);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -730,182 +735,220 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
           </DialogContent>
         </Dialog>
 
-        {/* Pengurus Section */}
+        {/* Struktur Organisasi - Bento Style */}
         {(strukturOrganisasi && (
           strukturOrganisasi.blokA.pengurus.length > 0 || 
           strukturOrganisasi.blokB.pengurus.length > 0 || 
           strukturOrganisasi.bersama.pengurus.length > 0
         )) && (
-          <section id="warga" className="py-16 px-6 md:px-12 bg-[#eaf7ee]">
+          <section id="warga" className="py-16 px-6 md:px-12 bg-[#f0fdf4]">
             <div className="max-w-screen-2xl mx-auto">
               <div className="text-center mb-12">
-                <h2 className="text-3xl font-bold mb-3">Struktur Organisasi</h2>
-                <p className="text-[#404944]">Pengurus yang berdedikasi untuk kesejahteraan dan keharmonisan warga</p>
+                <span className="text-[#003527] font-bold tracking-widest text-xs uppercase">Pengurus Lingkungan</span>
+                <h2 className="text-3xl md:text-4xl font-bold mt-2">Struktur Organisasi</h2>
+                <p className="text-[#404944] mt-3">Pengurus yang berdedikasi untuk kesejahteraan dan keharmonisan warga</p>
               </div>
               
-              {/* Organizational Structure */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Blok A */}
-                <div className="bg-white rounded-xl p-6 shadow-[0px_24px_48px_rgba(19,30,25,0.06)]">
-                  <h3 className="text-xl font-bold text-[#003527] mb-4 text-center pb-3 border-b border-emerald-100">
-                    Blok A
-                  </h3>
-                  {/* Kontak RT Blok A */}
-                  {strukturOrganisasi?.blokA?.kontakRT && (
-                    <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
-                      <p className="text-xs font-semibold text-blue-700 mb-1">Kontak RT Blok A</p>
-                      {strukturOrganisasi.blokA.kontakRT.nama && (
-                        <p className="font-medium text-sm">{strukturOrganisasi.blokA.kontakRT.nama}</p>
-                      )}
-                      {strukturOrganisasi.blokA.kontakRT.telepon && (
-                        <a
-                          href={getWhatsAppLink(strukturOrganisasi.blokA.kontakRT.telepon)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 px-2 py-1 mt-1 rounded-full bg-green-500 hover:bg-green-600 text-white text-xs font-medium transition-colors"
-                        >
-                          <MessageCircle className="h-3 w-3" />
-                          <span>{strukturOrganisasi.blokA.kontakRT.telepon}</span>
-                        </a>
-                      )}
+              {/* Bento Grid Layout */}
+              <div className="grid grid-cols-1 md:grid-cols-4 md:grid-rows-2 gap-4 h-auto md:h-[420px]">
+                {/* Blok A - Large Card */}
+                <div 
+                  className="md:col-span-2 md:row-span-2 bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl p-6 flex flex-col justify-between hover:scale-[1.02] transition-transform cursor-pointer border border-blue-200/30"
+                  onClick={() => strukturOrganisasi?.blokA && setSelectedBlok({ key: 'A', label: 'Blok A', data: strukturOrganisasi.blokA })}
+                >
+                  <div>
+                    <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center mb-4 shadow-lg shadow-blue-600/20">
+                      <Building2 className="h-6 w-6 text-white" />
                     </div>
-                  )}
-                  <div className="space-y-3">
-                    {strukturOrganisasi?.blokA?.pengurus?.sort((a, b) => a.order - b.order).map((p) => (
-                      <div key={p.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-emerald-50 transition-colors">
-                        <Avatar className="h-12 w-12">
-                          <AvatarImage src={p.photoUrl || undefined} alt={p.nama} />
-                          <AvatarFallback className="bg-emerald-500 text-white">
-                            {p.nama.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-semibold text-sm truncate">{p.nama}</h4>
-                          <p className="text-xs text-emerald-600">{p.jabatanLabel}</p>
-                        </div>
-                        {p.telepon && (
-                          <a
-                            href={getWhatsAppLink(p.telepon)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-500 hover:bg-green-600 text-white text-xs font-medium transition-colors shadow-sm"
-                          >
-                            <MessageCircle className="h-3.5 w-3.5" />
-                            <span>WhatsApp</span>
-                          </a>
-                        )}
+                    <h3 className="text-2xl font-bold text-blue-900 mb-2">Blok A</h3>
+                    <p className="text-blue-700/70 text-sm leading-relaxed">
+                      Pengurus RT Blok A yang melayani warga dengan penuh dedikasi untuk kesejahteraan bersama.
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between mt-6">
+                    <div className="flex items-center gap-2">
+                      <div className="flex -space-x-2">
+                        {strukturOrganisasi?.blokA?.pengurus?.slice(0, 3).map((p) => (
+                          <Avatar key={p.id} className="w-8 h-8 border-2 border-white shadow-sm">
+                            <AvatarImage src={p.photoUrl || undefined} alt={p.nama} />
+                            <AvatarFallback className="bg-blue-500 text-white text-xs">
+                              {p.nama.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                            </AvatarFallback>
+                          </Avatar>
+                        ))}
                       </div>
-                    ))}
-                    {(!strukturOrganisasi?.blokA?.pengurus || strukturOrganisasi.blokA.pengurus.length === 0) && (
-                      <p className="text-center text-muted-foreground text-sm py-4">
-                        Pengurus Blok A akan ditampilkan di sini
-                      </p>
-                    )}
+                      <span className="text-xs text-blue-700 font-medium">
+                        {strukturOrganisasi?.blokA?.pengurus?.length || 0} pengurus
+                      </span>
+                    </div>
+                    <div className="px-3 py-1 bg-blue-600 text-white text-xs font-medium rounded-full">
+                      Lihat Detail
+                    </div>
                   </div>
                 </div>
-                
-                {/* Blok B */}
-                <div className="bg-white rounded-xl p-6 shadow-[0px_24px_48px_rgba(19,30,25,0.06)]">
-                  <h3 className="text-xl font-bold text-[#003527] mb-4 text-center pb-3 border-b border-emerald-100">
-                    Blok B
-                  </h3>
-                  {/* Kontak RT Blok B */}
-                  {strukturOrganisasi?.blokB?.kontakRT && (
-                    <div className="mb-4 p-3 bg-green-50 rounded-lg border border-green-100">
-                      <p className="text-xs font-semibold text-green-700 mb-1">Kontak RT Blok B</p>
-                      {strukturOrganisasi.blokB.kontakRT.nama && (
-                        <p className="font-medium text-sm">{strukturOrganisasi.blokB.kontakRT.nama}</p>
-                      )}
-                      {strukturOrganisasi.blokB.kontakRT.telepon && (
-                        <a
-                          href={getWhatsAppLink(strukturOrganisasi.blokB.kontakRT.telepon)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 px-2 py-1 mt-1 rounded-full bg-green-500 hover:bg-green-600 text-white text-xs font-medium transition-colors"
-                        >
-                          <MessageCircle className="h-3 w-3" />
-                          <span>{strukturOrganisasi.blokB.kontakRT.telepon}</span>
-                        </a>
-                      )}
-                    </div>
-                  )}
-                  <div className="space-y-3">
-                    {strukturOrganisasi?.blokB?.pengurus?.sort((a, b) => a.order - b.order).map((p) => (
-                      <div key={p.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-emerald-50 transition-colors">
-                        <Avatar className="h-12 w-12">
-                          <AvatarImage src={p.photoUrl || undefined} alt={p.nama} />
-                          <AvatarFallback className="bg-emerald-500 text-white">
-                            {p.nama.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-semibold text-sm truncate">{p.nama}</h4>
-                          <p className="text-xs text-emerald-600">{p.jabatanLabel}</p>
-                        </div>
-                        {p.telepon && (
-                          <a
-                            href={getWhatsAppLink(p.telepon)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-500 hover:bg-green-600 text-white text-xs font-medium transition-colors shadow-sm"
-                          >
-                            <MessageCircle className="h-3.5 w-3.5" />
-                            <span>WhatsApp</span>
-                          </a>
-                        )}
-                      </div>
+
+                {/* Blok B - Horizontal Card */}
+                <div 
+                  className="md:col-span-2 md:row-span-1 bg-gradient-to-r from-emerald-50 to-emerald-100/50 rounded-xl p-6 flex items-center gap-6 hover:scale-[1.02] transition-transform cursor-pointer border border-emerald-200/30"
+                  onClick={() => strukturOrganisasi?.blokB && setSelectedBlok({ key: 'B', label: 'Blok B', data: strukturOrganisasi.blokB })}
+                >
+                  <div className="w-12 h-12 rounded-xl bg-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-600/20 shrink-0">
+                    <Building2 className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-lg font-bold text-emerald-900">Blok B</h4>
+                    <p className="text-emerald-700/70 text-sm truncate">Pengurus RT Blok B yang melayani warga dengan penuh dedikasi.</p>
+                  </div>
+                  <div className="flex -space-x-2 shrink-0">
+                    {strukturOrganisasi?.blokB?.pengurus?.slice(0, 3).map((p) => (
+                      <Avatar key={p.id} className="w-7 h-7 border-2 border-white shadow-sm">
+                        <AvatarImage src={p.photoUrl || undefined} alt={p.nama} />
+                        <AvatarFallback className="bg-emerald-500 text-white text-xs">
+                          {p.nama.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                        </AvatarFallback>
+                      </Avatar>
                     ))}
-                    {(!strukturOrganisasi?.blokB?.pengurus || strukturOrganisasi.blokB.pengurus.length === 0) && (
-                      <p className="text-center text-muted-foreground text-sm py-4">
-                        Pengurus Blok B akan ditampilkan di sini
-                      </p>
-                    )}
                   </div>
                 </div>
-                
-                {/* Bersama (Keamanan, Kebersihan, DKM) */}
-                <div className="bg-[#003527] text-white rounded-xl p-6 shadow-[0px_24px_48px_rgba(19,30,25,0.06)]">
-                  <h3 className="text-xl font-bold mb-4 text-center pb-3 border-b border-emerald-700">
-                    Bersama
-                  </h3>
-                  <p className="text-xs text-emerald-200 text-center mb-4">Sie. Keamanan, Kebersihan & DKM Masjid Al Birr</p>
-                  <div className="space-y-3">
-                    {strukturOrganisasi?.bersama?.pengurus?.sort((a, b) => a.order - b.order).map((p) => (
-                      <div key={p.id} className="flex items-center gap-3 p-3 rounded-lg bg-emerald-900/30 hover:bg-emerald-900/50 transition-colors">
-                        <Avatar className="h-12 w-12 border-2 border-emerald-400">
-                          <AvatarImage src={p.photoUrl || undefined} alt={p.nama} />
-                          <AvatarFallback className="bg-emerald-600 text-white">
-                            {p.nama.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-semibold text-sm truncate">{p.nama}</h4>
-                          <p className="text-xs text-emerald-300">{p.jabatanLabel}</p>
-                        </div>
-                        {p.telepon && (
-                          <a
-                            href={getWhatsAppLink(p.telepon)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500 hover:bg-emerald-400 text-white text-xs font-medium transition-colors shadow-sm"
-                          >
-                            <MessageCircle className="h-3.5 w-3.5" />
-                            <span>WhatsApp</span>
-                          </a>
-                        )}
-                      </div>
-                    ))}
-                    {(!strukturOrganisasi?.bersama?.pengurus || strukturOrganisasi.bersama.pengurus.length === 0) && (
-                      <p className="text-center text-emerald-300 text-sm py-4">
-                        Pengurus bersama akan ditampilkan di sini
-                      </p>
-                    )}
+
+                {/* Bersama - Small Card */}
+                <div 
+                  className="md:col-span-1 md:row-span-1 bg-[#003527] text-white rounded-xl p-6 flex flex-col justify-between hover:scale-[1.02] transition-transform cursor-pointer"
+                  onClick={() => strukturOrganisasi?.bersama && setSelectedBlok({ key: 'BERSAMA', label: 'Bersama', data: strukturOrganisasi.bersama })}
+                >
+                  <Shield className="h-8 w-8 text-emerald-300" />
+                  <div>
+                    <h4 className="font-bold">Bersama</h4>
+                    <p className="text-emerald-200/60 text-xs mt-1">Keamanan, Kebersihan, DKM</p>
+                  </div>
+                </div>
+
+                {/* Kontak RT - Small Card */}
+                <div className="md:col-span-1 md:row-span-1 bg-[#deebe3] rounded-xl p-6 flex flex-col justify-between hover:scale-[1.02] transition-transform">
+                  <Phone className="h-8 w-8 text-[#064e3b]" />
+                  <div>
+                    <h4 className="font-bold text-[#003527]">Kontak RT</h4>
+                    <p className="text-[#404944] text-xs mt-1">Hubungi pengurus via WhatsApp</p>
                   </div>
                 </div>
               </div>
             </div>
           </section>
         )}
+
+        {/* Blok Detail Modal */}
+        <Dialog open={!!selectedBlok} onOpenChange={() => setSelectedBlok(null)}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 bg-white border-0">
+            {selectedBlok && (
+              <div className="relative">
+                {/* Close button */}
+                <button
+                  onClick={() => setSelectedBlok(null)}
+                  className="absolute top-4 right-4 z-50 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+                
+                {/* Header */}
+                <div className={`p-6 text-white ${
+                  selectedBlok.key === 'A' ? 'bg-gradient-to-r from-blue-600 to-blue-700' :
+                  selectedBlok.key === 'B' ? 'bg-gradient-to-r from-emerald-600 to-emerald-700' :
+                  'bg-gradient-to-r from-[#003527] to-[#064e3b]'
+                }`}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
+                      <Building2 className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <DialogTitle className="text-xl font-bold">{selectedBlok.label}</DialogTitle>
+                      <p className="text-white/70 text-sm mt-1">
+                        {selectedBlok.key === 'BERSAMA' ? 'Sie. Keamanan, Kebersihan & DKM Masjid Al Birr' : 'Pengurus RT'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Kontak RT */}
+                {selectedBlok.data.kontakRT && (
+                  <div className="p-4 border-b bg-gray-50">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                          <Phone className="h-5 w-5 text-green-600" />
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Kontak RT {selectedBlok.label}</p>
+                          <p className="font-medium">{selectedBlok.data.kontakRT.nama}</p>
+                        </div>
+                      </div>
+                      {selectedBlok.data.kontakRT.telepon && (
+                        <a
+                          href={getWhatsAppLink(selectedBlok.data.kontakRT.telepon)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 px-4 py-2 rounded-full bg-green-500 hover:bg-green-600 text-white text-sm font-medium transition-colors"
+                        >
+                          <MessageCircle className="h-4 w-4" />
+                          WhatsApp
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Pengurus List */}
+                <div className="p-6 space-y-3">
+                  <h4 className="font-semibold text-gray-900 mb-4">Daftar Pengurus</h4>
+                  {selectedBlok.data.pengurus?.sort((a, b) => a.order - b.order).map((p) => (
+                    <div key={p.id} className="flex items-center gap-4 p-4 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors">
+                      <Avatar className="h-14 w-14">
+                        <AvatarImage src={p.photoUrl || undefined} alt={p.nama} />
+                        <AvatarFallback className={`text-white ${
+                          selectedBlok.key === 'A' ? 'bg-blue-500' :
+                          selectedBlok.key === 'B' ? 'bg-emerald-500' :
+                          'bg-[#003527]'
+                        }`}>
+                          {p.nama.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <h5 className="font-semibold text-gray-900">{p.nama}</h5>
+                        <p className="text-sm text-gray-500">{p.jabatanLabel}</p>
+                        <div className="flex items-center gap-3 mt-1">
+                          {p.nomorRumah && (
+                            <span className="flex items-center gap-1 text-xs text-gray-400">
+                              <Home className="h-3 w-3" />
+                              No. {p.nomorRumah}
+                            </span>
+                          )}
+                          {p.telepon && (
+                            <span className="text-xs text-gray-400">{p.telepon}</span>
+                          )}
+                        </div>
+                      </div>
+                      {p.telepon && (
+                        <a
+                          href={getWhatsAppLink(p.telepon)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 px-4 py-2 rounded-full bg-green-500 hover:bg-green-600 text-white text-sm font-medium transition-colors"
+                        >
+                          <MessageCircle className="h-4 w-4" />
+                          WhatsApp
+                        </a>
+                      )}
+                    </div>
+                  ))}
+                  {(!selectedBlok.data.pengurus || selectedBlok.data.pengurus.length === 0) && (
+                    <p className="text-center text-gray-500 py-8">
+                      Belum ada data pengurus
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
 
         {/* CTA Section */}
         <section className="py-16 px-6 md:px-12">

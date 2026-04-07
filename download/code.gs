@@ -1160,7 +1160,8 @@ function pengurusStrukturOrganisasi() {
       photoUrl: u.photoUrl || '',
       jabatan: u.jabatan,
       jabatanLabel: jabatanInfo.label,
-      order: jabatanInfo.order
+      order: jabatanInfo.order,
+      nomorRumah: u.nomorRumah || ''
     };
     
     // Cek apakah jabatan bersama atau per blok
