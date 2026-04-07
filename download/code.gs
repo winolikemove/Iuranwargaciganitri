@@ -50,7 +50,10 @@ const VALID_JABATAN = Object.keys(ALL_JABATAN);
 function doPost(e) {
   try {
     const req = JSON.parse(e.postData.contents);
-    const { action, token, payload = {} } = req;
+    
+    // Struktur baru: { action, data, auth: { token } }
+    const { action, data = {}, auth = {} } = req;
+    const token = auth.token || null;
     
     // Public actions (no auth required)
     const publicActions = [
@@ -82,7 +85,7 @@ function doPost(e) {
       return respond(featureCheck);
     }
     
-    const result = routeAction(action, payload, user);
+    const result = routeAction(action, data, user);
     return respond(result);
     
   } catch (error) {

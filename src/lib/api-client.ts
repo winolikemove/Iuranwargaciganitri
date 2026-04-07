@@ -713,8 +713,8 @@ class ApiClient {
         },
         body: JSON.stringify({
           action,
-          token,
-          payload,
+          data: payload,
+          auth: token ? { token } : {},
         }),
         redirect: 'follow', // Wajib untuk GAS yang mengembalikan 302 redirect
         signal: controller.signal,
