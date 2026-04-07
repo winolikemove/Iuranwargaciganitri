@@ -22,6 +22,8 @@ const SCHEMAS = {
   saldoawal: ['id', 'blok', 'year', 'amount', 'createdAt'],
   // NEW: Password reset tokens
   passwordResetTokens: ['id', 'userId', 'token', 'expiresAt', 'usedAt', 'createdAt'],
+  // NEW: System logs for debugging
+  logs: ['id', 'level', 'action', 'message', 'payload', 'error', 'userId', 'ipAddress', 'createdAt'],
 };
 
 // ==================== STRUKTUR ORGANISASI (NEW v3) ====================
@@ -48,11 +50,15 @@ const VALID_JABATAN = Object.keys(ALL_JABATAN);
 
 // ==================== MAIN ENTRY POINTS ====================
 function doPost(e) {
+  let action = 'unknown';
+  let userId = null;
+  
   try {
     const req = JSON.parse(e.postData.contents);
     
     // Struktur baru: { action, data, auth: { token } }
-    const { action, data = {}, auth = {} } = req;
+    const { action: act, data = {}, auth = {} } = req;
+    action = act || 'unknown';
     const token = auth.token || null;
     
     // Public actions (no auth required)
@@ -75,20 +81,30 @@ function doPost(e) {
     if (!publicActions.includes(action)) {
       user = validateToken(token);
       if (!user) {
+        logWarn(action, 'Token invalid atau expired', { hasToken: !!token }, userId);
         return respond({ ok: false, error: 'Token invalid atau expired' });
       }
+      userId = user.id;
     }
     
     // Check feature toggles for certain actions
     const featureCheck = checkFeatureEnabled(action);
     if (!featureCheck.ok) {
+      logWarn(action, 'Fitur dinonaktifkan', null, userId);
       return respond(featureCheck);
     }
     
     const result = routeAction(action, data, user);
+    
+    // Log important actions
+    if (action.startsWith('auth.') || action.startsWith('finance.') || action.startsWith('payment.')) {
+      logInfo(action, `Request completed: ${result.ok ? 'success' : 'failed'}`, { ok: result.ok, error: result.error }, userId);
+    }
+    
     return respond(result);
     
   } catch (error) {
+    logError(action, 'Unhandled error in doPost', null, error.message, userId);
     console.error('doPost Error:', error);
     return respond({ ok: false, error: 'Terjadi kesalahan server' });
   }
@@ -101,6 +117,68 @@ function doGet() {
 function respond(data) {
   return ContentService.createTextOutput(JSON.stringify(data))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+// ==================== LOGGING SYSTEM ====================
+/**
+ * Log errors and important events to Logs sheet for debugging
+ * Since Vercel cannot see console.log() in GAS, this provides a way to trace issues
+ */
+function logEvent(level, action, message, payload, error, userId) {
+  try {
+    const sheet = getSheet('logs');
+    const id = Utilities.getUuid();
+    const now = new Date();
+    
+    // Truncate payload if too large (max 5000 chars)
+    let payloadStr = payload ? JSON.stringify(payload) : '';
+    if (payloadStr.length > 5000) {
+      payloadStr = payloadStr.substring(0, 5000) + '... [truncated]';
+    }
+    
+    // Truncate error message if too large
+    let errorStr = error ? String(error) : '';
+    if (errorStr.length > 2000) {
+      errorStr = errorStr.substring(0, 2000) + '... [truncated]';
+    }
+    
+    sheet.appendRow([
+      id,
+      level,           // INFO, WARN, ERROR
+      action,          // e.g., 'auth.login', 'finance.create'
+      message,         // Human readable message
+      payloadStr,      // Request payload (truncated)
+      errorStr,        // Error details if any
+      userId || '',    // User ID if authenticated
+      '',              // IP Address (not available in GAS Web App)
+      now.toISOString()
+    ]);
+    
+    // Also log to console for StackDriver
+    if (level === 'ERROR') {
+      console.error(`[${action}] ${message}`, error || '');
+    } else if (level === 'WARN') {
+      console.warn(`[${action}] ${message}`);
+    } else {
+      console.log(`[${action}] ${message}`);
+    }
+  } catch (logError) {
+    // If logging fails, at least try to console log
+    console.error('Failed to write to log sheet:', logError);
+  }
+}
+
+// Convenience functions
+function logInfo(action, message, payload, userId) {
+  logEvent('INFO', action, message, payload, null, userId);
+}
+
+function logWarn(action, message, payload, userId) {
+  logEvent('WARN', action, message, payload, null, userId);
+}
+
+function logError(action, message, payload, error, userId) {
+  logEvent('ERROR', action, message, payload, error, userId);
 }
 
 // ==================== FEATURE TOGGLE CHECK (UPDATED) ====================
