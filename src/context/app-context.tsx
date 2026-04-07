@@ -228,6 +228,80 @@ const dummyReviews: Review[] = [
   }
 ];
 
+// Dummy data untuk agendas (fallback jika API belum punya data)
+const dummyAgendas: Agenda[] = [
+  {
+    id: 'agenda-1',
+    title: 'Kerja Bakti Bersih Lingkungan',
+    description: 'Kegiatan gotong royong bersih-bersih komplek bersama seluruh warga. Mari bergabung untuk menjaga kebersihan dan keindahan lingkungan kita.',
+    startDate: '2026-04-12',
+    endDate: '2026-04-12',
+    startTime: '07:00',
+    endTime: '10:00',
+    location: 'Halaman Komplek Blok A & B',
+    targetBlok: 'ALL',
+    status: 'UPCOMING',
+    createdBy: 'Ketua RT',
+    createdAt: '2026-04-01T08:00:00Z'
+  },
+  {
+    id: 'agenda-2',
+    title: 'Rapat Bulanan Pengurus RT',
+    description: 'Rapat koordinasi rutin bulanan untuk membahas program kerja, evaluasi kegiatan, dan perencanaan ke depan.',
+    startDate: '2026-04-15',
+    endDate: '2026-04-15',
+    startTime: '19:30',
+    endTime: '21:00',
+    location: 'Aula Masjid Al Birr',
+    targetBlok: 'ALL',
+    status: 'UPCOMING',
+    createdBy: 'Sekretaris RT',
+    createdAt: '2026-04-05T10:00:00Z'
+  },
+  {
+    id: 'agenda-3',
+    title: 'Pengajian Rutin Ibu-Ibu',
+    description: 'Kegiatan pengajian mingguan untuk ibu-ibu warga Pradha Ciganitri. Tempat berbagi ilmu dan mempererat silaturahmi.',
+    startDate: '2026-04-18',
+    endDate: '2026-04-18',
+    startTime: '09:00',
+    endTime: '11:00',
+    location: 'Masjid Al Birr',
+    targetBlok: 'ALL',
+    status: 'UPCOMING',
+    createdBy: 'Ibu Siti',
+    createdAt: '2026-04-10T09:00:00Z'
+  },
+  {
+    id: 'agenda-4',
+    title: 'Turnamen Futsal Antar Blok',
+    description: 'Kompetisi futsal antar blok untuk mempererat tali silaturahmi dan sportivitas antar warga.',
+    startDate: '2026-04-20',
+    endDate: '2026-04-21',
+    startTime: '15:00',
+    endTime: '18:00',
+    location: 'Lapangan Futsal Pradha',
+    targetBlok: 'ALL',
+    status: 'UPCOMING',
+    createdBy: 'Sie. Olahraga',
+    createdAt: '2026-04-08T14:00:00Z'
+  },
+  {
+    id: 'agenda-5',
+    title: 'Vaksinasi Gratis untuk Warga',
+    description: 'Program vaksinasi gratis bekerja sama dengan Puskesmas setempat. Dapatkan layanan kesehatan gratis untuk keluarga.',
+    startDate: '2026-04-25',
+    endDate: '2026-04-25',
+    startTime: '08:00',
+    endTime: '12:00',
+    location: 'Posyandu Blok A',
+    targetBlok: 'ALL',
+    status: 'UPCOMING',
+    createdBy: 'Admin',
+    createdAt: '2026-04-12T07:00:00Z'
+  }
+];
+
 // Dummy data untuk gallery (fallback jika API belum punya data)
 const dummyGalleries: Gallery[] = [
   {
@@ -295,6 +369,50 @@ const dummyGalleries: Gallery[] = [
     takenAt: '2026-01-15',
     uploadedBy: 'Admin',
     createdAt: '2026-01-15T12:00:00Z'
+  },
+  {
+    id: 'gallery-7',
+    agendaId: '',
+    title: 'Senam Pagi Bersama',
+    description: 'Kegiatan senam pagi setiap minggu untuk kesehatan warga',
+    imageUrl: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400',
+    takenAt: '2026-03-08',
+    uploadedBy: 'Admin',
+    createdAt: '2026-03-08T07:00:00Z'
+  },
+  {
+    id: 'gallery-8',
+    agendaId: '',
+    title: 'Lomba 17 Agustus',
+    description: 'Perayaan HUT RI dengan berbagai lomba tradisional',
+    imageUrl: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400',
+    takenAt: '2026-08-17',
+    uploadedBy: 'Admin',
+    createdAt: '2026-08-17T08:00:00Z'
+  },
+  {
+    id: 'gallery-9',
+    agendaId: '',
+    title: 'Bakti Sosial',
+    description: 'Kegiatan bakti sosial dan pembagian sembako',
+    imageUrl: 'https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=800',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=400',
+    takenAt: '2026-02-20',
+    uploadedBy: 'Admin',
+    createdAt: '2026-02-20T10:00:00Z'
+  },
+  {
+    id: 'gallery-10',
+    agendaId: '',
+    title: 'Pelatihan Digital',
+    description: 'Workshop digital untuk warga lanjut usia',
+    imageUrl: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=400',
+    takenAt: '2026-03-05',
+    uploadedBy: 'Admin',
+    createdAt: '2026-03-05T14:00:00Z'
   }
 ];
 
@@ -375,9 +493,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           });
         }
         
-        // Process agendas
+        // Process agendas - use dummy if empty
         if (results[2].status === 'fulfilled' && results[2].value.ok && results[2].value.data) {
-          setAgendas(results[2].value.data);
+          const agendaData = results[2].value.data;
+          if (agendaData && agendaData.length > 0) {
+            setAgendas(agendaData);
+          } else {
+            setAgendas(dummyAgendas);
+          }
+        } else {
+          setAgendas(dummyAgendas);
         }
         
         // Process informations
@@ -472,8 +597,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const refreshAgendas = useCallback(async () => {
     CacheManager.clearPattern('public_agenda');
     const result = await api.getPublicAgenda(10);
-    if (result.ok && result.data) {
+    if (result.ok && result.data && result.data.length > 0) {
       setAgendas(result.data);
+    } else {
+      setAgendas(dummyAgendas);
     }
   }, []);
 
