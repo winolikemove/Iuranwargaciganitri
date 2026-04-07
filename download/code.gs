@@ -2645,7 +2645,86 @@ function roleUpdatePermissions(user, { role, permissions }) {
 }
 
 // ==================== FILE UPLOAD ====================
-function fileUpload(user, { fileName, mimeType, base64 }) {
+// Folder categories for organized file storage
+const FOLDER_CATEGORIES = {
+  'profile_photos': { name: 'Foto Profil', description: 'Foto profil warga dan pengurus' },
+  'payment_proofs': { name: 'Bukti Pembayaran', description: 'Bukti transfer pembayaran iuran' },
+  'gallery': { name: 'Galeri Kegiatan', description: 'Dokumentasi foto kegiatan' },
+  'logo_banner': { name: 'Logo & Banner', description: 'Logo dan banner aplikasi' },
+  'documents': { name: 'Dokumen', description: 'Dokumen dan file lainnya' },
+};
+
+/**
+ * Get or create a subfolder within the main drive folder
+ * Automatically sets public sharing permission
+ * @param {string} category - Folder category (profile_photos, payment_proofs, gallery, logo_banner, documents)
+ * @returns {GoogleAppsScript.Drive.Folder} - The folder object
+ */
+function getOrCreateSubfolder(category) {
+  const mainFolder = DriveApp.getFolderById(CONFIG.DRIVEFOLDERID);
+  
+  // Default to 'documents' if category not found
+  const folderName = FOLDER_CATEGORIES[category]?.name || category || 'Dokumen';
+  
+  // Check if subfolder exists
+  const subfolders = mainFolder.getFoldersByName(folderName);
+  
+  if (subfolders.hasNext()) {
+    const folder = subfolders.next();
+    // Ensure public sharing is set
+    try {
+      folder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    } catch (e) {
+      // Folder might already have the correct sharing settings
+    }
+    return folder;
+  }
+  
+  // Create new subfolder
+  const newFolder = mainFolder.createFolder(folderName);
+  
+  // Set public sharing for the folder
+  newFolder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  
+  logInfo('fileUpload', `Created new folder: ${folderName}`, { category }, null);
+  
+  return newFolder;
+}
+
+/**
+ * Setup all folder categories - Run once to create folder structure
+ * Can be run manually from Apps Script editor
+ */
+function setupDriveFolders() {
+  const mainFolder = DriveApp.getFolderById(CONFIG.DRIVEFOLDERID);
+  
+  // Set main folder to public
+  try {
+    mainFolder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  } catch (e) {
+    console.log('Main folder sharing already set');
+  }
+  
+  // Create all category folders
+  for (const [key, info] of Object.entries(FOLDER_CATEGORIES)) {
+    const folder = getOrCreateSubfolder(key);
+    console.log(`Created/verified folder: ${info.name} - ${info.description}`);
+  }
+  
+  return { 
+    ok: true, 
+    message: 'All folder categories created and shared publicly',
+    folders: Object.keys(FOLDER_CATEGORIES).map(k => FOLDER_CATEGORIES[k].name)
+  };
+}
+
+/**
+ * Upload file to appropriate folder based on category
+ * @param {Object} user - Current user (can be null for public uploads)
+ * @param {Object} payload - { fileName, mimeType, base64, category }
+ * @returns {Object} - { ok, data: { url, fileName, folder } } or { ok: false, error }
+ */
+function fileUpload(user, { fileName, mimeType, base64, category }) {
   if (!fileName || !mimeType || !base64) {
     return { ok: false, error: 'Data file tidak lengkap' };
   }
@@ -2656,7 +2735,7 @@ function fileUpload(user, { fileName, mimeType, base64 }) {
   ];
   
   if (!allowedTypes.includes(mimeType)) {
-    return { ok: false, error: 'Tipe file tidak diizinkan' };
+    return { ok: false, error: 'Tipe file tidak diizinkan. Format yang didukung: JPG, PNG, GIF, WEBP, PDF' };
   }
   
   const maxSizeMB = 2;
@@ -2666,23 +2745,70 @@ function fileUpload(user, { fileName, mimeType, base64 }) {
     return { ok: false, error: `Ukuran file maksimal ${maxSizeMB}MB` };
   }
   
+  // Default category is 'documents'
+  const fileCategory = category || 'documents';
+  
   try {
-    const folder = DriveApp.getFolderById(CONFIG.DRIVEFOLDERID);
+    // Get appropriate folder based on category
+    const folder = getOrCreateSubfolder(fileCategory);
+    
+    // Create file
     const blob = Utilities.newBlob(Utilities.base64Decode(base64), mimeType, fileName);
     const file = folder.createFile(blob);
     
+    // Set public sharing for the file
     file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    
+    const userId = user?.id || null;
+    logInfo('fileUpload', 'File uploaded successfully', { 
+      fileName: file.getName(), 
+      category: fileCategory,
+      size: estimatedSize.toFixed(2) + 'MB'
+    }, userId);
     
     return {
       ok: true,
       data: {
         url: `https://drive.google.com/uc?export=view&id=${file.getId()}`,
         fileName: file.getName(),
+        folder: folder.getName(),
+        category: fileCategory,
+        fileId: file.getId(),
       },
     };
   } catch (e) {
+    const userId = user?.id || null;
+    logError('fileUpload', 'File upload failed', { fileName, category: fileCategory }, e.message, userId);
     console.error('File upload error:', e);
-    return { ok: false, error: 'Gagal mengupload file' };
+    return { ok: false, error: 'Gagal mengupload file: ' + e.message };
+  }
+}
+
+/**
+ * List all files in a specific category folder
+ * @param {string} category - Folder category
+ * @returns {Object} - List of files with URLs
+ */
+function listFilesByCategory(category) {
+  try {
+    const folder = getOrCreateSubfolder(category);
+    const files = folder.getFiles();
+    const fileList = [];
+    
+    while (files.hasNext()) {
+      const file = files.next();
+      fileList.push({
+        id: file.getId(),
+        name: file.getName(),
+        url: `https://drive.google.com/uc?export=view&id=${file.getId()}`,
+        createdTime: file.getDateCreated().toISOString(),
+        size: file.getSize(),
+      });
+    }
+    
+    return { ok: true, data: fileList };
+  } catch (e) {
+    return { ok: false, error: 'Gagal mengambil daftar file' };
   }
 }
 

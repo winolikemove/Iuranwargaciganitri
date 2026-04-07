@@ -180,7 +180,8 @@ export function PaymentWizard({
       
       // Upload file first if exists
       if (buktiFile) {
-        const uploadResult = await api.uploadFile(buktiFile);
+        // Payment proofs go to 'payment_proofs' folder
+        const uploadResult = await api.uploadFile(buktiFile, 'payment_proofs');
         
         if (uploadResult.ok && uploadResult.data?.url) {
           buktiUrl = uploadResult.data.url;

@@ -156,7 +156,8 @@ export function GalleryPage() {
       // If using file upload, upload the file first
       if (uploadMethod === 'file' && selectedFile) {
         setIsUploadingFile(true);
-        const uploadResult = await api.uploadFile(selectedFile);
+        // Gallery images go to 'gallery' folder
+        const uploadResult = await api.uploadFile(selectedFile, 'gallery');
         setIsUploadingFile(false);
         
         if (uploadResult.ok && uploadResult.data?.url) {

@@ -69,7 +69,8 @@ export function ProfilePage() {
     setError(null);
     
     try {
-      const result = await api.uploadFile(file);
+      // Profile photos go to 'profile_photos' folder
+      const result = await api.uploadFile(file, 'profile_photos');
       
       if (result.ok && result.data?.url) {
         // Update user photo URL

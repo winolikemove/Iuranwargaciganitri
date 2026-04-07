@@ -1841,7 +1841,12 @@ class ApiClient {
   
   // ==================== FILE UPLOAD ====================
   
-  async uploadFile(file: File): Promise<ApiResponse<{ url: string }>> {
+  /**
+   * Upload file to Google Drive with category-based folder organization
+   * @param file - File to upload
+   * @param category - Folder category: 'profile_photos' | 'payment_proofs' | 'gallery' | 'logo_banner' | 'documents'
+   */
+  async uploadFile(file: File, category?: string): Promise<ApiResponse<{ url: string }>> {
     // For demo mode, return a mock URL
     if (this.demoMode) {
       return this.handleDemoFileUpload(file);
@@ -1854,6 +1859,7 @@ class ApiClient {
       fileName: file.name,
       mimeType: file.type,
       base64: base64,
+      category: category || 'documents', // Default to 'documents' if no category provided
     });
     
     return result;

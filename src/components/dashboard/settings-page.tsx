@@ -127,7 +127,8 @@ export function SettingsPage() {
     setError(null);
     
     try {
-      const result = await api.uploadFile(file);
+      // Logo & banner uploads go to 'logo_banner' folder
+      const result = await api.uploadFile(file, 'logo_banner');
       
       if (result.ok && result.data?.url) {
         updateSetting(settingKey, result.data.url);
