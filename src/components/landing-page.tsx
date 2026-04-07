@@ -38,6 +38,13 @@ import {
   Shield,
   Sparkles,
   Home,
+  FileText,
+  AlertTriangle,
+  Trash2,
+  Car,
+  DollarSign,
+  AlertCircle,
+  Siren,
 } from 'lucide-react';
 import type { Gallery, Agenda, PengurusWithJabatan, StrukturBlok } from '@/types';
 
@@ -61,6 +68,7 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
   const [selectedAgenda, setSelectedAgenda] = useState<Agenda | null>(null);
   const [selectedBlok, setSelectedBlok] = useState<{ key: string; label: string; data: StrukturBlok } | null>(null);
   const [showReviewsModal, setShowReviewsModal] = useState(false);
+  const [showInfoModal, setShowInfoModal] = useState(false);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -382,7 +390,10 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
               </div>
 
               {/* Agenda */}
-              <div className="md:col-span-2 md:row-span-1 bg-[#b5ede7]/30 rounded-xl p-6 flex items-center gap-6 hover:scale-[1.02] transition-transform">
+              <div 
+                className="md:col-span-2 md:row-span-1 bg-[#b5ede7]/30 rounded-xl p-6 flex items-center gap-6 hover:scale-[1.02] transition-transform cursor-pointer"
+                onClick={onLoginClick}
+              >
                 <div className="bg-white p-3 rounded-xl shadow-[0px_24px_48px_rgba(19,30,25,0.06)]">
                   <Calendar className="h-8 w-8 text-[#316763]" />
                 </div>
@@ -393,7 +404,10 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
               </div>
 
               {/* Information */}
-              <div className="md:col-span-1 md:row-span-1 bg-[#eaf7ee] rounded-xl p-6 flex flex-col justify-between hover:scale-[1.02] transition-transform cursor-pointer" onClick={onLoginClick}>
+              <div 
+                className="md:col-span-1 md:row-span-1 bg-[#eaf7ee] rounded-xl p-6 flex flex-col justify-between hover:scale-[1.02] transition-transform cursor-pointer"
+                onClick={() => setShowInfoModal(true)}
+              >
                 <Info className="h-8 w-8 text-[#064e3b]" />
                 <div>
                   <h4 className="font-bold">Informasi</h4>
@@ -703,6 +717,170 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                       </div>
                     </div>
                   ))}
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Information/Rules Modal - Unified Style */}
+        <Dialog open={showInfoModal} onOpenChange={setShowInfoModal}>
+          <DialogContent showCloseButton={false} className="sm:max-w-3xl p-0 overflow-hidden bg-transparent border-0 shadow-none">
+            <div className="w-full bg-[#f0fdf4]/70 backdrop-blur-xl rounded-xl shadow-[0px_24px_48px_rgba(19,30,25,0.06)] overflow-hidden max-h-[90vh] flex flex-col">
+              {/* Header with gradient */}
+              <div className="bg-gradient-to-br from-[#003527] to-[#064e3b] p-6 md:p-8 text-white relative shrink-0">
+                {/* Close button */}
+                <button
+                  onClick={() => setShowInfoModal(false)}
+                  className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                >
+                  <X className="h-5 w-5 text-white" />
+                </button>
+                
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center">
+                    <FileText className="h-7 w-7 text-white" />
+                  </div>
+                  <div>
+                    <span className="text-white/70 text-xs uppercase tracking-wider">Informasi Resmi</span>
+                    <h3 className="text-2xl font-bold">Pengumuman & Peraturan</h3>
+                    <p className="text-white/70 text-sm mt-1">
+                      Tata Tertib Warga Komplek Pradha Ciganitri
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Content - Scrollable */}
+              <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-white">
+                {/* Intro */}
+                <div className="mb-6 p-4 bg-[#eaf7ee] rounded-xl border-l-4 border-[#003527]">
+                  <p className="text-[#404944] leading-relaxed text-sm">
+                    Demi menciptakan lingkungan hunian yang <strong className="text-[#003527]">Aman, Nyaman, Bersih, dan Harmonis</strong>, Pengurus Komplek menetapkan peraturan dan tata tertib yang berlaku bagi seluruh warga (pemilik maupun penyewa).
+                  </p>
+                </div>
+
+                {/* Section 1: Keamanan */}
+                <div className="mb-6">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                      <Shield className="h-4 w-4 text-blue-600" />
+                    </div>
+                    <h4 className="font-bold text-[#003527]">1. Keamanan & Akses Keluar Masuk</h4>
+                  </div>
+                  <div className="space-y-2 pl-11">
+                    <div className="flex gap-2 text-sm text-[#404944]">
+                      <span className="text-[#003527] font-bold">•</span>
+                      <p><strong>Tamu Berkunjung:</strong> Tamu yang berkunjung lebih dari pukul 22.00 WIB wajib melapor kepada petugas keamanan (Security).</p>
+                    </div>
+                    <div className="flex gap-2 text-sm text-[#404944]">
+                      <span className="text-[#003527] font-bold">•</span>
+                      <p><strong>Tamu Menginap:</strong> Tamu yang menginap lebih dari 1x24 jam wajib melapor kepada Ketua RT/Pengurus dengan menyerahkan salinan identitas (KTP).</p>
+                    </div>
+                    <div className="flex gap-2 text-sm text-[#404944]">
+                      <span className="text-[#003527] font-bold">•</span>
+                      <p><strong>Portal/Gate:</strong> Harap membuka kaca mobil atau membuka helm saat memasuki gerbang komplek demi memudahkan verifikasi identitas oleh petugas.</p>
+                    </div>
+                    <div className="flex gap-2 text-sm text-[#404944]">
+                      <span className="text-[#003527] font-bold">•</span>
+                      <p><strong>Jam Tenang:</strong> Dimulai pukul 22.00 WIB. Warga diharapkan menjaga ketenangan dan tidak melakukan aktivitas yang menimbulkan kebisingan (musik keras, renovasi berat, dsb).</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section 2: Kebersihan */}
+                <div className="mb-6">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
+                      <Trash2 className="h-4 w-4 text-green-600" />
+                    </div>
+                    <h4 className="font-bold text-[#003527]">2. Kebersihan Lingkungan</h4>
+                  </div>
+                  <div className="space-y-2 pl-11">
+                    <div className="flex gap-2 text-sm text-[#404944]">
+                      <span className="text-[#003527] font-bold">•</span>
+                      <p><strong>Pengelolaan Sampah:</strong> Sampah rumah tangga wajib diletakkan di dalam tempat sampah tertutup di depan rumah masing-masing sesuai jadwal pengambilan.</p>
+                    </div>
+                    <div className="flex gap-2 text-sm text-[#404944]">
+                      <span className="text-[#003527] font-bold">•</span>
+                      <p><strong>Dilarang Membakar Sampah:</strong> Mengingat kepadatan hunian, warga dilarang keras membakar sampah di area komplek kecuali tempat terbuka dengan intensitas kecil.</p>
+                    </div>
+                    <div className="flex gap-2 text-sm text-[#404944]">
+                      <span className="text-[#003527] font-bold">•</span>
+                      <p><strong>Saluran Air:</strong> Warga bertanggung jawab menjaga kebersihan selokan di depan rumah masing-masing agar tidak terjadi penyumbatan.</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section 3: Ketertiban */}
+                <div className="mb-6">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center">
+                      <Car className="h-4 w-4 text-amber-600" />
+                    </div>
+                    <h4 className="font-bold text-[#003527]">3. Ketertiban Parkir & Fasilitas Umum</h4>
+                  </div>
+                  <div className="space-y-2 pl-11">
+                    <div className="flex gap-2 text-sm text-[#404944]">
+                      <span className="text-[#003527] font-bold">•</span>
+                      <p><strong>Parkir Kendaraan:</strong> Gunakan area carport masing-masing. Hindari memarkir kendaraan di bahu jalan yang dapat mengganggu akses kendaraan lain atau mobil darurat (Ambulans/Pemadam Kebakaran).</p>
+                    </div>
+                    <div className="flex gap-2 text-sm text-[#404944]">
+                      <span className="text-[#003527] font-bold">•</span>
+                      <p><strong>Kecepatan Berkendara:</strong> Batas kecepatan maksimal di dalam komplek adalah <strong className="text-[#003527]">10-15 km/jam</strong>. Harap mengutamakan pejalan kaki dan anak-anak yang bermain.</p>
+                    </div>
+                    <div className="flex gap-2 text-sm text-[#404944]">
+                      <span className="text-[#003527] font-bold">•</span>
+                      <p><strong>Hewan Peliharaan:</strong> Pemilik wajib memastikan hewan peliharaan tidak berkeliaran tanpa pengawasan dan wajib membersihkan kotoran hewan jika berada di area publik.</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section 4: IPL */}
+                <div className="mb-6">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
+                      <DollarSign className="h-4 w-4 text-purple-600" />
+                    </div>
+                    <h4 className="font-bold text-[#003527]">4. Iuran Pengelolaan Lingkungan (IPL)</h4>
+                  </div>
+                  <div className="space-y-2 pl-11">
+                    <div className="flex gap-2 text-sm text-[#404944]">
+                      <span className="text-[#003527] font-bold">•</span>
+                      <p>Pembayaran IPL (Keamanan, Kebersihan, dan Kas) dilakukan paling lambat tanggal <strong className="text-[#003527]">10 setiap bulannya</strong>.</p>
+                    </div>
+                    <div className="flex gap-2 text-sm text-[#404944]">
+                      <span className="text-[#003527] font-bold">•</span>
+                      <p>Pembayaran dapat dilakukan melalui Transfer/datang ke rumah Bendahara RT masing-masing blok.</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Emergency Info */}
+                <div className="mb-6 p-4 bg-red-50 rounded-xl border border-red-200">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center shrink-0">
+                      <AlertCircle className="h-4 w-4 text-red-600" />
+                    </div>
+                    <div>
+                      <h5 className="font-bold text-red-700 mb-1">Keadaan Darurat</h5>
+                      <p className="text-sm text-red-600">
+                        Jika terdapat hal-hal yang mencurigakan, tindak kriminal, atau bencana (kebakaran/banjir), segera hubungi <strong>pos keamanan</strong> atau <strong>pengurus RT</strong>.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer Note */}
+                <div className="p-4 bg-[#f0fdf4] rounded-xl text-sm text-[#404944]">
+                  <p className="mb-2">Segala bentuk pelanggaran terhadap peraturan ini akan dikenakan sanksi teguran secara lisan maupun tertulis demi kebaikan bersama.</p>
+                  <p className="text-xs text-[#404944]/60">Demikian pengumuman ini dibuat untuk diperhatikan dan dilaksanakan dengan penuh tanggung jawab.</p>
+                </div>
+
+                {/* Signature */}
+                <div className="mt-6 text-right">
+                  <p className="text-xs text-[#404944]/60 mb-1">Hormat kami,</p>
+                  <p className="font-bold text-[#003527]">Pengurus Komplek Pradha Ciganitri</p>
                 </div>
               </div>
             </div>
@@ -1203,7 +1381,7 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                 Jadilah Bagian dari<br />Keluarga Pradha Ciganitri
               </h2>
               <p className="text-emerald-100 max-w-lg mx-auto">
-                Bersama kita wujudkan lingkungan yang harmonis, sejahtera, dan penuh kebersamaan. Daftarkan diri Anda untuk mengakses semua layanan digital kemurahan.
+                Bersama kita wujudkan lingkungan yang harmonis, sejahtera, dan penuh kebersamaan. Daftarkan diri Anda untuk mengakses semua layanan digital.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center pt-3">
                 {settings?.enableRegistration ? (
