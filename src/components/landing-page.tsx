@@ -955,158 +955,173 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
               
               {/* Bento Grid Gallery with Navigation */}
               <div className="relative">
-                {/* Gallery Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-                  {/* Get current page galleries */}
-                  {(() => {
-                    const itemsPerPage = 6;
-                    const totalPages = Math.ceil(galleries.length / itemsPerPage);
-                    const startIndex = galleryPage * itemsPerPage;
-                    const currentGalleries = galleries.slice(startIndex, startIndex + itemsPerPage);
-                    
-                    return (
-                      <>
-                        {/* First Image - Large (2x2) */}
-                        {currentGalleries[0] && (
-                          <div 
-                            className="col-span-2 row-span-2 rounded-xl overflow-hidden shadow-lg cursor-pointer group relative aspect-square md:aspect-auto min-h-[200px] md:min-h-[300px]"
-                            onClick={() => setSelectedImage(currentGalleries[0])}
-                          >
-                            <img
-                              src={currentGalleries[0].thumbnailUrl || currentGalleries[0].imageUrl}
-                              alt={currentGalleries[0].title}
-                              className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                              <div className="absolute bottom-4 left-4 right-4">
-                                <p className="text-white font-semibold truncate">{currentGalleries[0].title}</p>
-                                <div className="flex items-center gap-2 mt-2">
-                                  <div className="px-2 py-1 bg-white/20 backdrop-blur-sm text-white text-xs rounded-full flex items-center gap-1">
-                                    <Camera className="h-3 w-3" />
-                                    Lihat detail
-                                  </div>
-                                </div>
+                {/* Gallery Grid - Clean Bento Layout */}
+                {(() => {
+                  const itemsPerPage = 6;
+                  const startIndex = galleryPage * itemsPerPage;
+                  const currentGalleries = galleries.slice(startIndex, startIndex + itemsPerPage);
+                  
+                  return (
+                    <div className="grid grid-cols-2 md:grid-cols-6 md:grid-rows-2 gap-3 md:gap-4 h-auto md:h-[480px]">
+                      {/* First Image - Large (2 cols x 2 rows) */}
+                      {currentGalleries[0] && (
+                        <div 
+                          className="col-span-2 row-span-2 rounded-xl overflow-hidden shadow-lg cursor-pointer group relative"
+                          onClick={() => setSelectedImage(currentGalleries[0])}
+                        >
+                          <img
+                            src={currentGalleries[0].thumbnailUrl || currentGalleries[0].imageUrl}
+                            alt={currentGalleries[0].title}
+                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="absolute bottom-4 left-4 right-4">
+                              <p className="text-white font-semibold truncate">{currentGalleries[0].title}</p>
+                              <div className="px-2 py-1 bg-white/20 backdrop-blur-sm text-white text-xs rounded-full inline-flex items-center gap-1 mt-2">
+                                <Camera className="h-3 w-3" />
+                                Lihat detail
                               </div>
                             </div>
                           </div>
-                        )}
-                        
-                        {/* Second Image - Tall (1x2) */}
-                        {currentGalleries[1] && (
-                          <div 
-                            className="col-span-1 row-span-2 rounded-xl overflow-hidden shadow-lg cursor-pointer group relative min-h-[200px] md:min-h-[300px]"
-                            onClick={() => setSelectedImage(currentGalleries[1])}
-                          >
-                            <img
-                              src={currentGalleries[1].thumbnailUrl || currentGalleries[1].imageUrl}
-                              alt={currentGalleries[1].title}
-                              className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                              <div className="absolute bottom-3 left-3 right-3">
-                                <p className="text-white font-medium text-sm truncate">{currentGalleries[1].title}</p>
-                                <div className="px-2 py-0.5 bg-white/20 backdrop-blur-sm text-white text-xs rounded-full inline-flex items-center gap-1 mt-1">
-                                  <Camera className="h-3 w-3" />
-                                  Lihat detail
-                                </div>
+                        </div>
+                      )}
+                      
+                      {/* Second Image - Medium Wide (2 cols x 1 row) */}
+                      {currentGalleries[1] && (
+                        <div 
+                          className="col-span-2 row-span-1 rounded-xl overflow-hidden shadow-lg cursor-pointer group relative"
+                          onClick={() => setSelectedImage(currentGalleries[1])}
+                        >
+                          <img
+                            src={currentGalleries[1].thumbnailUrl || currentGalleries[1].imageUrl}
+                            alt={currentGalleries[1].title}
+                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="absolute bottom-3 left-3 right-3">
+                              <p className="text-white font-medium text-sm truncate">{currentGalleries[1].title}</p>
+                              <div className="px-2 py-0.5 bg-white/20 backdrop-blur-sm text-white text-xs rounded-full inline-flex items-center gap-1 mt-1">
+                                <Camera className="h-3 w-3" />
+                                Lihat detail
                               </div>
                             </div>
                           </div>
-                        )}
-                        
-                        {/* Third Image - Wide (2x1) */}
-                        {currentGalleries[2] && (
-                          <div 
-                            className="col-span-1 md:col-span-2 rounded-xl overflow-hidden shadow-lg cursor-pointer group relative aspect-video"
-                            onClick={() => setSelectedImage(currentGalleries[2])}
-                          >
-                            <img
-                              src={currentGalleries[2].thumbnailUrl || currentGalleries[2].imageUrl}
-                              alt={currentGalleries[2].title}
-                              className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                              <div className="absolute bottom-3 left-3 right-3">
-                                <p className="text-white font-medium text-sm truncate">{currentGalleries[2].title}</p>
-                                <div className="px-2 py-0.5 bg-white/20 backdrop-blur-sm text-white text-xs rounded-full inline-flex items-center gap-1 mt-1">
-                                  <Camera className="h-3 w-3" />
-                                  Lihat detail
-                                </div>
+                        </div>
+                      )}
+                      
+                      {/* Third Image - Small Square */}
+                      {currentGalleries[2] && (
+                        <div 
+                          className="col-span-1 row-span-1 rounded-xl overflow-hidden shadow-lg cursor-pointer group relative"
+                          onClick={() => setSelectedImage(currentGalleries[2])}
+                        >
+                          <img
+                            src={currentGalleries[2].thumbnailUrl || currentGalleries[2].imageUrl}
+                            alt={currentGalleries[2].title}
+                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="absolute bottom-2 left-2 right-2">
+                              <div className="px-2 py-0.5 bg-white/20 backdrop-blur-sm text-white text-xs rounded-full inline-flex items-center gap-1">
+                                <Camera className="h-3 w-3" />
+                                Lihat detail
                               </div>
                             </div>
                           </div>
-                        )}
-                        
-                        {/* Fourth Image - Small */}
-                        {currentGalleries[3] && (
-                          <div 
-                            className="col-span-1 rounded-xl overflow-hidden shadow-lg cursor-pointer group relative aspect-square"
-                            onClick={() => setSelectedImage(currentGalleries[3])}
-                          >
-                            <img
-                              src={currentGalleries[3].thumbnailUrl || currentGalleries[3].imageUrl}
-                              alt={currentGalleries[3].title}
-                              className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                              <div className="absolute bottom-2 left-2 right-2">
-                                <div className="px-2 py-0.5 bg-white/20 backdrop-blur-sm text-white text-xs rounded-full inline-flex items-center gap-1">
-                                  <Camera className="h-3 w-3" />
-                                  Lihat detail
-                                </div>
+                        </div>
+                      )}
+                      
+                      {/* Fourth Image - Small Square */}
+                      {currentGalleries[3] && (
+                        <div 
+                          className="col-span-1 row-span-1 rounded-xl overflow-hidden shadow-lg cursor-pointer group relative"
+                          onClick={() => setSelectedImage(currentGalleries[3])}
+                        >
+                          <img
+                            src={currentGalleries[3].thumbnailUrl || currentGalleries[3].imageUrl}
+                            alt={currentGalleries[3].title}
+                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="absolute bottom-2 left-2 right-2">
+                              <div className="px-2 py-0.5 bg-white/20 backdrop-blur-sm text-white text-xs rounded-full inline-flex items-center gap-1">
+                                <Camera className="h-3 w-3" />
+                                Lihat detail
                               </div>
                             </div>
                           </div>
-                        )}
-                        
-                        {/* Fifth Image - Small */}
-                        {currentGalleries[4] && (
-                          <div 
-                            className="col-span-1 rounded-xl overflow-hidden shadow-lg cursor-pointer group relative aspect-square"
-                            onClick={() => setSelectedImage(currentGalleries[4])}
-                          >
-                            <img
-                              src={currentGalleries[4].thumbnailUrl || currentGalleries[4].imageUrl}
-                              alt={currentGalleries[4].title}
-                              className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                              <div className="absolute bottom-2 left-2 right-2">
-                                <div className="px-2 py-0.5 bg-white/20 backdrop-blur-sm text-white text-xs rounded-full inline-flex items-center gap-1">
-                                  <Camera className="h-3 w-3" />
-                                  Lihat detail
-                                </div>
+                        </div>
+                      )}
+                      
+                      {/* Fifth Image - Medium Wide (2 cols x 1 row) */}
+                      {currentGalleries[4] && (
+                        <div 
+                          className="col-span-2 row-span-1 rounded-xl overflow-hidden shadow-lg cursor-pointer group relative"
+                          onClick={() => setSelectedImage(currentGalleries[4])}
+                        >
+                          <img
+                            src={currentGalleries[4].thumbnailUrl || currentGalleries[4].imageUrl}
+                            alt={currentGalleries[4].title}
+                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="absolute bottom-3 left-3 right-3">
+                              <p className="text-white font-medium text-sm truncate">{currentGalleries[4].title}</p>
+                              <div className="px-2 py-0.5 bg-white/20 backdrop-blur-sm text-white text-xs rounded-full inline-flex items-center gap-1 mt-1">
+                                <Camera className="h-3 w-3" />
+                                Lihat detail
                               </div>
                             </div>
                           </div>
-                        )}
-                        
-                        {/* Sixth Image - Wide */}
-                        {currentGalleries[5] && (
-                          <div 
-                            className="col-span-2 rounded-xl overflow-hidden shadow-lg cursor-pointer group relative aspect-video"
-                            onClick={() => setSelectedImage(currentGalleries[5])}
-                          >
-                            <img
-                              src={currentGalleries[5].thumbnailUrl || currentGalleries[5].imageUrl}
-                              alt={currentGalleries[5].title}
-                              className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                              <div className="absolute bottom-3 left-3 right-3">
-                                <p className="text-white font-medium text-sm truncate">{currentGalleries[5].title}</p>
-                                <div className="px-2 py-0.5 bg-white/20 backdrop-blur-sm text-white text-xs rounded-full inline-flex items-center gap-1 mt-1">
-                                  <Camera className="h-3 w-3" />
-                                  Lihat detail
-                                </div>
+                        </div>
+                      )}
+                      
+                      {/* Sixth Image - Small Square */}
+                      {currentGalleries[5] && (
+                        <div 
+                          className="col-span-1 row-span-1 rounded-xl overflow-hidden shadow-lg cursor-pointer group relative"
+                          onClick={() => setSelectedImage(currentGalleries[5])}
+                        >
+                          <img
+                            src={currentGalleries[5].thumbnailUrl || currentGalleries[5].imageUrl}
+                            alt={currentGalleries[5].title}
+                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="absolute bottom-2 left-2 right-2">
+                              <div className="px-2 py-0.5 bg-white/20 backdrop-blur-sm text-white text-xs rounded-full inline-flex items-center gap-1">
+                                <Camera className="h-3 w-3" />
+                                Lihat detail
                               </div>
                             </div>
                           </div>
-                        )}
-                      </>
-                    );
-                  })()}
-                </div>
+                        </div>
+                      )}
+                      
+                      {/* Seventh Image - Small Square */}
+                      {currentGalleries[6] && (
+                        <div 
+                          className="col-span-1 row-span-1 rounded-xl overflow-hidden shadow-lg cursor-pointer group relative"
+                          onClick={() => setSelectedImage(currentGalleries[6])}
+                        >
+                          <img
+                            src={currentGalleries[6].thumbnailUrl || currentGalleries[6].imageUrl}
+                            alt={currentGalleries[6].title}
+                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="absolute bottom-2 left-2 right-2">
+                              <div className="px-2 py-0.5 bg-white/20 backdrop-blur-sm text-white text-xs rounded-full inline-flex items-center gap-1">
+                                <Camera className="h-3 w-3" />
+                                Lihat detail
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
                 
                 {/* Navigation Buttons */}
                 {galleries.length > 6 && (
