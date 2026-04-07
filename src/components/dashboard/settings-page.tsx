@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Textarea } from '@/components/ui/textarea';
 import { FileUpload } from '@/components/ui/file-upload';
+import { Separator } from '@/components/ui/separator';
 import {
   Settings,
   Loader2,
@@ -31,8 +32,11 @@ import {
   Plus,
   X,
   Phone,
+  MessageCircle,
+  User,
 } from 'lucide-react';
-import type { AppSettings, Permissions, BankInfo, BlokCategories, SafeUser } from '@/types';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import type { AppSettings, Permissions, BankInfo, BlokCategories, SafeUser, StrukturOrganisasi } from '@/types';
 
 export function SettingsPage() {
   const { user, permissions } = useAuth();
@@ -45,6 +49,7 @@ export function SettingsPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [adminUsers, setAdminUsers] = useState<SafeUser[]>([]);
+  const [strukturOrganisasi, setStrukturOrganisasi] = useState<StrukturOrganisasi | null>(null);
 
   useEffect(() => {
     loadData();
@@ -75,6 +80,12 @@ export function SettingsPage() {
           ['SUPERADMIN', 'ADMIN', 'BENDAHARA'].includes(u.role)
         );
         setAdminUsers(admins);
+      }
+
+      // Fetch struktur organisasi for contact settings
+      const strukturRes = await api.getStrukturOrganisasi();
+      if (strukturRes.ok && strukturRes.data) {
+        setStrukturOrganisasi(strukturRes.data);
       }
     } catch (err) {
       console.error('Failed to load settings:', err);
@@ -884,104 +895,214 @@ export function SettingsPage() {
               <CardContent className="space-y-6">
                 {settings && (
                   <>
+                    {/* Kontak Pengurus Per Blok */}
                     <div className="space-y-4">
-                      {/* Dynamic Admin Contacts */}
-                      <div className="space-y-2">
-                        <Label>Kontak Admin Pengurus</Label>
-                        <p className="text-xs text-muted-foreground mb-2">
-                          Daftar kontak admin yang terdaftar di sistem
-                        </p>
-                        <div className="space-y-2 max-h-64 overflow-y-auto">
-                          {adminUsers.length > 0 ? (
-                            adminUsers.map((admin) => (
-                              <div key={admin.id} className="flex items-center justify-between p-3 border rounded-lg bg-muted/30">
-                                <div>
-                                  <p className="font-medium">{admin.nama}</p>
-                                  <p className="text-xs text-muted-foreground">{admin.role} - Blok {admin.blok}</p>
-                                </div>
-                                <a 
-                                  href={`https://wa.me/${admin.telepon.replace(/^0/, '62')}`} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                >
-                                  <Button size="sm" variant="outline">
-                                    <Phone className="h-4 w-4 mr-2" />
-                                    {admin.telepon}
-                                  </Button>
-                                </a>
-                              </div>
-                            ))
-                          ) : (
-                            <p className="text-sm text-muted-foreground">Belum ada admin terdaftar</p>
-                          )}
-                        </div>
+                      <div className="flex items-center gap-2">
+                        <User className="h-5 w-5" />
+                        <Label className="text-base font-semibold">Kontak Pengurus Per Blok</Label>
                       </div>
-
-                      <Separator />
-
-                      <div className="space-y-2">
-                        <Label>Nomor WhatsApp Admin Utama</Label>
-                        <Input
-                          value={settings.whatsappAdmin || ''}
-                          onChange={(e) => updateSetting('whatsappAdmin', e.target.value)}
-                          placeholder="08123456789"
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          Nomor utama yang akan ditampilkan di landing page
-                        </p>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label>Nama RT</Label>
-                          <Input
-                            value={settings.rtName || ''}
-                            onChange={(e) => updateSetting('rtName', e.target.value)}
-                            placeholder="RT 011"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Nama RW</Label>
-                          <Input
-                            value={settings.rwName || ''}
-                            onChange={(e) => updateSetting('rwName', e.target.value)}
-                            placeholder="RW 005"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>Alamat Lengkap</Label>
-                        <Textarea
-                          value={settings.address || ''}
-                          onChange={(e) => updateSetting('address', e.target.value)}
-                          placeholder="Alamat lengkap komplek"
-                          rows={2}
-                        />
-                      </div>
-
+                      <p className="text-xs text-muted-foreground">
+                        Kontak pengurus diambil dari Struktur Organisasi. Untuk mengubah, silakan edit di menu Struktur Organisasi.
+                      </p>
+                      
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="space-y-2">
-                          <Label>Kelurahan</Label>
-                          <Input
-                            value={settings.kelurahan || ''}
-                            onChange={(e) => updateSetting('kelurahan', e.target.value)}
-                          />
+                        {/* Blok A */}
+                        <div className="border rounded-lg p-4 bg-blue-50/50 border-blue-200">
+                          <h4 className="font-semibold text-blue-700 mb-3 flex items-center gap-2">
+                            <Building2 className="h-4 w-4" />
+                            Blok A
+                          </h4>
+                          <div className="space-y-2">
+                            {strukturOrganisasi?.blokA?.pengurus && strukturOrganisasi.blokA.pengurus.length > 0 ? (
+                              strukturOrganisasi.blokA.pengurus
+                                .sort((a, b) => a.order - b.order)
+                                .map((p) => (
+                                  <div key={p.id} className="flex items-center justify-between p-2 bg-white rounded border border-blue-100">
+                                    <div className="flex items-center gap-2 min-w-0">
+                                      <Avatar className="h-8 w-8">
+                                        <AvatarImage src={p.photoUrl || undefined} alt={p.nama} />
+                                        <AvatarFallback className="bg-blue-500 text-white text-xs">
+                                          {p.nama.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <div className="min-w-0">
+                                        <p className="font-medium text-sm truncate">{p.nama}</p>
+                                        <p className="text-xs text-muted-foreground">{p.jabatanLabel}</p>
+                                      </div>
+                                    </div>
+                                    {p.telepon && (
+                                      <a
+                                        href={`https://wa.me/${p.telepon.replace(/^0/, '62')}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-1 px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-xs rounded-full transition-colors"
+                                      >
+                                        <MessageCircle className="h-3 w-3" />
+                                        <span>Hubungi</span>
+                                      </a>
+                                    )}
+                                  </div>
+                                ))
+                            ) : (
+                              <p className="text-sm text-muted-foreground text-center py-2">Belum ada pengurus</p>
+                            )}
+                          </div>
                         </div>
-                        <div className="space-y-2">
-                          <Label>Kecamatan</Label>
-                          <Input
-                            value={settings.kecamatan || ''}
-                            onChange={(e) => updateSetting('kecamatan', e.target.value)}
-                          />
+
+                        {/* Blok B */}
+                        <div className="border rounded-lg p-4 bg-green-50/50 border-green-200">
+                          <h4 className="font-semibold text-green-700 mb-3 flex items-center gap-2">
+                            <Building2 className="h-4 w-4" />
+                            Blok B
+                          </h4>
+                          <div className="space-y-2">
+                            {strukturOrganisasi?.blokB?.pengurus && strukturOrganisasi.blokB.pengurus.length > 0 ? (
+                              strukturOrganisasi.blokB.pengurus
+                                .sort((a, b) => a.order - b.order)
+                                .map((p) => (
+                                  <div key={p.id} className="flex items-center justify-between p-2 bg-white rounded border border-green-100">
+                                    <div className="flex items-center gap-2 min-w-0">
+                                      <Avatar className="h-8 w-8">
+                                        <AvatarImage src={p.photoUrl || undefined} alt={p.nama} />
+                                        <AvatarFallback className="bg-green-500 text-white text-xs">
+                                          {p.nama.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <div className="min-w-0">
+                                        <p className="font-medium text-sm truncate">{p.nama}</p>
+                                        <p className="text-xs text-muted-foreground">{p.jabatanLabel}</p>
+                                      </div>
+                                    </div>
+                                    {p.telepon && (
+                                      <a
+                                        href={`https://wa.me/${p.telepon.replace(/^0/, '62')}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-1 px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-xs rounded-full transition-colors"
+                                      >
+                                        <MessageCircle className="h-3 w-3" />
+                                        <span>Hubungi</span>
+                                      </a>
+                                    )}
+                                  </div>
+                                ))
+                            ) : (
+                              <p className="text-sm text-muted-foreground text-center py-2">Belum ada pengurus</p>
+                            )}
+                          </div>
                         </div>
-                        <div className="space-y-2">
-                          <Label>Kota</Label>
-                          <Input
-                            value={settings.kota || ''}
-                            onChange={(e) => updateSetting('kota', e.target.value)}
-                          />
+
+                        {/* Bersama */}
+                        <div className="border rounded-lg p-4 bg-emerald-50/50 border-emerald-200">
+                          <h4 className="font-semibold text-emerald-700 mb-3 flex items-center gap-2">
+                            <Building2 className="h-4 w-4" />
+                            Bersama
+                          </h4>
+                          <p className="text-xs text-muted-foreground mb-2">Sie. Keamanan, Kebersihan & DKM</p>
+                          <div className="space-y-2">
+                            {strukturOrganisasi?.bersama?.pengurus && strukturOrganisasi.bersama.pengurus.length > 0 ? (
+                              strukturOrganisasi.bersama.pengurus
+                                .sort((a, b) => a.order - b.order)
+                                .map((p) => (
+                                  <div key={p.id} className="flex items-center justify-between p-2 bg-white rounded border border-emerald-100">
+                                    <div className="flex items-center gap-2 min-w-0">
+                                      <Avatar className="h-8 w-8">
+                                        <AvatarImage src={p.photoUrl || undefined} alt={p.nama} />
+                                        <AvatarFallback className="bg-emerald-500 text-white text-xs">
+                                          {p.nama.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <div className="min-w-0">
+                                        <p className="font-medium text-sm truncate">{p.nama}</p>
+                                        <p className="text-xs text-muted-foreground">{p.jabatanLabel}</p>
+                                      </div>
+                                    </div>
+                                    {p.telepon && (
+                                      <a
+                                        href={`https://wa.me/${p.telepon.replace(/^0/, '62')}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-1 px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-xs rounded-full transition-colors"
+                                      >
+                                        <MessageCircle className="h-3 w-3" />
+                                        <span>Hubungi</span>
+                                      </a>
+                                    )}
+                                  </div>
+                                ))
+                            ) : (
+                              <p className="text-sm text-muted-foreground text-center py-2">Belum ada pengurus</p>
+                            )}
+                          </div>
                         </div>
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    {/* Nomor WhatsApp Admin Utama */}
+                    <div className="space-y-2">
+                      <Label>Nomor WhatsApp Admin Utama</Label>
+                      <Input
+                        value={settings.whatsappAdmin || ''}
+                        onChange={(e) => updateSetting('whatsappAdmin', e.target.value)}
+                        placeholder="08123456789"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Nomor utama yang akan ditampilkan di landing page untuk dihubungi
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Nama RT</Label>
+                        <Input
+                          value={settings.rtName || ''}
+                          onChange={(e) => updateSetting('rtName', e.target.value)}
+                          placeholder="RT 011"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Nama RW</Label>
+                        <Input
+                          value={settings.rwName || ''}
+                          onChange={(e) => updateSetting('rwName', e.target.value)}
+                          placeholder="RW 005"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Alamat Lengkap</Label>
+                      <Textarea
+                        value={settings.address || ''}
+                        onChange={(e) => updateSetting('address', e.target.value)}
+                        placeholder="Alamat lengkap komplek"
+                        rows={2}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label>Kelurahan</Label>
+                        <Input
+                          value={settings.kelurahan || ''}
+                          onChange={(e) => updateSetting('kelurahan', e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Kecamatan</Label>
+                        <Input
+                          value={settings.kecamatan || ''}
+                          onChange={(e) => updateSetting('kecamatan', e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Kota</Label>
+                        <Input
+                          value={settings.kota || ''}
+                          onChange={(e) => updateSetting('kota', e.target.value)}
+                        />
                       </div>
                     </div>
 
@@ -1249,9 +1370,4 @@ function CategoryEditor({
       </div>
     </div>
   );
-}
-
-// Separator component
-function Separator() {
-  return <div className="border-t my-4" />;
 }
