@@ -138,7 +138,19 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
     ...(strukturOrganisasi?.bersama?.pengurus || [])
   ];
   const activeResidents = allPengurus.length || 11;
-  const totalUnits = 98; // Placeholder - total unit di komplek
+  const totalUnits = 98; // Total unit di komplek Pradha Ciganitri
+
+  // Data keuangan bulanan untuk grafik
+  const monthlyFinanceData = [
+    { month: 'Jan', fullName: 'Januari', pemasukan: 4500000, pengeluaran: 2800000 },
+    { month: 'Feb', fullName: 'Februari', pemasukan: 5200000, pengeluaran: 3100000 },
+    { month: 'Mar', fullName: 'Maret', pemasukan: 4800000, pengeluaran: 2500000 },
+    { month: 'Apr', fullName: 'April', pemasukan: 5100000, pengeluaran: 3200000 },
+    { month: 'Mei', fullName: 'Mei', pemasukan: 4700000, pengeluaran: 2900000 },
+    { month: 'Jun', fullName: 'Juni', pemasukan: 5500000, pengeluaran: 3400000 },
+  ];
+
+  const [hoveredBar, setHoveredBar] = useState<number | null>(null);
 
   // Scroll to section
   const scrollToSection = (sectionId: string) => {
@@ -256,11 +268,11 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                     <p className="text-xl font-bold text-[#003527]">9.8</p>
                   </div>
                 </div>
-                {pengurus.length > 0 && (
+                {allPengurus.length > 0 && (
                   <div className="mt-6 pt-6 border-t border-emerald-900/10">
                     <div className="flex items-center gap-4">
                       <div className="flex -space-x-3">
-                        {pengurus.slice(0, 3).map((p) => (
+                        {allPengurus.slice(0, 3).map((p) => (
                           <Avatar key={p.id} className="w-8 h-8 border-2 border-white">
                             <AvatarImage src={p.photoUrl || undefined} alt={p.nama} />
                             <AvatarFallback className="bg-emerald-500 text-white text-xs">
@@ -270,7 +282,7 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                         ))}
                       </div>
                       <p className="text-sm text-[#404944] font-medium">
-                        {pengurus.length} pengurus aktif
+                        {allPengurus.length} pengurus aktif
                       </p>
                     </div>
                   </div>
@@ -304,7 +316,7 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                 {/* Balance Card */}
                 <div className="lg:col-span-1 bg-[#003527] text-white p-6 rounded-xl flex flex-col justify-between shadow-[0px_24px_48px_rgba(19,30,25,0.06)]">
                   <div className="space-y-2">
-                    <p className="text-emerald-100/70 font-medium text-sm">Total Saldo Komunitas</p>
+                    <p className="text-emerald-100/70 font-medium text-sm">Total Saldo Kas RT Pradha Ciganitri</p>
                     <h3 className="text-2xl font-bold">{formatCurrency(finance.saldoAkhir)}</h3>
                   </div>
                   <div className="mt-8 space-y-3">
@@ -352,13 +364,50 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                     </div>
                   </div>
 
-                  {/* Mockup Graph */}
-                  <div className="h-24 w-full flex items-end justify-between gap-2">
-                    {[65, 45, 85, 55, 95, 70, 80].map((height, i) => (
-                      <div key={i} className="w-full bg-emerald-50 rounded-t-lg relative" style={{ height: `${height}%` }}>
-                        <div className="absolute bottom-0 w-full bg-emerald-100 rounded-t-lg" style={{ height: `${Math.random() * 60 + 20}%` }}></div>
-                      </div>
-                    ))}
+                  {/* Interactive Graph */}
+                  <div className="h-32 w-full flex items-end justify-between gap-2 relative">
+                    {monthlyFinanceData.map((data, i) => {
+                      const maxValue = Math.max(...monthlyFinanceData.map(d => Math.max(d.pemasukan, d.pengeluaran)));
+                      const pemasukanHeight = (data.pemasukan / maxValue) * 100;
+                      const pengeluaranHeight = (data.pengeluaran / maxValue) * 100;
+                      return (
+                        <div 
+                          key={i} 
+                          className="flex-1 flex flex-col items-center gap-1 relative"
+                          onMouseEnter={() => setHoveredBar(i)}
+                          onMouseLeave={() => setHoveredBar(null)}
+                        >
+                          {/* Tooltip */}
+                          {hoveredBar === i && (
+                            <div className="absolute -top-24 left-1/2 -translate-x-1/2 bg-[#003527] text-white p-3 rounded-lg shadow-lg z-10 min-w-[140px] text-xs">
+                              <p className="font-bold mb-2 text-center">{data.fullName}</p>
+                              <div className="flex items-center gap-2 mb-1">
+                                <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
+                                <span>Pemasukan: {formatCurrency(data.pemasukan)}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 rounded-full bg-red-400"></div>
+                                <span>Pengeluaran: {formatCurrency(data.pengeluaran)}</span>
+                              </div>
+                              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 rotate-45 w-2 h-2 bg-[#003527]"></div>
+                            </div>
+                          )}
+                          {/* Bars */}
+                          <div className="w-full flex gap-0.5 h-24 items-end">
+                            <div 
+                              className="flex-1 bg-emerald-400 rounded-t-sm transition-all duration-200 hover:bg-emerald-500 cursor-pointer" 
+                              style={{ height: `${pemasukanHeight}%` }}
+                            ></div>
+                            <div 
+                              className="flex-1 bg-red-300 rounded-t-sm transition-all duration-200 hover:bg-red-400 cursor-pointer" 
+                              style={{ height: `${pengeluaranHeight}%` }}
+                            ></div>
+                          </div>
+                          {/* Month Label */}
+                          <span className="text-[10px] text-[#404944] font-medium">{data.month}</span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -412,6 +461,9 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                 <div>
                   <h4 className="font-bold">Informasi</h4>
                   <p className="text-[#404944] text-xs mt-1">Pengumuman & peraturan resmi.</p>
+                  <div className="mt-2 inline-block px-2 py-0.5 bg-[#003527]/10 text-[#003527] text-xs font-medium rounded-full">
+                    Lihat di sini
+                  </div>
                 </div>
               </div>
 

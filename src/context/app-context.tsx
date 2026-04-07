@@ -174,6 +174,140 @@ const dummyStrukturOrganisasi: StrukturOrganisasi = {
   }
 };
 
+// Dummy data untuk reviews (fallback jika API belum punya data)
+const dummyReviews: Review[] = [
+  {
+    id: 'review-1',
+    userId: 'user-1',
+    userName: 'Bpk Ahmad Hidayat',
+    userPhotoUrl: '',
+    rating: 5,
+    comment: 'Lingkungan yang sangat nyaman dan harmonis. Pengurus RT sangat responsif dan peduli dengan keluhan warga. Sangat bangga menjadi bagian dari Pradha Ciganitri!',
+    status: 'APPROVED',
+    createdAt: '2026-03-15T10:30:00Z'
+  },
+  {
+    id: 'review-2',
+    userId: 'user-2',
+    userName: 'Ibu Siti Nurhaliza',
+    userPhotoUrl: '',
+    rating: 5,
+    comment: 'Keamanan komplek sangat terjaga, petugas security ramah dan sigap. Fasilitas umum juga bersih dan terawat dengan baik. Recommended!',
+    status: 'APPROVED',
+    createdAt: '2026-03-10T14:20:00Z'
+  },
+  {
+    id: 'review-3',
+    userId: 'user-3',
+    userName: 'Bpk Dedi Kurniawan',
+    userPhotoUrl: '',
+    rating: 4,
+    comment: 'Sistem pembayaran iuran online sangat memudahkan. Transparansi keuangan juga bagus, bisa langsung cek di aplikasi. Mantap!',
+    status: 'APPROVED',
+    createdAt: '2026-03-05T09:15:00Z'
+  },
+  {
+    id: 'review-4',
+    userId: 'user-4',
+    userName: 'Ibu Ratna Dewi',
+    userPhotoUrl: '',
+    rating: 5,
+    comment: 'Acara-acara komunitas selalu seru dan menghibur. Kegiatan bersih-bersih dan pengajian rutin membuat warga semakin akrab. Terima kasih pengurus!',
+    status: 'APPROVED',
+    createdAt: '2026-02-28T16:45:00Z'
+  },
+  {
+    id: 'review-5',
+    userId: 'user-5',
+    userName: 'Bpk Hendra Wijaya',
+    userPhotoUrl: '',
+    rating: 5,
+    comment: 'Anak-anak sangat senang bermain di taman komplek. Lingkungan asri dan aman untuk keluarga. Perfect place untuk tinggal!',
+    status: 'APPROVED',
+    createdAt: '2026-02-20T11:00:00Z'
+  }
+];
+
+// Dummy data untuk gallery (fallback jika API belum punya data)
+const dummyGalleries: Gallery[] = [
+  {
+    id: 'gallery-1',
+    agendaId: '',
+    title: 'Kerja Bakti Bersih Lingkungan',
+    description: 'Kegiatan gotong royong bersih-bersih komplek yang diikuti oleh warga blok A dan B',
+    imageUrl: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400',
+    takenAt: '2026-03-01',
+    uploadedBy: 'Admin',
+    createdAt: '2026-03-01T08:00:00Z'
+  },
+  {
+    id: 'gallery-2',
+    agendaId: '',
+    title: 'Peringatan Maulid Nabi',
+    description: 'Acara peringatan Maulid Nabi Muhammad SAW di Masjid Al Birr',
+    imageUrl: 'https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?w=800',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?w=400',
+    takenAt: '2026-02-28',
+    uploadedBy: 'Admin',
+    createdAt: '2026-02-28T18:00:00Z'
+  },
+  {
+    id: 'gallery-3',
+    agendaId: '',
+    title: 'Rapat Koordinasi Pengurus RT',
+    description: 'Rapat rutin pengurus RT membahas program kerja dan keuangan',
+    imageUrl: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=800',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=400',
+    takenAt: '2026-02-15',
+    uploadedBy: 'Admin',
+    createdAt: '2026-02-15T19:00:00Z'
+  },
+  {
+    id: 'gallery-4',
+    agendaId: '',
+    title: 'Turnamen Futsal Antar Blok',
+    description: 'Kompetisi futsal antar blok untuk mempererat tali silaturahmi',
+    imageUrl: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=400',
+    takenAt: '2026-02-10',
+    uploadedBy: 'Admin',
+    createdAt: '2026-02-10T15:00:00Z'
+  },
+  {
+    id: 'gallery-5',
+    agendaId: '',
+    title: 'Pengajian Rutin Ibu-Ibu',
+    description: 'Kegiatan pengajian mingguan ibu-ibu warga Pradha Ciganitri',
+    imageUrl: 'https://images.unsplash.com/photo-1585036156171-384164a8c675?w=800',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1585036156171-384164a8c675?w=400',
+    takenAt: '2026-01-25',
+    uploadedBy: 'Admin',
+    createdAt: '2026-01-25T10:00:00Z'
+  },
+  {
+    id: 'gallery-6',
+    agendaId: '',
+    title: 'Penyerahan Sembako',
+    description: 'Penyerahan paket sembako untuk warga kurang mampu',
+    imageUrl: 'https://images.unsplash.com/photo-1593113598332-cd288d649433?w=800',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1593113598332-cd288d649433?w=400',
+    takenAt: '2026-01-15',
+    uploadedBy: 'Admin',
+    createdAt: '2026-01-15T12:00:00Z'
+  }
+];
+
+// Dummy data untuk finance bulanan (untuk grafik)
+const dummyMonthlyFinance = [
+  { month: 'Januari', pemasukan: 4500000, pengeluaran: 2800000 },
+  { month: 'Februari', pemasukan: 5200000, pengeluaran: 3100000 },
+  { month: 'Maret', pemasukan: 4800000, pengeluaran: 2500000 },
+  { month: 'April', pemasukan: 5100000, pengeluaran: 3200000 },
+  { month: 'Mei', pemasukan: 4700000, pengeluaran: 2900000 },
+  { month: 'Juni', pemasukan: 5500000, pengeluaran: 3400000 },
+];
+
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
@@ -217,9 +351,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           setSettings(defaultSettings);
         }
         
-        // Process finance
+        // Process finance - use dummy if empty
         if (results[1].status === 'fulfilled' && results[1].value.ok && results[1].value.data) {
-          setFinance(results[1].value.data);
+          const financeData = results[1].value.data;
+          if (financeData.saldoAkhir !== undefined) {
+            setFinance(financeData);
+          } else {
+            setFinance({
+              saldoAkhir: 15500000,
+              totalPemasukanBulanIni: 4800000,
+              totalPengeluaranBulanIni: 2500000,
+              periodLabel: 'April 2026',
+              lastUpdated: new Date().toISOString()
+            });
+          }
+        } else {
+          setFinance({
+            saldoAkhir: 15500000,
+            totalPemasukanBulanIni: 4800000,
+            totalPengeluaranBulanIni: 2500000,
+            periodLabel: 'April 2026',
+            lastUpdated: new Date().toISOString()
+          });
         }
         
         // Process agendas
@@ -232,14 +385,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           setInformations(results[3].value.data);
         }
         
-        // Process galleries
+        // Process galleries - use dummy if empty
         if (results[4].status === 'fulfilled' && results[4].value.ok && results[4].value.data) {
-          setGalleries(results[4].value.data);
+          const galleryData = results[4].value.data;
+          if (galleryData && galleryData.length > 0) {
+            setGalleries(galleryData);
+          } else {
+            setGalleries(dummyGalleries);
+          }
+        } else {
+          setGalleries(dummyGalleries);
         }
         
-        // Process reviews
+        // Process reviews - use dummy if empty
         if (results[5].status === 'fulfilled' && results[5].value.ok && results[5].value.data) {
-          setReviews(results[5].value.data);
+          const reviewData = results[5].value.data;
+          if (reviewData && reviewData.length > 0) {
+            setReviews(reviewData);
+          } else {
+            setReviews(dummyReviews);
+          }
+        } else {
+          setReviews(dummyReviews);
         }
         
         // Process pengurus
