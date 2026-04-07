@@ -295,7 +295,7 @@ function routeAction(action, payload, user) {
     'role.permissions': () => rolePermissions(user),
     'role.allPermissions': () => roleAllPermissions(user),
     'role.updatePermissions': () => roleUpdatePermissions(user, payload),
-    'role.jabatanList': () => ({ ok: true, data: { jabatanPerBlok: JABATAN_PER_BLOK, jabatanBersama: JABATAN_BERSAMA, allJabatan: ALL_JABATAN } }),
+    'role.jabatanList': () => roleJabatanList(),
     
     // File
     'file.upload': () => fileUpload(user, payload),
@@ -1053,6 +1053,21 @@ function infoPublicList({ limit }) {
 
 function pengurusPublicList() {
   const users = dbGetAll('users');
+  const settings = getPublicSettings();
+  
+  // Get dynamic jabatan config or fallback to hardcoded
+  let jabatanMap = ALL_JABATAN;
+  if (settings.jabatanConfig) {
+    jabatanMap = {};
+    const perBlok = settings.jabatanConfig.perBlok || [];
+    const bersama = settings.jabatanConfig.bersama || [];
+    for (const j of perBlok) {
+      jabatanMap[j.key] = { label: j.label, order: j.order, scope: j.scope };
+    }
+    for (const j of bersama) {
+      jabatanMap[j.key] = { label: j.label, order: j.order, scope: j.scope };
+    }
+  }
   
   const pengurus = users.filter(u => 
     u.status === 'ACTIVE' && 
@@ -1067,13 +1082,13 @@ function pengurusPublicList() {
     telepon: u.telepon,
     photoUrl: u.photoUrl || '',
     jabatan: u.jabatan || '',
-    jabatanLabel: u.jabatan && ALL_JABATAN[u.jabatan] ? ALL_JABATAN[u.jabatan].label : '',
+    jabatanLabel: u.jabatan && jabatanMap[u.jabatan] ? jabatanMap[u.jabatan].label : '',
   }));
   
   // Sort by jabatan order, then by role
   publicPengurus.sort((a, b) => {
-    const aJabatanOrder = a.jabatan && ALL_JABATAN[a.jabatan] ? ALL_JABATAN[a.jabatan].order : 100;
-    const bJabatanOrder = b.jabatan && ALL_JABATAN[b.jabatan] ? ALL_JABATAN[b.jabatan].order : 100;
+    const aJabatanOrder = a.jabatan && jabatanMap[a.jabatan] ? jabatanMap[a.jabatan].order : 100;
+    const bJabatanOrder = b.jabatan && jabatanMap[b.jabatan] ? jabatanMap[b.jabatan].order : 100;
     
     if (aJabatanOrder !== bJabatanOrder) {
       return aJabatanOrder - bJabatanOrder;
@@ -1089,20 +1104,42 @@ function pengurusPublicList() {
 // ==================== STRUKTUR ORGANISASI (NEW v3) ====================
 function pengurusStrukturOrganisasi() {
   const users = dbGetAll('users');
+  const settings = getPublicSettings();
+  
+  // Get dynamic jabatan config or fallback to hardcoded
+  let jabatanMap = {};
+  
+  if (settings.jabatanConfig) {
+    // Build jabatan map from dynamic config
+    const perBlok = settings.jabatanConfig.perBlok || [];
+    const bersama = settings.jabatanConfig.bersama || [];
+    
+    for (const j of perBlok) {
+      jabatanMap[j.key] = { label: j.label, order: j.order, scope: j.scope };
+    }
+    for (const j of bersama) {
+      jabatanMap[j.key] = { label: j.label, order: j.order, scope: j.scope };
+    }
+  } else {
+    // Fallback to hardcoded
+    jabatanMap = ALL_JABATAN;
+  }
   
   // Filter only active users with jabatan
   const pengurusAktif = users.filter(u => 
-    u.status === 'ACTIVE' && u.jabatan && u.jabatan !== ''
+    u.status === 'ACTIVE' && u.jabatan && u.jabatan !== '' && jabatanMap[u.jabatan]
   );
   
   // Build structure per blok
   const struktur = {
     blokA: {
       label: 'Blok A',
+      kontakRT: settings.kontakRTA || null,
       pengurus: []
     },
     blokB: {
       label: 'Blok B',
+      kontakRT: settings.kontakRTB || null,
       pengurus: []
     },
     bersama: {
@@ -1112,7 +1149,7 @@ function pengurusStrukturOrganisasi() {
   };
   
   for (const u of pengurusAktif) {
-    const jabatanInfo = ALL_JABATAN[u.jabatan];
+    const jabatanInfo = jabatanMap[u.jabatan];
     if (!jabatanInfo) continue;
     
     const pengurusData = {
@@ -1421,9 +1458,30 @@ function userUpdateJabatan(user, { userId, jabatan }) {
     return { ok: false, error: 'User tidak ditemukan' };
   }
   
+  // Get dynamic jabatan config
+  const settings = getPublicSettings();
+  let validJabatan = [];
+  let jabatanMap = ALL_JABATAN;
+  
+  if (settings.jabatanConfig) {
+    jabatanMap = {};
+    const perBlok = settings.jabatanConfig.perBlok || [];
+    const bersama = settings.jabatanConfig.bersama || [];
+    for (const j of perBlok) {
+      validJabatan.push(j.key);
+      jabatanMap[j.key] = { label: j.label, order: j.order, scope: j.scope };
+    }
+    for (const j of bersama) {
+      validJabatan.push(j.key);
+      jabatanMap[j.key] = { label: j.label, order: j.order, scope: j.scope };
+    }
+  } else {
+    validJabatan = VALID_JABATAN;
+  }
+  
   // Validate jabatan (empty string means remove jabatan)
-  if (jabatan !== '' && !VALID_JABATAN.includes(jabatan)) {
-    return { ok: false, error: 'Jabatan tidak valid. Pilih dari: ' + VALID_JABATAN.join(', ') };
+  if (jabatan !== '' && !validJabatan.includes(jabatan)) {
+    return { ok: false, error: 'Jabatan tidak valid' };
   }
   
   // Check scope - only ADMIN can update users in their blok
@@ -1431,15 +1489,9 @@ function userUpdateJabatan(user, { userId, jabatan }) {
     return { ok: false, error: 'Tidak dapat mengubah jabatan user dari blok lain' };
   }
   
-  // Check if jabatan is BLOK scope, user must be in correct blok
-  if (jabatan && JABATAN_PER_BLOK[jabatan]) {
-    // For BLOK scope jabatan, user's blok matters
-    // No additional check needed as user already belongs to a blok
-  }
+  dbUpdate('users', userId, { jabatan, updatedAt: new Date().toISOString() });
   
-  dbUpdate('users', userId, { jabatan });
-  
-  const jabatanLabel = jabatan && ALL_JABATAN[jabatan] ? ALL_JABATAN[jabatan].label : '';
+  const jabatanLabel = jabatan && jabatanMap[jabatan] ? jabatanMap[jabatan].label : '';
   
   return { 
     ok: true, 
@@ -2447,6 +2499,31 @@ function getPublicSettings() {
     // Saldo Awal
     saldoAwalA: 0,
     saldoAwalB: 0,
+    // Dynamic Jabatan Configuration (NEW)
+    jabatanConfig: {
+      perBlok: [
+        { key: 'KETUA_RT', label: 'Ketua RT', order: 1, scope: 'BLOK' },
+        { key: 'WAKIL_KETUA', label: 'Wakil Ketua RT', order: 2, scope: 'BLOK' },
+        { key: 'SEKRETARIS', label: 'Sekretaris', order: 3, scope: 'BLOK' },
+        { key: 'BENDAHARA', label: 'Bendahara', order: 4, scope: 'BLOK' },
+      ],
+      bersama: [
+        { key: 'SIE_KEAMANAN', label: 'Sie. Keamanan', order: 10, scope: 'SHARED' },
+        { key: 'SIE_KEBERSIHAN', label: 'Sie. Kebersihan', order: 11, scope: 'SHARED' },
+        { key: 'DKM_MASJID', label: 'DKM Masjid Al Birr', order: 12, scope: 'SHARED' },
+      ],
+    },
+    // Kontak RT per Blok (NEW)
+    kontakRTA: {
+      nama: '',
+      telepon: '',
+      alamat: '',
+    },
+    kontakRTB: {
+      nama: '',
+      telepon: '',
+      alamat: '',
+    },
   };
   
   const settings = dbGetAll('settings');
@@ -2502,6 +2579,7 @@ function settingsUpdate(user, payload) {
     'incomeCategories', 'expenseCategories', 'informationCategories',
     'categoriesA', 'categoriesB',
     'saldoAwalA', 'saldoAwalB',
+    'jabatanConfig', 'kontakRTA', 'kontakRTB',
   ];
   
   const lock = LockService.getScriptLock();
@@ -2613,6 +2691,55 @@ function roleAllPermissions(user) {
   });
   
   return { ok: true, data: result };
+}
+
+function roleJabatanList() {
+  const settings = getPublicSettings();
+  
+  // Return dynamic config or fallback to hardcoded
+  if (settings.jabatanConfig) {
+    const perBlok = settings.jabatanConfig.perBlok || [];
+    const bersama = settings.jabatanConfig.bersama || [];
+    
+    // Build maps for backward compatibility
+    const jabatanPerBlok = {};
+    const jabatanBersama = {};
+    const allJabatan = {};
+    
+    for (const j of perBlok) {
+      jabatanPerBlok[j.key] = { label: j.label, order: j.order, scope: j.scope };
+      allJabatan[j.key] = { label: j.label, order: j.order, scope: j.scope };
+    }
+    for (const j of bersama) {
+      jabatanBersama[j.key] = { label: j.label, order: j.order, scope: j.scope };
+      allJabatan[j.key] = { label: j.label, order: j.order, scope: j.scope };
+    }
+    
+    return { 
+      ok: true, 
+      data: { 
+        jabatanPerBlok, 
+        jabatanBersama, 
+        allJabatan,
+        jabatanConfig: settings.jabatanConfig,
+        kontakRTA: settings.kontakRTA || null,
+        kontakRTB: settings.kontakRTB || null,
+      } 
+    };
+  }
+  
+  // Fallback to hardcoded
+  return { 
+    ok: true, 
+    data: { 
+      jabatanPerBlok: JABATAN_PER_BLOK, 
+      jabatanBersama: JABATAN_BERSAMA, 
+      allJabatan: ALL_JABATAN,
+      jabatanConfig: null,
+      kontakRTA: null,
+      kontakRTB: null,
+    } 
+  };
 }
 
 function roleUpdatePermissions(user, { role, permissions }) {

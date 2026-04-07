@@ -11,6 +11,27 @@ export interface JabatanInfo {
   scope: 'BLOK' | 'SHARED';
 }
 
+// Dynamic Jabatan Config Item
+export interface JabatanConfigItem {
+  key: string;
+  label: string;
+  order: number;
+  scope: 'BLOK' | 'SHARED';
+}
+
+// Dynamic Jabatan Configuration
+export interface JabatanConfig {
+  perBlok: JabatanConfigItem[];
+  bersama: JabatanConfigItem[];
+}
+
+// Kontak RT per Blok
+export interface KontakRT {
+  nama: string;
+  telepon: string;
+  alamat: string;
+}
+
 export const JABATAN_PER_BLOK: Record<string, JabatanInfo> = {
   KETUA_RT: { label: 'Ketua RT', order: 1, scope: 'BLOK' },
   WAKIL_KETUA: { label: 'Wakil Ketua RT', order: 2, scope: 'BLOK' },
@@ -220,6 +241,11 @@ export interface AppSettings {
   kota?: string;
   googleMapsEmbedUrl?: string;
   socialMediaLinks?: string[];
+  // Dynamic Jabatan Configuration (NEW)
+  jabatanConfig?: JabatanConfig;
+  // Kontak RT per Blok (NEW)
+  kontakRTA?: KontakRT;
+  kontakRTB?: KontakRT;
   [key: string]: unknown;
 }
 
@@ -313,6 +339,7 @@ export interface PengurusWithJabatan {
 
 export interface StrukturBlok {
   label: string;
+  kontakRT?: KontakRT | null;
   pengurus: PengurusWithJabatan[];
 }
 

@@ -38,7 +38,7 @@ import {
   Shield,
   AlertCircle,
 } from 'lucide-react';
-import type { StrukturOrganisasi, PengurusWithJabatan, JabatanInfo, SafeUser, JabatanKey } from '@/types';
+import type { StrukturOrganisasi, PengurusWithJabatan, JabatanInfo, SafeUser, JabatanKey, KontakRT } from '@/types';
 
 interface JabatanListResponse {
   jabatanPerBlok: Record<string, JabatanInfo>;
@@ -274,7 +274,8 @@ export function OrganizationPage() {
     pengurusList: PengurusWithJabatan[],
     jabatanPositions: Record<string, JabatanInfo>,
     blok?: string,
-    darkMode: boolean = false
+    darkMode: boolean = false,
+    kontakRT?: KontakRT | null
   ) => {
     // Sort pengurus by order
     const sortedPengurus = [...pengurusList].sort((a, b) => a.order - b.order);
@@ -301,6 +302,29 @@ export function OrganizationPage() {
           )}
         </CardHeader>
         <CardContent className="space-y-2">
+          {/* Kontak RT */}
+          {kontakRT && (kontakRT.nama || kontakRT.telepon) && (
+            <div className={`mb-3 p-3 rounded-lg ${darkMode ? 'bg-emerald-900/50 border border-emerald-600' : 'bg-blue-50 border border-blue-100'}`}>
+              <p className={`text-xs font-semibold mb-1 ${darkMode ? 'text-emerald-200' : 'text-blue-700'}`}>
+                Kontak RT {title}
+              </p>
+              {kontakRT.nama && (
+                <p className={`font-medium text-sm ${darkMode ? 'text-white' : ''}`}>{kontakRT.nama}</p>
+              )}
+              {kontakRT.telepon && (
+                <a
+                  href={getWhatsAppLink(kontakRT.telepon)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-2 py-1 mt-1 rounded-full bg-green-500 hover:bg-green-600 text-white text-xs font-medium transition-colors"
+                >
+                  <MessageCircle className="h-3 w-3" />
+                  <span>{kontakRT.telepon}</span>
+                </a>
+              )}
+            </div>
+          )}
+          
           {/* Filled positions */}
           {sortedPengurus.map((pengurus) => renderPengurusCard(pengurus, !darkMode))}
           
@@ -394,7 +418,8 @@ export function OrganizationPage() {
           strukturOrganisasi.blokA.pengurus,
           jabatanList.jabatanPerBlok,
           'A',
-          false
+          false,
+          strukturOrganisasi.blokA.kontakRT
         )}
 
         {/* Blok B */}
@@ -403,7 +428,8 @@ export function OrganizationPage() {
           strukturOrganisasi.blokB.pengurus,
           jabatanList.jabatanPerBlok,
           'B',
-          false
+          false,
+          strukturOrganisasi.blokB.kontakRT
         )}
 
         {/* Bersama */}
@@ -412,7 +438,8 @@ export function OrganizationPage() {
           strukturOrganisasi.bersama.pengurus,
           jabatanList.jabatanBersama,
           undefined,
-          true
+          true,
+          null
         )}
       </div>
 

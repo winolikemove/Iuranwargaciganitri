@@ -750,6 +750,26 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                   <h3 className="text-xl font-bold text-[#003527] mb-4 text-center pb-3 border-b border-emerald-100">
                     Blok A
                   </h3>
+                  {/* Kontak RT Blok A */}
+                  {strukturOrganisasi?.blokA?.kontakRT && (
+                    <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                      <p className="text-xs font-semibold text-blue-700 mb-1">Kontak RT Blok A</p>
+                      {strukturOrganisasi.blokA.kontakRT.nama && (
+                        <p className="font-medium text-sm">{strukturOrganisasi.blokA.kontakRT.nama}</p>
+                      )}
+                      {strukturOrganisasi.blokA.kontakRT.telepon && (
+                        <a
+                          href={getWhatsAppLink(strukturOrganisasi.blokA.kontakRT.telepon)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-2 py-1 mt-1 rounded-full bg-green-500 hover:bg-green-600 text-white text-xs font-medium transition-colors"
+                        >
+                          <MessageCircle className="h-3 w-3" />
+                          <span>{strukturOrganisasi.blokA.kontakRT.telepon}</span>
+                        </a>
+                      )}
+                    </div>
+                  )}
                   <div className="space-y-3">
                     {strukturOrganisasi?.blokA?.pengurus?.sort((a, b) => a.order - b.order).map((p) => (
                       <div key={p.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-emerald-50 transition-colors">
@@ -789,6 +809,26 @@ export function LandingPage({ onLoginClick, onRegisterClick }: LandingPageProps)
                   <h3 className="text-xl font-bold text-[#003527] mb-4 text-center pb-3 border-b border-emerald-100">
                     Blok B
                   </h3>
+                  {/* Kontak RT Blok B */}
+                  {strukturOrganisasi?.blokB?.kontakRT && (
+                    <div className="mb-4 p-3 bg-green-50 rounded-lg border border-green-100">
+                      <p className="text-xs font-semibold text-green-700 mb-1">Kontak RT Blok B</p>
+                      {strukturOrganisasi.blokB.kontakRT.nama && (
+                        <p className="font-medium text-sm">{strukturOrganisasi.blokB.kontakRT.nama}</p>
+                      )}
+                      {strukturOrganisasi.blokB.kontakRT.telepon && (
+                        <a
+                          href={getWhatsAppLink(strukturOrganisasi.blokB.kontakRT.telepon)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-2 py-1 mt-1 rounded-full bg-green-500 hover:bg-green-600 text-white text-xs font-medium transition-colors"
+                        >
+                          <MessageCircle className="h-3 w-3" />
+                          <span>{strukturOrganisasi.blokB.kontakRT.telepon}</span>
+                        </a>
+                      )}
+                    </div>
+                  )}
                   <div className="space-y-3">
                     {strukturOrganisasi?.blokB?.pengurus?.sort((a, b) => a.order - b.order).map((p) => (
                       <div key={p.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-emerald-50 transition-colors">

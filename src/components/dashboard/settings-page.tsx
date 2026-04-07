@@ -15,6 +15,31 @@ import { Textarea } from '@/components/ui/textarea';
 import { FileUpload } from '@/components/ui/file-upload';
 import { Separator } from '@/components/ui/separator';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   Settings,
   Loader2,
   AlertCircle,
@@ -34,9 +59,15 @@ import {
   Phone,
   MessageCircle,
   User,
+  Users,
+  Pencil,
+  Trash2,
+  GripVertical,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import type { AppSettings, Permissions, BankInfo, BlokCategories, SafeUser, StrukturOrganisasi } from '@/types';
+import type { AppSettings, Permissions, BankInfo, BlokCategories, SafeUser, StrukturOrganisasi, JabatanConfigItem, JabatanConfig, KontakRT } from '@/types';
 
 export function SettingsPage() {
   const { user, permissions } = useAuth();
@@ -50,6 +81,12 @@ export function SettingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [adminUsers, setAdminUsers] = useState<SafeUser[]>([]);
   const [strukturOrganisasi, setStrukturOrganisasi] = useState<StrukturOrganisasi | null>(null);
+  
+  // State for jabatan editor
+  const [isJabatanDialogOpen, setIsJabatanDialogOpen] = useState(false);
+  const [editingJabatan, setEditingJabatan] = useState<JabatanConfigItem | null>(null);
+  const [jabatanForm, setJabatanForm] = useState<{ label: string; scope: 'BLOK' | 'SHARED' }>({ label: '', scope: 'BLOK' });
+  const [deleteJabatanKey, setDeleteJabatanKey] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
@@ -228,6 +265,180 @@ export function SettingsPage() {
     } : null);
   };
 
+  // Jabatan Config handlers
+  const getJabatanConfig = (): JabatanConfig => {
+    return settings?.jabatanConfig || {
+      perBlok: [
+        { key: 'KETUA_RT', label: 'Ketua RT', order: 1, scope: 'BLOK' },
+        { key: 'WAKIL_KETUA', label: 'Wakil Ketua RT', order: 2, scope: 'BLOK' },
+        { key: 'SEKRETARIS', label: 'Sekretaris', order: 3, scope: 'BLOK' },
+        { key: 'BENDAHARA', label: 'Bendahara', order: 4, scope: 'BLOK' },
+      ],
+      bersama: [
+        { key: 'SIE_KEAMANAN', label: 'Sie. Keamanan', order: 10, scope: 'SHARED' },
+        { key: 'SIE_KEBERSIHAN', label: 'Sie. Kebersihan', order: 11, scope: 'SHARED' },
+        { key: 'DKM_MASJID', label: 'DKM Masjid Al Birr', order: 12, scope: 'SHARED' },
+      ],
+    };
+  };
+
+  const generateJabatanKey = (label: string): string => {
+    return label
+      .toUpperCase()
+      .replace(/[^A-Z0-9\s]/g, '')
+      .replace(/\s+/g, '_')
+      .replace(/^_+|_+$/g, '');
+  };
+
+  const openAddJabatanDialog = (scope: 'BLOK' | 'SHARED') => {
+    setEditingJabatan(null);
+    setJabatanForm({ label: '', scope });
+    setIsJabatanDialogOpen(true);
+  };
+
+  const openEditJabatanDialog = (jabatan: JabatanConfigItem) => {
+    setEditingJabatan(jabatan);
+    setJabatanForm({ label: jabatan.label, scope: jabatan.scope });
+    setIsJabatanDialogOpen(true);
+  };
+
+  const handleSaveJabatan = () => {
+    if (!jabatanForm.label.trim()) {
+      setError('Label jabatan tidak boleh kosong');
+      return;
+    }
+
+    const config = getJabatanConfig();
+    const key = editingJabatan?.key || generateJabatanKey(jabatanForm.label);
+    
+    if (jabatanForm.scope === 'BLOK') {
+      const existingIndex = config.perBlok.findIndex(j => j.key === key);
+      const maxOrder = Math.max(...config.perBlok.map(j => j.order), 0);
+      
+      if (existingIndex >= 0) {
+        // Update existing
+        config.perBlok[existingIndex] = {
+          ...config.perBlok[existingIndex],
+          label: jabatanForm.label,
+          scope: jabatanForm.scope,
+        };
+      } else {
+        // Add new
+        config.perBlok.push({
+          key,
+          label: jabatanForm.label,
+          order: maxOrder + 1,
+          scope: jabatanForm.scope,
+        });
+      }
+      
+      // Sort by order
+      config.perBlok.sort((a, b) => a.order - b.order);
+    } else {
+      const existingIndex = config.bersama.findIndex(j => j.key === key);
+      const maxOrder = Math.max(...config.bersama.map(j => j.order), 9);
+      
+      if (existingIndex >= 0) {
+        // Update existing
+        config.bersama[existingIndex] = {
+          ...config.bersama[existingIndex],
+          label: jabatanForm.label,
+          scope: jabatanForm.scope,
+        };
+      } else {
+        // Add new
+        config.bersama.push({
+          key,
+          label: jabatanForm.label,
+          order: maxOrder + 1,
+          scope: jabatanForm.scope,
+        });
+      }
+      
+      // Sort by order
+      config.bersama.sort((a, b) => a.order - b.order);
+    }
+
+    updateSetting('jabatanConfig', config);
+    setIsJabatanDialogOpen(false);
+    setEditingJabatan(null);
+    setJabatanForm({ label: '', scope: 'BLOK' });
+  };
+
+  const handleDeleteJabatan = () => {
+    if (!deleteJabatanKey) return;
+
+    const config = getJabatanConfig();
+    config.perBlok = config.perBlok.filter(j => j.key !== deleteJabatanKey);
+    config.bersama = config.bersama.filter(j => j.key !== deleteJabatanKey);
+    
+    updateSetting('jabatanConfig', config);
+    setDeleteJabatanKey(null);
+  };
+
+  const moveJabatanUp = (key: string, scope: 'BLOK' | 'SHARED') => {
+    const config = getJabatanConfig();
+    const list = scope === 'BLOK' ? config.perBlok : config.bersama;
+    const index = list.findIndex(j => j.key === key);
+    
+    if (index > 0) {
+      // Swap orders
+      const temp = list[index].order;
+      list[index].order = list[index - 1].order;
+      list[index - 1].order = temp;
+      
+      // Sort
+      list.sort((a, b) => a.order - b.order);
+      
+      if (scope === 'BLOK') {
+        config.perBlok = list;
+      } else {
+        config.bersama = list;
+      }
+      
+      updateSetting('jabatanConfig', config);
+    }
+  };
+
+  const moveJabatanDown = (key: string, scope: 'BLOK' | 'SHARED') => {
+    const config = getJabatanConfig();
+    const list = scope === 'BLOK' ? config.perBlok : config.bersama;
+    const index = list.findIndex(j => j.key === key);
+    
+    if (index < list.length - 1) {
+      // Swap orders
+      const temp = list[index].order;
+      list[index].order = list[index + 1].order;
+      list[index + 1].order = temp;
+      
+      // Sort
+      list.sort((a, b) => a.order - b.order);
+      
+      if (scope === 'BLOK') {
+        config.perBlok = list;
+      } else {
+        config.bersama = list;
+      }
+      
+      updateSetting('jabatanConfig', config);
+    }
+  };
+
+  // Kontak RT handlers
+  const updateKontakRT = (blok: 'A' | 'B', field: keyof KontakRT, value: string) => {
+    const key = blok === 'A' ? 'kontakRTA' : 'kontakRTB';
+    const currentKontak = settings?.[key] as KontakRT | undefined;
+    setSettings(prev => prev ? {
+      ...prev,
+      [key]: {
+        nama: currentKontak?.nama || '',
+        telepon: currentKontak?.telepon || '',
+        alamat: currentKontak?.alamat || '',
+        [field]: value,
+      }
+    } : null);
+  };
+
   const updatePermission = (role: string, key: keyof Permissions, value: boolean) => {
     setRolePermissions(prev => ({
       ...prev,
@@ -319,6 +530,10 @@ export function SettingsPage() {
               <TabsTrigger value="categories">
                 <Tags className="h-4 w-4 mr-2" />
                 Kategori
+              </TabsTrigger>
+              <TabsTrigger value="jabatan">
+                <Users className="h-4 w-4 mr-2" />
+                Struktur Organisasi
               </TabsTrigger>
               <TabsTrigger value="contact">
                 <MessageSquare className="h-4 w-4 mr-2" />
@@ -1040,6 +1255,89 @@ export function SettingsPage() {
 
                     <Separator />
 
+                    {/* Kontak RT Per Blok */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-5 w-5" />
+                        <Label className="text-base font-semibold">Kontak RT Per Blok</Label>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Informasi kontak RT untuk masing-masing blok yang akan ditampilkan di landing page.
+                      </p>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Kontak RT Blok A */}
+                        <div className="border rounded-lg p-4 bg-blue-50/50 border-blue-200 space-y-3">
+                          <h4 className="font-semibold text-blue-700 flex items-center gap-2">
+                            <Building2 className="h-4 w-4" />
+                            Kontak RT Blok A
+                          </h4>
+                          <div className="space-y-2">
+                            <div className="space-y-1">
+                              <Label className="text-xs">Nama</Label>
+                              <Input
+                                value={settings.kontakRTA?.nama || ''}
+                                onChange={(e) => updateKontakRT('A', 'nama', e.target.value)}
+                                placeholder="Nama Ketua RT Blok A"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Telepon</Label>
+                              <Input
+                                value={settings.kontakRTA?.telepon || ''}
+                                onChange={(e) => updateKontakRT('A', 'telepon', e.target.value)}
+                                placeholder="08123456789"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Alamat</Label>
+                              <Input
+                                value={settings.kontakRTA?.alamat || ''}
+                                onChange={(e) => updateKontakRT('A', 'alamat', e.target.value)}
+                                placeholder="Alamat RT Blok A"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Kontak RT Blok B */}
+                        <div className="border rounded-lg p-4 bg-green-50/50 border-green-200 space-y-3">
+                          <h4 className="font-semibold text-green-700 flex items-center gap-2">
+                            <Building2 className="h-4 w-4" />
+                            Kontak RT Blok B
+                          </h4>
+                          <div className="space-y-2">
+                            <div className="space-y-1">
+                              <Label className="text-xs">Nama</Label>
+                              <Input
+                                value={settings.kontakRTB?.nama || ''}
+                                onChange={(e) => updateKontakRT('B', 'nama', e.target.value)}
+                                placeholder="Nama Ketua RT Blok B"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Telepon</Label>
+                              <Input
+                                value={settings.kontakRTB?.telepon || ''}
+                                onChange={(e) => updateKontakRT('B', 'telepon', e.target.value)}
+                                placeholder="08123456789"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Alamat</Label>
+                              <Input
+                                value={settings.kontakRTB?.alamat || ''}
+                                onChange={(e) => updateKontakRT('B', 'alamat', e.target.value)}
+                                placeholder="Alamat RT Blok B"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <Separator />
+
                     {/* Nomor WhatsApp Admin Utama */}
                     <div className="space-y-2">
                       <Label>Nomor WhatsApp Admin Utama</Label>
@@ -1296,7 +1594,268 @@ export function SettingsPage() {
             </div>
           </TabsContent>
         )}
+
+        {/* Struktur Organisasi Tab - Jabatan Config */}
+        {permissions?.canManageSettings && (
+          <TabsContent value="jabatan" className="mt-4">
+            <div className="space-y-6">
+              {/* Jabatan Per Blok */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <Building2 className="h-5 w-5 text-blue-600" />
+                        Jabatan Per Blok
+                      </CardTitle>
+                      <CardDescription>
+                        Jabatan yang ada di masing-masing blok (Ketua RT, Wakil, Sekretaris, Bendahara, dll)
+                      </CardDescription>
+                    </div>
+                    <Button onClick={() => openAddJabatanDialog('BLOK')} size="sm">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Tambah Jabatan
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {settings && (
+                    <div className="space-y-2">
+                      {getJabatanConfig().perBlok.map((jabatan, index, arr) => (
+                        <div
+                          key={jabatan.key}
+                          className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg border border-blue-200"
+                        >
+                          <div className="flex flex-col gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0"
+                              onClick={() => moveJabatanUp(jabatan.key, 'BLOK')}
+                              disabled={index === 0}
+                            >
+                              <ArrowUp className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0"
+                              onClick={() => moveJabatanDown(jabatan.key, 'BLOK')}
+                              disabled={index === arr.length - 1}
+                            >
+                              <ArrowDown className="h-3 w-3" />
+                            </Button>
+                          </div>
+                          <Badge className="bg-blue-500 text-white">{jabatan.order}</Badge>
+                          <div className="flex-1">
+                            <p className="font-medium">{jabatan.label}</p>
+                            <p className="text-xs text-muted-foreground">{jabatan.key}</p>
+                          </div>
+                          <Badge variant="outline" className="border-blue-300 text-blue-700">BLOK</Badge>
+                          <div className="flex gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => openEditJabatanDialog(jabatan)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => setDeleteJabatanKey(jabatan.key)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Jabatan Bersama */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <Users className="h-5 w-5 text-emerald-600" />
+                        Jabatan Bersama
+                      </CardTitle>
+                      <CardDescription>
+                        Jabatan yang bersifat bersama untuk kedua blok (Sie. Keamanan, Kebersihan, DKM, dll)
+                      </CardDescription>
+                    </div>
+                    <Button onClick={() => openAddJabatanDialog('SHARED')} size="sm">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Tambah Jabatan
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {settings && (
+                    <div className="space-y-2">
+                      {getJabatanConfig().bersama.map((jabatan, index, arr) => (
+                        <div
+                          key={jabatan.key}
+                          className="flex items-center gap-2 p-3 bg-emerald-50 rounded-lg border border-emerald-200"
+                        >
+                          <div className="flex flex-col gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0"
+                              onClick={() => moveJabatanUp(jabatan.key, 'SHARED')}
+                              disabled={index === 0}
+                            >
+                              <ArrowUp className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0"
+                              onClick={() => moveJabatanDown(jabatan.key, 'SHARED')}
+                              disabled={index === arr.length - 1}
+                            >
+                              <ArrowDown className="h-3 w-3" />
+                            </Button>
+                          </div>
+                          <Badge className="bg-emerald-500 text-white">{jabatan.order}</Badge>
+                          <div className="flex-1">
+                            <p className="font-medium">{jabatan.label}</p>
+                            <p className="text-xs text-muted-foreground">{jabatan.key}</p>
+                          </div>
+                          <Badge variant="outline" className="border-emerald-300 text-emerald-700">SHARED</Badge>
+                          <div className="flex gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => openEditJabatanDialog(jabatan)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => setDeleteJabatanKey(jabatan.key)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <div className="p-4 bg-muted rounded-lg">
+                <p className="text-sm text-muted-foreground">
+                  Konfigurasi jabatan ini akan digunakan untuk Struktur Organisasi. 
+                  Jabatan Per Blok akan tersedia untuk masing-masing blok (A dan B), 
+                  sedangkan Jabatan Bersama akan ditampilkan sebagai pengurus yang melayani kedua blok.
+                </p>
+              </div>
+              
+              <Button onClick={handleSaveSettings} disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Menyimpan...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    Simpan Struktur Organisasi
+                  </>
+                )}
+              </Button>
+            </div>
+          </TabsContent>
+        )}
       </Tabs>
+
+      {/* Dialog for Add/Edit Jabatan */}
+      <Dialog open={isJabatanDialogOpen} onOpenChange={setIsJabatanDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {editingJabatan ? 'Edit Jabatan' : 'Tambah Jabatan Baru'}
+            </DialogTitle>
+            <DialogDescription>
+              {editingJabatan 
+                ? 'Ubah label jabatan sesuai kebutuhan.' 
+                : 'Tambahkan jabatan baru untuk struktur organisasi.'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="label">Label Jabatan</Label>
+              <Input
+                id="label"
+                value={jabatanForm.label}
+                onChange={(e) => setJabatanForm(prev => ({ ...prev, label: e.target.value }))}
+                placeholder="Contoh: Ketua RT, Sie. Keamanan"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="scope">Tipe Jabatan</Label>
+              <Select
+                value={jabatanForm.scope}
+                onValueChange={(value: 'BLOK' | 'SHARED') => 
+                  setJabatanForm(prev => ({ ...prev, scope: value }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih tipe jabatan" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="BLOK">Per Blok (masing-masing blok punya)</SelectItem>
+                  <SelectItem value="SHARED">Bersama (melayani kedua blok)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {!editingJabatan && jabatanForm.label && (
+              <div className="p-3 bg-muted rounded-lg">
+                <p className="text-sm text-muted-foreground">
+                  Key yang akan di-generate: <code className="font-mono bg-background px-1 rounded">{generateJabatanKey(jabatanForm.label)}</code>
+                </p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsJabatanDialogOpen(false)}>
+              Batal
+            </Button>
+            <Button onClick={handleSaveJabatan}>
+              {editingJabatan ? 'Simpan Perubahan' : 'Tambah Jabatan'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Alert Dialog for Delete Confirmation */}
+      <AlertDialog open={!!deleteJabatanKey} onOpenChange={() => setDeleteJabatanKey(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus Jabatan?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tindakan ini tidak dapat dibatalkan. Jabatan ini akan dihapus dari konfigurasi struktur organisasi.
+              Warga yang saat ini memiliki jabatan ini tidak akan terpengaruh, namun jabatan tidak akan tersedia untuk warga baru.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteJabatan} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Hapus
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
