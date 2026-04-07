@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { useApp } from '@/context/app-context';
 import { api } from '@/lib/api-client';
@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select,
   SelectContent,
@@ -46,8 +47,11 @@ import {
   Trash2,
   Loader2,
   AlertCircle,
+  Building2,
+  ArrowRight,
 } from 'lucide-react';
-import type { Transaction, FinanceSummary } from '@/types';
+import { FinanceChart, generateMonthlyFinanceData } from '@/components/ui/finance-chart';
+import type { Transaction, FinanceSummary, MonthlyFinance } from '@/types';
 
 export function FinancePage() {
   const { user, permissions } = useAuth();
@@ -62,6 +66,7 @@ export function FinancePage() {
   const [filterYear, setFilterYear] = useState(new Date().getFullYear().toString());
   const [filterMonth, setFilterMonth] = useState<string>('ALL');
   const [filterType, setFilterType] = useState<string>('ALL');
+  const [filterBlok, setFilterBlok] = useState<string>(user?.blok || 'A');
   const [searchQuery, setSearchQuery] = useState('');
   
   // Dialog
@@ -74,6 +79,9 @@ export function FinancePage() {
     description: '',
     date: new Date().toISOString().split('T')[0],
   });
+
+  // Generate monthly finance data for chart
+  const monthlyData = useMemo(() => generateMonthlyFinanceData(6), []);
 
   const months = [
     { value: 'ALL', label: 'Semua Bulan' },
@@ -91,7 +99,6 @@ export function FinancePage() {
     { value: '12', label: 'Desember' },
   ];
 
-  // Generate years dynamically (current year - 2 to current year + 2)
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i);
 
@@ -99,14 +106,13 @@ export function FinancePage() {
 
   useEffect(() => {
     loadData();
-  }, [filterYear, filterMonth, filterType]);
+  }, [filterYear, filterMonth, filterType, filterBlok]);
 
   const loadData = async () => {
     setIsLoading(true);
     setError(null);
     
     try {
-      // Load summary
       const summaryRes = await api.getFinanceSummary(
         parseInt(filterYear),
         filterMonth !== 'ALL' ? parseInt(filterMonth) : undefined
@@ -115,7 +121,6 @@ export function FinancePage() {
         setSummary(summaryRes.data);
       }
       
-      // Load transactions
       const transRes = await api.getTransactions({
         year: parseInt(filterYear),
         month: filterMonth !== 'ALL' ? parseInt(filterMonth) : undefined,
@@ -136,7 +141,6 @@ export function FinancePage() {
     e.preventDefault();
     setFormError(null);
     
-    // Validation
     if (!formData.category) {
       setFormError('Kategori harus dipilih');
       return;
@@ -215,15 +219,20 @@ export function FinancePage() {
     return true;
   });
 
-  // Get categories based on user's blok
-  const userBlok = user?.blok || 'A';
-  const blokCategories = userBlok === 'A' ? settings?.categoriesA : settings?.categoriesB;
+  // Get categories based on selected blok
+  const blokCategories = filterBlok === 'A' ? settings?.categoriesA : settings?.categoriesB;
   
   const categories = formData.type === 'INCOME' 
     ? blokCategories?.income || settings?.incomeCategories || ['Iuran', 'Sumbangan', 'Lainnya']
     : formData.type === 'EXPENSE'
     ? blokCategories?.expense || settings?.expenseCategories || ['Kebersihan', 'Keamanan', 'Lainnya']
     : [];
+
+  // Get saldo awal based on blok
+  const saldoAwal = filterBlok === 'A' ? settings?.saldoAwalA : settings?.saldoAwalB;
+
+  // Can view all bloks (superadmin)
+  const canViewAllBloks = permissions?.canViewAllUsers || user?.role === 'SUPERADMIN';
 
   if (!permissions?.canViewFinance) {
     return (
@@ -238,64 +247,103 @@ export function FinancePage() {
 
   return (
     <div className="space-y-6">
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription className="flex items-center gap-2">
-              <Wallet className="h-4 w-4" />
-              Saldo Awal
+      {/* Blok Selector (for superadmin) */}
+      {canViewAllBloks && (
+        <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 border-blue-200 dark:border-blue-800">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Building2 className="h-5 w-5 text-blue-600" />
+                <div>
+                  <p className="font-medium">Lihat Keuangan Blok</p>
+                  <p className="text-sm text-muted-foreground">Pilih blok untuk melihat data keuangan</p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                {settings?.bloks?.map((blok) => (
+                  <Button
+                    key={blok}
+                    variant={filterBlok === blok ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setFilterBlok(blok)}
+                    className={filterBlok === blok ? 'bg-blue-600 hover:bg-blue-700' : ''}
+                  >
+                    Blok {blok}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Summary Cards - Bento Style */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card className="border-l-4 border-l-blue-500">
+          <CardHeader className="pb-2 pt-4">
+            <CardDescription className="flex items-center gap-2 text-xs">
+              <Wallet className="h-3 w-3" />
+              Saldo Awal Blok {filterBlok}
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{formatCurrency(summary?.saldoAwal || 0)}</p>
+          <CardContent className="pb-4">
+            <p className="text-xl md:text-2xl font-bold">{formatCurrency(saldoAwal || summary?.saldoAwal || 0)}</p>
           </CardContent>
         </Card>
         
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4" />
+        <Card className="border-l-4 border-l-green-500 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950">
+          <CardHeader className="pb-2 pt-4">
+            <CardDescription className="flex items-center gap-2 text-xs">
+              <TrendingUp className="h-3 w-3" />
               Total Pemasukan
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold text-green-600">{formatCurrency(summary?.totalPemasukan || 0)}</p>
+          <CardContent className="pb-4">
+            <p className="text-xl md:text-2xl font-bold text-green-600">{formatCurrency(summary?.totalPemasukan || 0)}</p>
           </CardContent>
         </Card>
         
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription className="flex items-center gap-2">
-              <TrendingDown className="h-4 w-4" />
+        <Card className="border-l-4 border-l-red-500 bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-950 dark:to-rose-950">
+          <CardHeader className="pb-2 pt-4">
+            <CardDescription className="flex items-center gap-2 text-xs">
+              <TrendingDown className="h-3 w-3" />
               Total Pengeluaran
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold text-red-600">{formatCurrency(summary?.totalPengeluaran || 0)}</p>
+          <CardContent className="pb-4">
+            <p className="text-xl md:text-2xl font-bold text-red-600">{formatCurrency(summary?.totalPengeluaran || 0)}</p>
           </CardContent>
         </Card>
         
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription className="flex items-center gap-2">
-              <Wallet className="h-4 w-4" />
+        <Card className="border-l-4 border-l-emerald-500 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950 dark:to-teal-950">
+          <CardHeader className="pb-2 pt-4">
+            <CardDescription className="flex items-center gap-2 text-xs">
+              <Wallet className="h-3 w-3" />
               Saldo Akhir
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold text-emerald-600">{formatCurrency(summary?.saldoAkhir || 0)}</p>
+          <CardContent className="pb-4">
+            <p className="text-xl md:text-2xl font-bold text-emerald-600">{formatCurrency(summary?.saldoAkhir || 0)}</p>
+            <p className="text-xs text-muted-foreground mt-1">{summary?.periodLabel}</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Filters */}
+      {/* Finance Chart */}
+      <FinanceChart 
+        data={monthlyData} 
+        title={`Grafik Keuangan Blok ${filterBlok}`}
+        description="Pemasukan vs Pengeluaran 6 bulan terakhir"
+        formatCurrency={formatCurrency}
+      />
+
+      {/* Transactions */}
       <Card>
         <CardHeader>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <CardTitle>Transaksi</CardTitle>
-              <CardDescription>Daftar transaksi keuangan Blok {user?.blok}</CardDescription>
+              <CardTitle>Transaksi Blok {filterBlok}</CardTitle>
+              <CardDescription>Daftar transaksi keuangan</CardDescription>
             </div>
             {permissions?.canCreateTransaction && (
               <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
@@ -308,7 +356,7 @@ export function FinancePage() {
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>Tambah Transaksi Baru</DialogTitle>
-                    <DialogDescription>Masukkan detail transaksi</DialogDescription>
+                    <DialogDescription>Masukkan detail transaksi untuk Blok {filterBlok}</DialogDescription>
                   </DialogHeader>
                   <form onSubmit={handleSubmit} className="space-y-4">
                     {formError && (
@@ -401,7 +449,7 @@ export function FinancePage() {
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-muted-foreground" />
               <Select value={filterYear} onValueChange={setFilterYear}>
-                <SelectTrigger className="w-32">
+                <SelectTrigger className="w-28">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -413,7 +461,7 @@ export function FinancePage() {
             </div>
             
             <Select value={filterMonth} onValueChange={setFilterMonth}>
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-36">
                 <SelectValue placeholder="Semua Bulan" />
               </SelectTrigger>
               <SelectContent>
@@ -424,7 +472,7 @@ export function FinancePage() {
             </Select>
             
             <Select value={filterType} onValueChange={setFilterType}>
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-36">
                 <SelectValue placeholder="Semua Tipe" />
               </SelectTrigger>
               <SelectContent>

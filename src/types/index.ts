@@ -315,6 +315,17 @@ export interface FinanceSummary {
   totalPengeluaran: number;
   saldoAkhir: number;
   periodLabel: string;
+  blok?: string;
+  monthlyBreakdown?: MonthlyFinance[];
+}
+
+// Monthly Finance for Charts
+export interface MonthlyFinance {
+  month: string;
+  monthShort: string;
+  pemasukan: number;
+  pengeluaran: number;
+  saldo: number;
 }
 
 export interface PublicFinanceSummary {

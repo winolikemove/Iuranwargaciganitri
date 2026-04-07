@@ -44,8 +44,8 @@ import {
   CreditCard,
   Shield,
   User,
-  Menu,
   Building2,
+  Home,
 } from 'lucide-react';
 import { DashboardHome } from './dashboard/dashboard-home';
 import { FinancePage } from './dashboard/finance-page';
@@ -59,13 +59,12 @@ import { SettingsPage } from './dashboard/settings-page';
 import { ProfilePage } from './dashboard/profile-page';
 import { OrganizationPage } from './dashboard/organization-page';
 
-type PageType = 'dashboard' | 'finance' | 'payment' | 'users' | 'agenda' | 'information' | 'gallery' | 'reviews' | 'settings' | 'profile' | 'organization';
+export type PageType = 'dashboard' | 'finance' | 'payment' | 'users' | 'agenda' | 'information' | 'gallery' | 'reviews' | 'settings' | 'profile' | 'organization';
 
 export function Dashboard() {
   const { user, permissions, logout } = useAuth();
   const { settings } = useApp();
   const [currentPage, setCurrentPage] = useState<PageType>('dashboard');
-  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const getRoleBadge = (role: string) => {
     const roleMap: Record<string, { label: string; className: string }> = {
@@ -111,10 +110,14 @@ export function Dashboard() {
     logout();
   };
 
+  const handleNavigate = (page: PageType) => {
+    setCurrentPage(page);
+  };
+
   const renderPage = () => {
     switch (currentPage) {
       case 'dashboard':
-        return <DashboardHome />;
+        return <DashboardHome onNavigate={handleNavigate} />;
       case 'finance':
         return <FinancePage />;
       case 'payment':
@@ -136,8 +139,17 @@ export function Dashboard() {
       case 'organization':
         return <OrganizationPage />;
       default:
-        return <DashboardHome />;
+        return <DashboardHome onNavigate={handleNavigate} />;
     }
+  };
+
+  // Get current page label
+  const getCurrentPageLabel = () => {
+    for (const group of menuItems) {
+      const item = group.items.find(i => i.id === currentPage);
+      if (item) return item.label;
+    }
+    return 'Dashboard';
   };
 
   return (
@@ -153,7 +165,7 @@ export function Dashboard() {
               />
             ) : (
               <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 flex items-center justify-center shadow-sm">
-                <span className="text-white font-bold text-sm">P</span>
+                <Home className="text-white h-5 w-5" />
               </div>
             )}
             <div className="flex-1 min-w-0">
@@ -228,16 +240,19 @@ export function Dashboard() {
       </Sidebar>
       
       <SidebarInset>
-        <header className="flex h-14 items-center gap-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 lg:px-6">
+        <header className="flex h-14 items-center gap-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 lg:px-6 sticky top-0 z-10">
           <SidebarTrigger />
           <Separator orientation="vertical" className="h-6" />
           <div className="flex-1">
             <h1 className="text-lg font-semibold">
-              {menuItems.flatMap(g => g.items).find(i => i.id === currentPage)?.label || 'Dashboard'}
+              {getCurrentPageLabel()}
             </h1>
           </div>
           <div className="flex items-center gap-2">
             <Badge className={roleBadge.className}>{roleBadge.label}</Badge>
+            {user?.blok && (
+              <Badge variant="outline">Blok {user.blok}</Badge>
+            )}
           </div>
         </header>
         
