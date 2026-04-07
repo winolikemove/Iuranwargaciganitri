@@ -20,6 +20,8 @@ const SCHEMAS = {
   settings: ['key', 'value'],
   permissions: ['role', 'permissions'],
   saldoawal: ['id', 'blok', 'year', 'amount', 'createdAt'],
+  // NEW: Password reset tokens
+  passwordResetTokens: ['id', 'userId', 'token', 'expiresAt', 'usedAt', 'createdAt'],
 };
 
 // ==================== STRUKTUR ORGANISASI (NEW v3) ====================
@@ -54,6 +56,8 @@ function doPost(e) {
     const publicActions = [
       'auth.login', 
       'auth.register', 
+      'auth.forgotpassword',
+      'auth.resetPassword',
       'settings.public',
       'finance.publicSummary',
       'agenda.publicList',
@@ -135,6 +139,8 @@ function routeAction(action, payload, user) {
     // Auth
     'auth.login': () => authLogin(payload),
     'auth.register': () => authRegister(payload),
+    'auth.forgotpassword': () => authForgotPassword(payload),
+    'auth.resetPassword': () => authResetPassword(payload),
     'auth.me': () => ({ ok: true, data: sanitizeUser(user) }),
     'auth.changePassword': () => authChangePassword(user, payload),
     
@@ -553,6 +559,164 @@ function authChangePassword(user, { oldPassword, newPassword }) {
   dbUpdate('users', user.id, { passwordHash: hashPassword(newPassword) });
   
   return { ok: true, data: { message: 'Password berhasil diubah' } };
+}
+
+// ==================== FORGOT PASSWORD FUNCTIONS ====================
+/**
+ * Generate a random reset token
+ */
+function generateResetToken() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let token = '';
+  for (let i = 0; i < 64; i++) {
+    token += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return token;
+}
+
+/**
+ * Forgot Password - Send reset link to user's email
+ * Since GAS cannot send emails directly to arbitrary addresses,
+ * this returns the reset token which frontend can use to show reset form
+ * or send via external email service
+ */
+function authForgotPassword({ email }) {
+  if (!email) {
+    return { ok: false, error: 'Email wajib diisi' };
+  }
+  
+  const emailLower = email.toLowerCase().trim();
+  const user = dbFindOne('users', { email: emailLower });
+  
+  // Always return success to prevent email enumeration
+  // But only create token if user exists
+  if (!user) {
+    return { 
+      ok: true, 
+      data: { 
+        message: 'Jika email terdaftar, link reset password akan dikirim ke email tersebut.',
+        tokenSent: false
+      } 
+    };
+  }
+  
+  // Check if user is active
+  if (user.status !== 'ACTIVE') {
+    return { 
+      ok: true, 
+      data: { 
+        message: 'Jika email terdaftar, link reset password akan dikirim ke email tersebut.',
+        tokenSent: false
+      } 
+    };
+  }
+  
+  // Invalidate any existing reset tokens for this user
+  const existingTokens = dbFind('passwordResetTokens', { userId: user.id, usedAt: '' });
+  for (const t of existingTokens) {
+    if (!t.usedAt) {
+      dbUpdate('passwordResetTokens', t.id, { usedAt: new Date().toISOString() });
+    }
+  }
+  
+  // Generate new token (expires in 1 hour)
+  const resetToken = generateResetToken();
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hour
+  
+  dbInsert('passwordResetTokens', {
+    userId: user.id,
+    token: resetToken,
+    expiresAt: expiresAt,
+    usedAt: '',
+  createdAt: new Date().toISOString()
+  });
+  
+  // Build reset URL
+  const resetUrl = `https://your-frontend-url.com/reset-password?token=${resetToken}`;
+  
+  // In Google Apps Script, we can use MailApp to send email
+  // Uncomment the following lines if you want to send actual emails:
+  /*
+  try {
+    MailApp.sendEmail({
+      to: user.email,
+      subject: 'Reset Password - Aplikasi Warga Pradha Ciganitri',
+      htmlBody: `
+        <p>Halo ${user.nama},</p>
+        <p>Anda telah meminta untuk mereset password akun Anda.</p>
+        <p>Klik link berikut untuk mereset password Anda:</p>
+        <p><a href="${resetUrl}">${resetUrl}</a></p>
+        <p>Link ini akan kadaluarsa dalam 1 jam.</p>
+        <p>Jika Anda tidak meminta reset password, abaikan email ini.</p>
+        <p>Terima kasih,<br>Tim Aplikasi Warga Pradha Ciganitri</p>
+      `
+    });
+  } catch (e) {
+    console.error('Failed to send email:', e);
+  }
+  */
+  
+  // Return token info (for demo/testing purposes)
+  // In production, you should not return the token in response
+  return {
+    ok: true,
+    data: {
+      message: 'Jika email terdaftar, link reset password akan dikirim ke email tersebut.',
+      tokenSent: true,
+      // For development/testing - remove in production
+      resetToken: resetToken,
+      resetUrl: resetUrl,
+      expiresAt: expiresAt
+    }
+  };
+}
+
+/**
+ * Reset Password - Validate token and update password
+ */
+function authResetPassword({ token, newPassword }) {
+  if (!token || !newPassword) {
+    return { ok: false, error: 'Token dan password baru wajib diisi' };
+  }
+  
+  if (newPassword.length < 6) {
+    return { ok: false, error: 'Password baru minimal 6 karakter' };
+  }
+  
+  // Find the token
+  const resetRecord = dbFindOne('passwordResetTokens', { token });
+  
+  if (!resetRecord) {
+    return { ok: false, error: 'Token tidak valid atau sudah kadaluarsa' };
+  }
+  
+  // Check if already used
+  if (resetRecord.usedAt) {
+    return { ok: false, error: 'Token sudah digunakan' };
+  }
+  
+  // Check if expired
+  if (new Date(resetRecord.expiresAt) < new Date()) {
+    return { ok: false, error: 'Token sudah kadaluarsa' };
+  }
+  
+  // Find the user
+  const user = dbFindOne('users', { id: resetRecord.userId });
+  
+  if (!user || user.status !== 'ACTIVE') {
+    return { ok: false, error: 'User tidak ditemukan atau tidak aktif' };
+  }
+  
+  // Update password
+  dbUpdate('users', user.id, { passwordHash: hashPassword(newPassword) });
+  
+  // Mark token as used
+  dbUpdate('passwordResetTokens', resetRecord.id, { usedAt: new Date().toISOString() });
+  
+  return {
+    ok: true,
+    data: { message: 'Password berhasil direset. Silakan login dengan password baru.' }
+  };
 }
 
 // ==================== PERMISSION HELPERS ====================

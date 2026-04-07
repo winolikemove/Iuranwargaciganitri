@@ -822,12 +822,34 @@ class ApiClient {
         result = { ok: true, data: { message: 'Password berhasil diubah' } as T };
         break;
 
-      case 'auth.forgotPassword':
+      case 'auth.forgotpassword':
         // Demo mode - simulate password reset
         if (payload.email) {
-          result = { ok: true, data: { message: 'Link reset password telah dikirim ke email Anda' } as T };
+          result = { 
+            ok: true, 
+            data: { 
+              message: 'Jika email terdaftar, link reset password akan dikirim ke email tersebut.',
+              tokenSent: true,
+              resetToken: 'demo-reset-token-' + Date.now(),
+              resetUrl: '/reset-password?token=demo-reset-token-' + Date.now(),
+              expiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString()
+            } as T 
+          };
         } else {
           result = { ok: false, error: 'Email diperlukan' };
+        }
+        break;
+        
+      case 'auth.resetPassword':
+        // Demo mode - simulate password reset
+        if (payload.token && payload.newPassword) {
+          if ((payload.newPassword as string).length < 6) {
+            result = { ok: false, error: 'Password baru minimal 6 karakter' };
+          } else {
+            result = { ok: true, data: { message: 'Password berhasil direset. Silakan login dengan password baru.' } as T };
+          }
+        } else {
+          result = { ok: false, error: 'Token dan password baru diperlukan' };
         }
         break;
         
@@ -1336,8 +1358,14 @@ class ApiClient {
     return this.request<{ message: string }>('auth.changePassword', { oldPassword, newPassword });
   }
 
-  async forgotPassword(email: string): Promise<ApiResponse<{ message: string }>> {
-    return this.request<{ message: string }>('auth.forgotPassword', { email }, {
+  async forgotPassword(email: string): Promise<ApiResponse<{ message: string; tokenSent?: boolean; resetToken?: string; resetUrl?: string; expiresAt?: string }>> {
+    return this.request<{ message: string; tokenSent?: boolean; resetToken?: string; resetUrl?: string; expiresAt?: string }>('auth.forgotpassword', { email }, {
+      requireAuth: false,
+    });
+  }
+
+  async resetPassword(token: string, newPassword: string): Promise<ApiResponse<{ message: string }>> {
+    return this.request<{ message: string }>('auth.resetPassword', { token, newPassword }, {
       requireAuth: false,
     });
   }
