@@ -110,6 +110,16 @@ export function FinanceReportPage({ onBack }: FinanceReportPageProps) {
 
   // Calculate summary from filtered transactions
   const summary = useMemo(() => {
+    // Use financeData from API if available, otherwise calculate from transactions
+    if (financeData) {
+      return {
+        totalPemasukan: financeData.totalPemasukan || 0,
+        totalPengeluaran: financeData.totalPengeluaran || 0,
+        saldoAwal: financeData.saldoAwal || 0,
+        saldoAkhir: financeData.saldoAkhir || 0,
+      };
+    }
+
     const totalPemasukan = filteredTransactions
       .filter((t) => t.type === 'INCOME')
       .reduce((sum, t) => sum + t.amount, 0);
@@ -128,7 +138,7 @@ export function FinanceReportPage({ onBack }: FinanceReportPageProps) {
       saldoAwal,
       saldoAkhir: saldoAwal + totalPemasukan - totalPengeluaran,
     };
-  }, [filteredTransactions, user?.blok, settings]);
+  }, [filteredTransactions, user?.blok, settings, financeData]);
 
   // Group transactions by category
   const categoryBreakdown = useMemo(() => {
@@ -148,6 +158,11 @@ export function FinanceReportPage({ onBack }: FinanceReportPageProps) {
 
   // Generate monthly data for chart
   const monthlyData = useMemo(() => {
+    // Use monthlyBreakdown from API if available
+    if (financeData?.monthlyBreakdown && financeData.monthlyBreakdown.length > 0) {
+      return financeData.monthlyBreakdown;
+    }
+
     const months = parseInt(selectedMonths);
     const monthNames = [
       'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -183,7 +198,7 @@ export function FinanceReportPage({ onBack }: FinanceReportPageProps) {
     }
 
     return data;
-  }, [filteredTransactions, selectedMonths]);
+  }, [filteredTransactions, selectedMonths, financeData]);
 
   // Pie chart data
   const pieData = useMemo(() => {
