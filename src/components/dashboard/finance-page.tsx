@@ -24,7 +24,18 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import {
   Table,
   TableBody,
@@ -49,13 +60,19 @@ import {
   AlertCircle,
   Building2,
   ArrowRight,
+  Settings,
+  Link,
+  CreditCard,
+  Save,
 } from 'lucide-react';
 import { FinanceChart, generateMonthlyFinanceData } from '@/components/ui/finance-chart';
+import { useToast } from '@/hooks/use-toast';
 import type { Transaction, FinanceSummary, MonthlyFinance } from '@/types';
 
 export function FinancePage() {
   const { user, permissions } = useAuth();
-  const { settings } = useApp();
+  const { settings, refreshSettings } = useApp();
+  const { toast } = useToast();
   
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [summary, setSummary] = useState<FinanceSummary | null>(null);
@@ -69,7 +86,7 @@ export function FinancePage() {
   const [filterBlok, setFilterBlok] = useState<string>(user?.blok || 'A');
   const [searchQuery, setSearchQuery] = useState('');
   
-  // Dialog
+  // Add Dialog
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -78,6 +95,28 @@ export function FinancePage() {
     amount: '',
     description: '',
     date: new Date().toISOString().split('T')[0],
+  });
+  
+  // Edit Dialog
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [editFormData, setEditFormData] = useState({
+    category: '',
+    amount: '',
+    description: '',
+    date: '',
+  });
+  
+  // Delete Dialog
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deletingTransaction, setDeletingTransaction] = useState<Transaction | null>(null);
+  
+  // Saldo Awal Dialog
+  const [showSaldoDialog, setShowSaldoDialog] = useState(false);
+  const [saldoFormData, setSaldoFormData] = useState({
+    blok: 'A',
+    year: new Date().getFullYear(),
+    amount: '',
   });
 
   // Generate monthly finance data for chart
@@ -128,7 +167,12 @@ export function FinancePage() {
         limit: 100,
       });
       if (transRes.ok && transRes.data) {
-        setTransactions(transRes.data);
+        // Filter by blok if not superadmin
+        let filteredTrans = transRes.data;
+        if (!permissions?.canViewAllUsers && user?.blok) {
+          filteredTrans = transRes.data.filter(t => t.blok === user.blok);
+        }
+        setTransactions(filteredTrans);
       }
     } catch (err) {
       setError('Gagal memuat data keuangan');
@@ -137,6 +181,7 @@ export function FinancePage() {
     }
   };
 
+  // Add Transaction
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
@@ -169,6 +214,10 @@ export function FinancePage() {
       });
       
       if (result.ok) {
+        toast({
+          title: 'Berhasil',
+          description: 'Transaksi berhasil ditambahkan',
+        });
         setShowAddDialog(false);
         setFormData({
           type: 'INCOME',
@@ -183,6 +232,157 @@ export function FinancePage() {
       }
     } catch (err) {
       setFormError('Terjadi kesalahan');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Edit Transaction
+  const handleEditClick = (transaction: Transaction) => {
+    setEditingTransaction(transaction);
+    setEditFormData({
+      category: transaction.category,
+      amount: transaction.amount.toString(),
+      description: transaction.description,
+      date: transaction.date,
+    });
+    setShowEditDialog(true);
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTransaction) return;
+    
+    const amount = parseInt(editFormData.amount);
+    if (isNaN(amount) || amount <= 0) {
+      toast({
+        title: 'Error',
+        description: 'Nominal harus berupa angka positif',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    try {
+      const result = await api.updateTransaction(editingTransaction.id, {
+        category: editFormData.category,
+        amount: amount,
+        description: editFormData.description,
+        date: editFormData.date,
+      });
+      
+      if (result.ok) {
+        toast({
+          title: 'Berhasil',
+          description: 'Transaksi berhasil diperbarui',
+        });
+        setShowEditDialog(false);
+        setEditingTransaction(null);
+        loadData();
+      } else {
+        toast({
+          title: 'Error',
+          description: result.error || 'Gagal memperbarui transaksi',
+          variant: 'destructive',
+        });
+      }
+    } catch (err) {
+      toast({
+        title: 'Error',
+        description: 'Terjadi kesalahan',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Delete Transaction
+  const handleDeleteClick = (transaction: Transaction) => {
+    setDeletingTransaction(transaction);
+    setShowDeleteDialog(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingTransaction) return;
+    
+    setIsSubmitting(true);
+    
+    try {
+      const result = await api.deleteTransaction(deletingTransaction.id);
+      
+      if (result.ok) {
+        toast({
+          title: 'Berhasil',
+          description: 'Transaksi berhasil dihapus',
+        });
+        setShowDeleteDialog(false);
+        setDeletingTransaction(null);
+        loadData();
+      } else {
+        toast({
+          title: 'Error',
+          description: result.error || 'Gagal menghapus transaksi',
+          variant: 'destructive',
+        });
+      }
+    } catch (err) {
+      toast({
+        title: 'Error',
+        description: 'Terjadi kesalahan',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Set Saldo Awal
+  const handleSaldoSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const amount = parseInt(saldoFormData.amount);
+    if (isNaN(amount) || amount < 0) {
+      toast({
+        title: 'Error',
+        description: 'Nominal tidak valid',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    try {
+      const result = await api.setSaldoAwal(
+        saldoFormData.blok,
+        saldoFormData.year,
+        amount
+      );
+      
+      if (result.ok) {
+        toast({
+          title: 'Berhasil',
+          description: `Saldo awal Blok ${saldoFormData.blok} tahun ${saldoFormData.year} berhasil diatur`,
+        });
+        setShowSaldoDialog(false);
+        refreshSettings?.();
+        loadData();
+      } else {
+        toast({
+          title: 'Error',
+          description: result.error || 'Gagal mengatur saldo awal',
+          variant: 'destructive',
+        });
+      }
+    } catch (err) {
+      toast({
+        title: 'Error',
+        description: 'Terjadi kesalahan',
+        variant: 'destructive',
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -233,6 +433,9 @@ export function FinancePage() {
 
   // Can view all bloks (superadmin)
   const canViewAllBloks = permissions?.canViewAllUsers || user?.role === 'SUPERADMIN';
+  
+  // Can manage saldo awal
+  const canManageSaldo = permissions?.canCreateTransaction;
 
   if (!permissions?.canViewFinance) {
     return (
@@ -251,7 +454,7 @@ export function FinancePage() {
       {canViewAllBloks && (
         <Card>
           <CardContent className="p-4">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-4">
               <div className="flex items-center gap-3">
                 <Building2 className="h-5 w-5 text-muted-foreground" />
                 <div>
@@ -278,7 +481,7 @@ export function FinancePage() {
 
       {/* Summary Cards - Bento Style */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => {}}>
+        <Card className="cursor-pointer hover:shadow-md transition-shadow">
           <CardHeader className="pb-2 pt-4">
             <CardDescription className="flex items-center gap-2 text-xs">
               <Wallet className="h-3 w-3" />
@@ -290,7 +493,7 @@ export function FinancePage() {
           </CardContent>
         </Card>
         
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => {}}>
+        <Card className="cursor-pointer hover:shadow-md transition-shadow">
           <CardHeader className="pb-2 pt-4">
             <CardDescription className="flex items-center gap-2 text-xs">
               <TrendingUp className="h-3 w-3" />
@@ -302,7 +505,7 @@ export function FinancePage() {
           </CardContent>
         </Card>
         
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => {}}>
+        <Card className="cursor-pointer hover:shadow-md transition-shadow">
           <CardHeader className="pb-2 pt-4">
             <CardDescription className="flex items-center gap-2 text-xs">
               <TrendingDown className="h-3 w-3" />
@@ -314,7 +517,7 @@ export function FinancePage() {
           </CardContent>
         </Card>
         
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => {}}>
+        <Card className="cursor-pointer hover:shadow-md transition-shadow">
           <CardHeader className="pb-2 pt-4">
             <CardDescription className="flex items-center gap-2 text-xs">
               <Wallet className="h-3 w-3" />
@@ -344,102 +547,183 @@ export function FinancePage() {
               <CardTitle>Transaksi Blok {filterBlok}</CardTitle>
               <CardDescription>Daftar transaksi keuangan</CardDescription>
             </div>
-            {permissions?.canCreateTransaction && (
-              <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-                <DialogTrigger asChild>
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Tambah Transaksi
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Tambah Transaksi Baru</DialogTitle>
-                    <DialogDescription>Masukkan detail transaksi untuk Blok {filterBlok}</DialogDescription>
-                  </DialogHeader>
-                  <form onSubmit={handleSubmit} className="space-y-4">
-                    {formError && (
-                      <Alert variant="destructive">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertDescription>{formError}</AlertDescription>
-                      </Alert>
-                    )}
-                    
-                    <div className="space-y-2">
-                      <Label>Tipe</Label>
-                      <Select
-                        value={formData.type}
-                        onValueChange={(value) => setFormData({ ...formData, type: value, category: '' })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="INCOME">Pemasukan</SelectItem>
-                          <SelectItem value="EXPENSE">Pengeluaran</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label>Kategori</Label>
-                      <Select
-                        value={formData.category}
-                        onValueChange={(value) => setFormData({ ...formData, category: value })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Pilih kategori" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {categories.map((cat) => (
-                            <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label>Nominal</Label>
-                      <Input
-                        type="number"
-                        placeholder="0"
-                        value={formData.amount}
-                        onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label>Keterangan</Label>
-                      <Textarea
-                        placeholder="Keterangan transaksi"
-                        value={formData.description}
-                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label>Tanggal</Label>
-                      <Input
-                        type="date"
-                        value={formData.date}
-                        onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                      />
-                    </div>
-                    
-                    <Button type="submit" className="w-full" disabled={isSubmitting}>
-                      {isSubmitting ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Menyimpan...
-                        </>
-                      ) : (
-                        'Simpan'
-                      )}
+            <div className="flex gap-2">
+              {/* Set Saldo Awal Button */}
+              {canManageSaldo && (
+                <Dialog open={showSaldoDialog} onOpenChange={setShowSaldoDialog}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Settings className="h-4 w-4 mr-2" />
+                      Atur Saldo Awal
                     </Button>
-                  </form>
-                </DialogContent>
-              </Dialog>
-            )}
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Atur Saldo Awal</DialogTitle>
+                      <DialogDescription>
+                        Tentukan saldo awal untuk blok dan tahun tertentu
+                      </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleSaldoSubmit} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label>Blok</Label>
+                        <Select
+                          value={saldoFormData.blok}
+                          onValueChange={(value) => setSaldoFormData({ ...saldoFormData, blok: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="A">Blok A</SelectItem>
+                            <SelectItem value="B">Blok B</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label>Tahun</Label>
+                        <Select
+                          value={saldoFormData.year.toString()}
+                          onValueChange={(value) => setSaldoFormData({ ...saldoFormData, year: parseInt(value) })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {years.map((year) => (
+                              <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label>Jumlah Saldo Awal</Label>
+                        <Input
+                          type="number"
+                          placeholder="0"
+                          value={saldoFormData.amount}
+                          onChange={(e) => setSaldoFormData({ ...saldoFormData, amount: e.target.value })}
+                        />
+                      </div>
+                      
+                      <Button type="submit" className="w-full" disabled={isSubmitting}>
+                        {isSubmitting ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Menyimpan...
+                          </>
+                        ) : (
+                          <>
+                            <Save className="mr-2 h-4 w-4" />
+                            Simpan Saldo Awal
+                          </>
+                        )}
+                      </Button>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              )}
+              
+              {/* Add Transaction Button */}
+              {permissions?.canCreateTransaction && (
+                <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Tambah Transaksi
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Tambah Transaksi Baru</DialogTitle>
+                      <DialogDescription>Masukkan detail transaksi untuk Blok {filterBlok}</DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                      {formError && (
+                        <Alert variant="destructive">
+                          <AlertCircle className="h-4 w-4" />
+                          <AlertDescription>{formError}</AlertDescription>
+                        </Alert>
+                      )}
+                      
+                      <div className="space-y-2">
+                        <Label>Tipe</Label>
+                        <Select
+                          value={formData.type}
+                          onValueChange={(value) => setFormData({ ...formData, type: value, category: '' })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="INCOME">Pemasukan</SelectItem>
+                            <SelectItem value="EXPENSE">Pengeluaran</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label>Kategori</Label>
+                        <Select
+                          value={formData.category}
+                          onValueChange={(value) => setFormData({ ...formData, category: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Pilih kategori" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {categories.map((cat) => (
+                              <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label>Nominal</Label>
+                        <Input
+                          type="number"
+                          placeholder="0"
+                          value={formData.amount}
+                          onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label>Keterangan</Label>
+                        <Textarea
+                          placeholder="Keterangan transaksi"
+                          value={formData.description}
+                          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label>Tanggal</Label>
+                        <Input
+                          type="date"
+                          value={formData.date}
+                          onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                        />
+                      </div>
+                      
+                      <Button type="submit" className="w-full" disabled={isSubmitting}>
+                        {isSubmitting ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Menyimpan...
+                          </>
+                        ) : (
+                          'Simpan'
+                        )}
+                      </Button>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -532,7 +816,17 @@ export function FinancePage() {
                     <TableRow key={tx.id}>
                       <TableCell>{formatDate(tx.date)}</TableCell>
                       <TableCell>{tx.category}</TableCell>
-                      <TableCell className="max-w-[200px] truncate">{tx.description}</TableCell>
+                      <TableCell className="max-w-[200px]">
+                        <div className="flex items-center gap-2">
+                          <span className="truncate">{tx.description}</span>
+                          {tx.paymentId && (
+                            <Badge variant="outline" className="text-xs flex-shrink-0">
+                              <CreditCard className="h-3 w-3 mr-1" />
+                              Iuran
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell>
                         <Badge variant={tx.type === 'INCOME' ? 'default' : 'destructive'}>
                           {tx.type === 'INCOME' ? 'Pemasukan' : 'Pengeluaran'}
@@ -544,11 +838,20 @@ export function FinancePage() {
                       {permissions?.canEditTransaction && (
                         <TableCell>
                           <div className="flex items-center gap-1">
-                            <Button variant="ghost" size="icon">
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              onClick={() => handleEditClick(tx)}
+                            >
                               <Edit className="h-4 w-4" />
                             </Button>
                             {permissions?.canDeleteTransaction && (
-                              <Button variant="ghost" size="icon" className="text-destructive">
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="text-destructive"
+                                onClick={() => handleDeleteClick(tx)}
+                              >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             )}
@@ -563,6 +866,108 @@ export function FinancePage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Edit Transaction Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Transaksi</DialogTitle>
+            <DialogDescription>Ubah detail transaksi</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleEditSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label>Kategori</Label>
+              <Select
+                value={editFormData.category}
+                onValueChange={(value) => setEditFormData({ ...editFormData, category: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih kategori" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Nominal</Label>
+              <Input
+                type="number"
+                placeholder="0"
+                value={editFormData.amount}
+                onChange={(e) => setEditFormData({ ...editFormData, amount: e.target.value })}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Keterangan</Label>
+              <Textarea
+                placeholder="Keterangan transaksi"
+                value={editFormData.description}
+                onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Tanggal</Label>
+              <Input
+                type="date"
+                value={editFormData.date}
+                onChange={(e) => setEditFormData({ ...editFormData, date: e.target.value })}
+              />
+            </div>
+            
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setShowEditDialog(false)}>
+                Batal
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Menyimpan...
+                  </>
+                ) : (
+                  'Simpan Perubahan'
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus Transaksi?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin menghapus transaksi "{deletingTransaction?.description}"?
+              Tindakan ini tidak dapat dibatalkan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Menghapus...
+                </>
+              ) : (
+                'Hapus'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
