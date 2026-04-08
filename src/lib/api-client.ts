@@ -1618,6 +1618,75 @@ class ApiClient {
         result = { ok: true, data: [] as T };
         break;
         
+      case 'payment.residentsByBlok': {
+        const residentsBlok = (payload.blok as string) || currentDemoUser?.blok || 'A';
+        const residentsYear = (payload.year as number) || new Date().getFullYear();
+        
+        // Generate demo residents with unpaid periods
+        const demoResidents = [
+          {
+            id: 'demo-resident-1',
+            nama: 'Budi Santoso',
+            nomorRumah: '1',
+            blok: residentsBlok,
+            telepon: '081234567801',
+            unpaidPeriods: ['2026-01', '2026-02'],
+            paidPeriods: ['2025-11', '2025-12'],
+            pendingPeriods: [],
+            unpaidCount: 2,
+            totalUnpaid: 300000,
+          },
+          {
+            id: 'demo-resident-2',
+            nama: 'Siti Aminah',
+            nomorRumah: '2',
+            blok: residentsBlok,
+            telepon: '081234567802',
+            unpaidPeriods: ['2026-02'],
+            paidPeriods: ['2026-01', '2025-12'],
+            pendingPeriods: [],
+            unpaidCount: 1,
+            totalUnpaid: 150000,
+          },
+          {
+            id: 'demo-resident-3',
+            nama: 'Ahmad Yusuf',
+            nomorRumah: '3',
+            blok: residentsBlok,
+            telepon: '081234567803',
+            unpaidPeriods: [],
+            paidPeriods: ['2026-01', '2026-02'],
+            pendingPeriods: [],
+            unpaidCount: 0,
+            totalUnpaid: 0,
+          },
+        ];
+        
+        result = { 
+          ok: true, 
+          data: {
+            residents: demoResidents,
+            monthlyFee: 150000,
+            year: residentsYear,
+            blok: residentsBlok,
+            allMonths: ['2026-01', '2026-02'],
+          } as T 
+        };
+        break;
+      }
+        
+      case 'payment.payForResident':
+        result = { 
+          ok: true, 
+          data: {
+            message: 'Pembayaran iuran berhasil dicatat',
+            paymentId: 'payment-' + Date.now(),
+            amount: 150000,
+            periods: payload.periods as string[],
+          } as T 
+        };
+        break;
+        
       // Permissions
       case 'role.allPermissions':
         result = { 
@@ -2081,6 +2150,70 @@ class ApiClient {
       cacheKey: 'unpaid_users',
       cacheTTL: 60 * 1000,
     });
+  }
+  
+  // Get residents by blok with their unpaid periods
+  async getResidentsByBlok(blok?: string, year?: number): Promise<ApiResponse<{
+    residents: Array<{
+      id: string;
+      nama: string;
+      nomorRumah: string;
+      blok: string;
+      telepon: string;
+      unpaidPeriods: string[];
+      paidPeriods: string[];
+      pendingPeriods: string[];
+      unpaidCount: number;
+      totalUnpaid: number;
+    }>;
+    monthlyFee: number;
+    year: number;
+    blok: string;
+    allMonths: string[];
+  }>> {
+    return this.request<{
+      residents: Array<{
+        id: string;
+        nama: string;
+        nomorRumah: string;
+        blok: string;
+        telepon: string;
+        unpaidPeriods: string[];
+        paidPeriods: string[];
+        pendingPeriods: string[];
+        unpaidCount: number;
+        totalUnpaid: number;
+      }>;
+      monthlyFee: number;
+      year: number;
+      blok: string;
+      allMonths: string[];
+    }>('payment.residentsByBlok', { blok, year }, {
+      useCache: true,
+      cacheKey: `residents_blok_${blok || 'default'}_${year || 'current'}`,
+      cacheTTL: 30 * 1000,
+    });
+  }
+  
+  // Admin pays for resident's iuran
+  async payForResident(userId: string, periods: string[], buktiUrl?: string): Promise<ApiResponse<{
+    message: string;
+    paymentId: string;
+    amount: number;
+    periods: string[];
+  }>> {
+    // Clear all related caches
+    CacheManager.clearPattern('payment');
+    CacheManager.clearPattern('finance');
+    CacheManager.clearPattern('transactions');
+    CacheManager.clearPattern('residents');
+    CacheManager.remove('public_finance');
+    return this.request<{
+      message: string;
+      paymentId: string;
+      amount: number;
+      periods: string[];
+    }>('payment.payForResident', { userId, periods, buktiUrl });
   }
   
   // ==================== AGENDA ====================

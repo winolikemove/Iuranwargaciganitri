@@ -256,6 +256,8 @@ function routeAction(action, payload, user) {
     'payment.reject': () => paymentReject(user, payload),
     'payment.paidPeriods': () => paymentPaidPeriods(user, payload),
     'payment.unpaidUsers': () => paymentUnpaidUsers(user, payload),
+    'payment.residentsByBlok': () => paymentResidentsByBlok(user, payload),
+    'payment.payForResident': () => paymentPayForResident(user, payload),
     
     // Agenda
     'agenda.list': () => agendaList(user, payload),
@@ -2021,6 +2023,204 @@ function paymentUnpaidUsers(user, { period }) {
   });
   
   return { ok: true, data: unpaid.map(sanitizeUser) };
+}
+
+// ==================== PAYMENT FOR RESIDENT (Admin pays for warga) ====================
+/**
+ * Get residents by blok with their unpaid periods
+ * Admin/Bendahara can get list of residents in their blok with unpaid months
+ * @param {Object} user - Current user
+ * @param {Object} payload - { blok, year }
+ * @returns {Object} - List of residents with unpaid periods
+ */
+function paymentResidentsByBlok(user, { blok, year }) {
+  const permCheck = requirePermission(user, 'canApprovePayment');
+  if (permCheck) return permCheck;
+  
+  const y = year || new Date().getFullYear();
+  
+  // Determine which blok to query
+  const canViewAll = hasPermission(user, 'canViewAllUsers');
+  const targetBlok = canViewAll && blok ? blok : user.blok;
+  
+  // Validate blok access
+  if (!canViewAll && targetBlok !== user.blok) {
+    return { ok: false, error: 'Anda hanya dapat melihat warga blok Anda sendiri' };
+  }
+  
+  // Get all active users in the blok
+  let users = dbFind('users', { blok: targetBlok, status: 'ACTIVE' });
+  
+  // Get settings for monthly fee
+  const settings = getPublicSettings();
+  const monthlyFee = settings.monthlyFee || settings.tarifIuran || 50000;
+  
+  // Generate all months for the year up to current month
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1; // 1-12
+  
+  const allMonths = [];
+  for (let m = 1; m <= 12; m++) {
+    // Skip future months if viewing current year
+    if (y === currentYear && m > currentMonth) continue;
+    allMonths.push(`${y}-${String(m).padStart(2, '0')}`);
+  }
+  
+  // For each user, calculate unpaid periods
+  const residents = users.map(u => {
+    const paidPeriods = getPaidPeriodsForUser(u.id);
+    
+    // Get pending periods (currently in verification)
+    const pendingPayments = dbFind('payments', { userId: u.id, status: 'PENDING' });
+    const pendingPeriods = [];
+    for (const p of pendingPayments) {
+      try {
+        const periods = JSON.parse(p.periods || '[]');
+        pendingPeriods.push(...periods);
+      } catch (e) {}
+    }
+    
+    // Calculate unpaid periods
+    const unpaidPeriods = allMonths.filter(m => 
+      !paidPeriods.includes(m) && !pendingPeriods.includes(m)
+    );
+    
+    return {
+      id: u.id,
+      nama: u.nama,
+      nomorRumah: u.nomorRumah,
+      blok: u.blok,
+      telepon: u.telepon,
+      unpaidPeriods,
+      paidPeriods,
+      pendingPeriods: [...new Set(pendingPeriods)],
+      unpaidCount: unpaidPeriods.length,
+      totalUnpaid: unpaidPeriods.length * monthlyFee,
+    };
+  });
+  
+  // Sort by nomorRumah
+  residents.sort((a, b) => {
+    const numA = parseInt(a.nomorRumah) || 0;
+    const numB = parseInt(b.nomorRumah) || 0;
+    return numA - numB;
+  });
+  
+  return { 
+    ok: true, 
+    data: { 
+      residents, 
+      monthlyFee,
+      year: y,
+      blok: targetBlok,
+      allMonths 
+    } 
+  };
+}
+
+/**
+ * Admin pays for resident's iuran
+ * Creates payment record and immediately approves it
+ * @param {Object} user - Current user (admin/bendahara)
+ * @param {Object} payload - { userId, periods, buktiUrl }
+ * @returns {Object} - Success/error response
+ */
+function paymentPayForResident(user, { userId, periods, buktiUrl }) {
+  const permCheck = requirePermission(user, 'canApprovePayment');
+  if (permCheck) return permCheck;
+  
+  // Validate input
+  if (!userId) {
+    return { ok: false, error: 'User warga wajib dipilih' };
+  }
+  
+  if (!periods || !Array.isArray(periods) || periods.length === 0) {
+    return { ok: false, error: 'Pilih minimal 1 periode pembayaran' };
+  }
+  
+  // Get target user
+  const targetUser = dbFindOne('users', { id: userId });
+  if (!targetUser) {
+    return { ok: false, error: 'Warga tidak ditemukan' };
+  }
+  
+  if (targetUser.status !== 'ACTIVE') {
+    return { ok: false, error: 'Warga tidak aktif' };
+  }
+  
+  // Check blok access
+  const canViewAll = hasPermission(user, 'canViewAllUsers');
+  if (!canViewAll && targetUser.blok !== user.blok) {
+    return { ok: false, error: 'Anda hanya dapat membayarkan iuran untuk warga blok Anda sendiri' };
+  }
+  
+  // Check for already paid periods
+  const paidPeriods = getPaidPeriodsForUser(userId);
+  const duplicates = periods.filter(p => paidPeriods.includes(p));
+  if (duplicates.length > 0) {
+    return { ok: false, error: `Periode ${duplicates.join(', ')} sudah dibayar` };
+  }
+  
+  // Check for pending periods
+  const pendingPayments = dbFind('payments', { userId: userId, status: 'PENDING' });
+  for (const payment of pendingPayments) {
+    const paymentPeriods = JSON.parse(payment.periods || '[]');
+    const overlap = periods.filter(p => paymentPeriods.includes(p));
+    if (overlap.length > 0) {
+      return { ok: false, error: `Periode ${overlap.join(', ')} sedang dalam verifikasi` };
+    }
+  }
+  
+  // Get settings for monthly fee
+  const settings = getPublicSettings();
+  const monthlyFee = settings.monthlyFee || settings.tarifIuran || 50000;
+  const amount = periods.length * monthlyFee;
+  
+  // Create payment record (auto-approved since admin is paying)
+  const paymentRecord = dbInsert('payments', {
+    userId: targetUser.id,
+    userName: targetUser.nama,
+    blok: targetUser.blok,
+    nomorRumah: targetUser.nomorRumah,
+    periods: JSON.stringify(periods),
+    amount,
+    buktiUrl: buktiUrl || '',
+    status: 'APPROVED',
+    processedBy: user.nama,
+    processedAt: new Date().toISOString(),
+  });
+  
+  // Create income transaction
+  dbInsert('transactions', {
+    blok: targetUser.blok,
+    type: 'INCOME',
+    category: 'Iuran Bulanan',
+    amount: amount,
+    description: `Iuran ${targetUser.nama} (Blok ${targetUser.blok}, No. ${targetUser.nomorRumah}) - ${periods.join(', ')} - Dibayarkan oleh ${user.nama}`,
+    date: Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd"),
+    paymentId: paymentRecord.id,
+    createdBy: user.nama,
+  });
+  
+  // Clear cache
+  CacheService.getScriptCache().remove('publicFinanceSummary');
+  
+  logInfo('payment.payForResident', `Admin ${user.nama} paid iuran for ${targetUser.nama}`, { 
+    targetUserId: userId, 
+    periods, 
+    amount 
+  }, user.id);
+  
+  return { 
+    ok: true, 
+    data: { 
+      message: `Pembayaran iuran untuk ${targetUser.nama} berhasil dicatat`,
+      paymentId: paymentRecord.id,
+      amount,
+      periods
+    } 
+  };
 }
 
 // ==================== AGENDA FUNCTIONS ====================

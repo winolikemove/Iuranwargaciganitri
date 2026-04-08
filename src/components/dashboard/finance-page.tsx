@@ -64,6 +64,10 @@ import {
   Link,
   CreditCard,
   Save,
+  Users,
+  Upload,
+  X,
+  Check,
 } from 'lucide-react';
 import { FinanceChart } from '@/components/ui/finance-chart';
 import { useToast } from '@/hooks/use-toast';
@@ -118,6 +122,29 @@ export function FinancePage() {
     year: new Date().getFullYear(),
     amount: '',
   });
+
+  // Payment for Resident Dialog
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [paymentBlok, setPaymentBlok] = useState<string>(user?.blok || 'A');
+  const [residents, setResidents] = useState<Array<{
+    id: string;
+    nama: string;
+    nomorRumah: string;
+    blok: string;
+    telepon: string;
+    unpaidPeriods: string[];
+    paidPeriods: string[];
+    pendingPeriods: string[];
+    unpaidCount: number;
+    totalUnpaid: number;
+  }>>([]);
+  const [selectedResident, setSelectedResident] = useState<string>('');
+  const [selectedPeriods, setSelectedPeriods] = useState<string[]>([]);
+  const [monthlyFee, setMonthlyFee] = useState(0);
+  const [isLoadingResidents, setIsLoadingResidents] = useState(false);
+  const [buktiFile, setBuktiFile] = useState<File | null>(null);
+  const [buktiPreview, setBuktiPreview] = useState<string>('');
+  const [isUploading, setIsUploading] = useState(false);
 
   // Get monthly finance data for chart from API response
   const monthlyData = useMemo(() => {
@@ -403,6 +430,168 @@ export function FinancePage() {
     }
   };
 
+  // Load residents for payment dialog
+  const loadResidents = async (blok: string) => {
+    setIsLoadingResidents(true);
+    try {
+      const result = await api.getResidentsByBlok(blok);
+      if (result.ok && result.data) {
+        setResidents(result.data.residents);
+        setMonthlyFee(result.data.monthlyFee);
+      } else {
+        toast({
+          title: 'Error',
+          description: result.error || 'Gagal memuat data warga',
+          variant: 'destructive',
+        });
+      }
+    } catch (err) {
+      toast({
+        title: 'Error',
+        description: 'Terjadi kesalahan saat memuat data warga',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoadingResidents(false);
+    }
+  };
+
+  // Handle file upload for bukti transfer
+  const handleBuktiUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file size (max 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        toast({
+          title: 'Error',
+          description: 'Ukuran file maksimal 2MB',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      // Validate file type
+      if (!['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(file.type)) {
+        toast({
+          title: 'Error',
+          description: 'Format file harus JPG, PNG, GIF, atau WEBP',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      setBuktiFile(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setBuktiPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Upload file to server
+  const uploadBuktiFile = async (file: File): Promise<string | null> => {
+    try {
+      const result = await api.uploadFile(file, 'payment_proofs');
+      if (result.ok && result.data) {
+        return result.data.url;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  };
+
+  // Handle payment for resident
+  const handlePaymentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!selectedResident) {
+      toast({
+        title: 'Error',
+        description: 'Pilih warga terlebih dahulu',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    if (selectedPeriods.length === 0) {
+      toast({
+        title: 'Error',
+        description: 'Pilih minimal 1 periode pembayaran',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    try {
+      // Upload bukti if provided
+      let buktiUrl = '';
+      if (buktiFile) {
+        setIsUploading(true);
+        buktiUrl = (await uploadBuktiFile(buktiFile)) || '';
+        setIsUploading(false);
+      }
+      
+      // Submit payment
+      const result = await api.payForResident(selectedResident, selectedPeriods, buktiUrl);
+      
+      if (result.ok) {
+        toast({
+          title: 'Berhasil',
+          description: result.data?.message || 'Pembayaran iuran berhasil dicatat',
+        });
+        setShowPaymentDialog(false);
+        setSelectedResident('');
+        setSelectedPeriods([]);
+        setBuktiFile(null);
+        setBuktiPreview('');
+        loadData();
+      } else {
+        toast({
+          title: 'Error',
+          description: result.error || 'Gagal mencatat pembayaran',
+          variant: 'destructive',
+        });
+      }
+    } catch (err) {
+      toast({
+        title: 'Error',
+        description: 'Terjadi kesalahan',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+      setIsUploading(false);
+    }
+  };
+
+  // Toggle period selection
+  const togglePeriod = (period: string) => {
+    setSelectedPeriods(prev => 
+      prev.includes(period) 
+        ? prev.filter(p => p !== period)
+        : [...prev, period]
+    );
+  };
+
+  // Get selected resident info
+  const selectedResidentInfo = residents.find(r => r.id === selectedResident);
+  
+  // Calculate total payment
+  const totalPayment = selectedPeriods.length * monthlyFee;
+
+  // Format period for display
+  const formatPeriod = (period: string) => {
+    const [year, month] = period.split('-');
+    const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    return `${monthNames[parseInt(month) - 1]} ${year}`;
+  };
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
@@ -653,6 +842,228 @@ export function FinancePage() {
                           <>
                             <Save className="mr-2 h-4 w-4" />
                             Simpan Saldo Awal
+                          </>
+                        )}
+                      </Button>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              )}
+              
+              {/* Pay Resident Iuran Button */}
+              {permissions?.canApprovePayment && (
+                <Dialog open={showPaymentDialog} onOpenChange={(open) => {
+                  setShowPaymentDialog(open);
+                  if (open) {
+                    loadResidents(paymentBlok);
+                  } else {
+                    setSelectedResident('');
+                    setSelectedPeriods([]);
+                    setBuktiFile(null);
+                    setBuktiPreview('');
+                  }
+                }}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline">
+                      <Users className="h-4 w-4 mr-2" />
+                      Bayar Iuran Warga
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Bayar Iuran Warga</DialogTitle>
+                      <DialogDescription>
+                        Bayarkan iuran bulanan untuk warga di blok {paymentBlok}
+                      </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handlePaymentSubmit} className="space-y-4">
+                      {/* Blok Selector for SuperAdmin */}
+                      {isSuperAdmin && (
+                        <div className="space-y-2">
+                          <Label>Pilih Blok</Label>
+                          <Select
+                            value={paymentBlok}
+                            onValueChange={(value) => {
+                              setPaymentBlok(value);
+                              setSelectedResident('');
+                              setSelectedPeriods([]);
+                              loadResidents(value);
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="A">Blok A</SelectItem>
+                              <SelectItem value="B">Blok B</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                      
+                      {/* Resident Selection */}
+                      <div className="space-y-2">
+                        <Label>Pilih Warga</Label>
+                        {isLoadingResidents ? (
+                          <div className="flex items-center justify-center py-4">
+                            <Loader2 className="h-6 w-6 animate-spin" />
+                          </div>
+                        ) : residents.length === 0 ? (
+                          <p className="text-sm text-muted-foreground py-4 text-center">
+                            Tidak ada data warga
+                          </p>
+                        ) : (
+                          <div className="border rounded-md max-h-48 overflow-y-auto">
+                            {residents.map((resident) => (
+                              <div
+                                key={resident.id}
+                                className={`flex items-center justify-between p-3 cursor-pointer hover:bg-muted/50 border-b last:border-b-0 ${
+                                  selectedResident === resident.id ? 'bg-muted' : ''
+                                }`}
+                                onClick={() => {
+                                  setSelectedResident(resident.id);
+                                  setSelectedPeriods([]);
+                                }}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div className={`w-4 h-4 rounded-full border ${
+                                    selectedResident === resident.id 
+                                      ? 'bg-primary border-primary' 
+                                      : 'border-muted-foreground'
+                                  } flex items-center justify-center`}>
+                                    {selectedResident === resident.id && (
+                                      <Check className="h-3 w-3 text-primary-foreground" />
+                                    )}
+                                  </div>
+                                  <div>
+                                    <p className="font-medium">{resident.nama}</p>
+                                    <p className="text-sm text-muted-foreground">
+                                      No. {resident.nomorRumah} {resident.unpaidCount > 0 && (
+                                        <span className="text-destructive">
+                                          • {resident.unpaidCount} bulan belum dibayar
+                                        </span>
+                                      )}
+                                    </p>
+                                  </div>
+                                </div>
+                                {resident.unpaidCount > 0 && (
+                                  <Badge variant="destructive">
+                                    {formatCurrency(resident.totalUnpaid)}
+                                  </Badge>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Period Selection */}
+                      {selectedResidentInfo && selectedResidentInfo.unpaidPeriods.length > 0 && (
+                        <div className="space-y-2">
+                          <Label>Pilih Periode Pembayaran</Label>
+                          <p className="text-sm text-muted-foreground">
+                            Tarif iuran: {formatCurrency(monthlyFee)}/bulan
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {selectedResidentInfo.unpaidPeriods.map((period) => (
+                              <Badge
+                                key={period}
+                                variant={selectedPeriods.includes(period) ? 'default' : 'outline'}
+                                className="cursor-pointer"
+                                onClick={() => togglePeriod(period)}
+                              >
+                                {formatPeriod(period)}
+                              </Badge>
+                            ))}
+                          </div>
+                          
+                          {/* Also show paid periods */}
+                          {selectedResidentInfo.paidPeriods.length > 0 && (
+                            <div className="mt-2">
+                              <p className="text-xs text-muted-foreground mb-1">Sudah dibayar:</p>
+                              <div className="flex flex-wrap gap-1">
+                                {selectedResidentInfo.paidPeriods.map((period) => (
+                                  <Badge key={period} variant="secondary" className="text-xs">
+                                    {formatPeriod(period)}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      
+                      {/* Total Payment */}
+                      {selectedPeriods.length > 0 && (
+                        <div className="p-3 bg-muted rounded-md">
+                          <div className="flex justify-between items-center">
+                            <span>Total Pembayaran:</span>
+                            <span className="text-lg font-bold">{formatCurrency(totalPayment)}</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {selectedPeriods.length} bulan × {formatCurrency(monthlyFee)}
+                          </p>
+                        </div>
+                      )}
+                      
+                      {/* Bukti Transfer Upload */}
+                      <div className="space-y-2">
+                        <Label>Bukti Transfer (Opsional)</Label>
+                        <div className="border-2 border-dashed rounded-md p-4">
+                          {buktiPreview ? (
+                            <div className="relative">
+                              <img 
+                                src={buktiPreview} 
+                                alt="Bukti Transfer" 
+                                className="max-h-32 mx-auto rounded"
+                              />
+                              <Button
+                                type="button"
+                                variant="destructive"
+                                size="icon"
+                                className="absolute top-0 right-0 h-6 w-6"
+                                onClick={() => {
+                                  setBuktiFile(null);
+                                  setBuktiPreview('');
+                                }}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <label className="flex flex-col items-center cursor-pointer">
+                              <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                              <span className="text-sm text-muted-foreground">
+                                Klik untuk upload bukti transfer
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                (JPG, PNG, GIF, WEBP - Max 2MB)
+                              </span>
+                              <input
+                                type="file"
+                                className="hidden"
+                                accept="image/*"
+                                onChange={handleBuktiUpload}
+                              />
+                            </label>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <Button 
+                        type="submit" 
+                        className="w-full" 
+                        disabled={isSubmitting || !selectedResident || selectedPeriods.length === 0}
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            {isUploading ? 'Mengupload bukti...' : 'Memproses...'}
+                          </>
+                        ) : (
+                          <>
+                            <CreditCard className="mr-2 h-4 w-4" />
+                            Bayar Iuran
                           </>
                         )}
                       </Button>
