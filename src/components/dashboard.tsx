@@ -110,19 +110,21 @@ export function Dashboard() {
     if (!user) return [];
     
     const notifs: Notification[] = [];
+    const userBlok = user.blok?.toUpperCase() || '';
     
     // Information notifications - filtered by user's block or ALL
-    const relevantInformations = informations.filter(info => 
-      info.targetBlok === 'ALL' || info.targetBlok === user.blok
-    );
+    const relevantInformations = informations.filter(info => {
+      const targetBlok = (info.targetBlok || '').toUpperCase();
+      return targetBlok === 'ALL' || targetBlok === userBlok;
+    });
     
     relevantInformations.slice(0, 5).forEach(info => {
       notifs.push({
         id: `info-${info.id}`,
         type: 'information',
         title: info.title,
-        description: info.content.slice(0, 80) + (info.content.length > 80 ? '...' : ''),
-        timestamp: info.createdAt || info.publishedAt,
+        description: info.content?.slice(0, 80) + ((info.content?.length || 0) > 80 ? '...' : ''),
+        timestamp: info.createdAt || info.publishedAt || new Date().toISOString(),
         redirectPage: 'information',
         redirectId: info.id,
         isRead: readNotifications.has(`info-${info.id}`)
@@ -130,10 +132,11 @@ export function Dashboard() {
     });
 
     // Agenda notifications - upcoming agendas
-    const upcomingAgendas = agendas.filter(agenda => 
-      (agenda.targetBlok === 'ALL' || agenda.targetBlok === user.blok) &&
-      agenda.status === 'UPCOMING'
-    );
+    const upcomingAgendas = agendas.filter(agenda => {
+      const targetBlok = (agenda.targetBlok || '').toUpperCase();
+      return (targetBlok === 'ALL' || targetBlok === userBlok) &&
+      agenda.status === 'UPCOMING';
+    });
     
     upcomingAgendas.slice(0, 3).forEach(agenda => {
       notifs.push({
@@ -141,7 +144,7 @@ export function Dashboard() {
         type: 'agenda',
         title: agenda.title,
         description: `${agenda.startDate}${agenda.startTime ? ` • ${agenda.startTime}` : ''}`,
-        timestamp: agenda.createdAt,
+        timestamp: agenda.createdAt || new Date().toISOString(),
         redirectPage: 'agenda',
         redirectId: agenda.id,
         isRead: readNotifications.has(`agenda-${agenda.id}`)
