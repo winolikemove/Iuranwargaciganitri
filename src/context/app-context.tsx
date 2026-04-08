@@ -426,6 +426,65 @@ const dummyMonthlyFinance = [
   { month: 'Juni', pemasukan: 5500000, pengeluaran: 3400000 },
 ];
 
+// Dummy data untuk informations (fallback jika API belum punya data)
+const dummyInformations: Information[] = [
+  {
+    id: 'info-1',
+    title: 'Pengumuman Pembayaran Iuran Bulanan',
+    content: 'Diharapkan kepada seluruh warga untuk segera melakukan pembayaran iuran bulanan paling lambat tanggal 10 setiap bulannya. Pembayaran dapat dilakukan melalui transfer bank atau langsung kepada bendahara RT.',
+    category: 'Pengumuman',
+    isPinned: true,
+    targetBlok: 'ALL',
+    publishedAt: '2026-04-05T10:00:00Z',
+    createdBy: 'Admin',
+    createdAt: '2026-04-05T10:00:00Z'
+  },
+  {
+    id: 'info-2',
+    title: 'Jadwa Kerja Bakti Bulan April',
+    content: 'Akan diadakan kerja bakti bersih lingkungan pada hari Minggu, 12 April 2026 pukul 07:00 WIB. Diharapkan kehadiran seluruh warga untuk menjaga kebersihan komplek.',
+    category: 'Kegiatan',
+    isPinned: true,
+    targetBlok: 'ALL',
+    publishedAt: '2026-04-03T08:00:00Z',
+    createdBy: 'Ketua RT',
+    createdAt: '2026-04-03T08:00:00Z'
+  },
+  {
+    id: 'info-3',
+    title: 'Pemutusan Air Sementara',
+    content: 'Akan dilakukan pemeliharaan jaringan air bersih pada tanggal 15 April 2026 pukul 09:00-15:00 WIB. Mohon untuk menyiapkan cadangan air.',
+    category: 'Pengumuman',
+    isPinned: false,
+    targetBlok: 'A',
+    publishedAt: '2026-04-07T14:00:00Z',
+    createdBy: 'Admin',
+    createdAt: '2026-04-07T14:00:00Z'
+  },
+  {
+    id: 'info-4',
+    title: 'Rapat Koordinasi Bulanan',
+    content: 'Rapat koordinasi bulanan pengurus RT akan dilaksanakan pada tanggal 15 April 2026 pukul 19:30 WIB di Aula Masjid Al Birr. Agenda: Evaluasi kegiatan dan perencanaan program kerja.',
+    category: 'Kegiatan',
+    isPinned: false,
+    targetBlok: 'ALL',
+    publishedAt: '2026-04-06T09:00:00Z',
+    createdBy: 'Sekretaris RT',
+    createdAt: '2026-04-06T09:00:00Z'
+  },
+  {
+    id: 'info-5',
+    title: 'Info Keamanan: Waspadai Maling Besi',
+    content: 'Telah dilaporkan adanya aksi pencurian besi dan logam di sekitar komplek perumahan. Mohon warga untuk lebih waspada dan segera melaporkan kepada petugas keamanan jika melihat aktivitas mencurigakan.',
+    category: 'Pengumuman',
+    isPinned: true,
+    targetBlok: 'ALL',
+    publishedAt: '2026-04-08T07:00:00Z',
+    createdBy: 'Sie. Keamanan',
+    createdAt: '2026-04-08T07:00:00Z'
+  }
+];
+
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
@@ -505,9 +564,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           setAgendas(dummyAgendas);
         }
         
-        // Process informations
+        // Process informations - use dummy if empty
         if (results[3].status === 'fulfilled' && results[3].value.ok && results[3].value.data) {
-          setInformations(results[3].value.data);
+          const infoData = results[3].value.data;
+          if (infoData && infoData.length > 0) {
+            setInformations(infoData);
+          } else {
+            setInformations(dummyInformations);
+          }
+        } else {
+          setInformations(dummyInformations);
         }
         
         // Process galleries - use dummy if empty
@@ -607,8 +673,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const refreshInformations = useCallback(async () => {
     CacheManager.clearPattern('public_info');
     const result = await api.getPublicInfo(10);
-    if (result.ok && result.data) {
+    if (result.ok && result.data && result.data.length > 0) {
       setInformations(result.data);
+    } else {
+      setInformations(dummyInformations);
     }
   }, []);
 

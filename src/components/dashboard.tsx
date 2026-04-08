@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { useApp } from '@/context/app-context';
 import { Button } from '@/components/ui/button';
@@ -15,9 +15,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
-  Dialog,
-  DialogContent,
-} from '@/components/ui/dialog';
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import {
   Sidebar,
   SidebarContent,
@@ -34,6 +35,7 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   LayoutDashboard,
   Wallet,
@@ -51,6 +53,12 @@ import {
   Building2,
   Home,
   X,
+  BellRing,
+  FileText,
+  CheckCircle,
+  Clock,
+  AlertCircle,
+  Info,
 } from 'lucide-react';
 import { DashboardHome } from './dashboard/dashboard-home';
 import { FinancePage } from './dashboard/finance-page';
@@ -64,14 +72,119 @@ import { SettingsPage } from './dashboard/settings-page';
 import { ProfilePage } from './dashboard/profile-page';
 import { OrganizationPage } from './dashboard/organization-page';
 import { FinanceReportPage } from './dashboard/finance-report-page';
+import { cn } from '@/lib/utils';
 
 export type PageType = 'dashboard' | 'finance' | 'payment' | 'users' | 'agenda' | 'information' | 'gallery' | 'reviews' | 'settings' | 'profile' | 'organization' | 'finance-report';
 
+// Notification type
+interface Notification {
+  id: string;
+  type: 'information' | 'agenda' | 'payment' | 'user';
+  title: string;
+  description: string;
+  timestamp: string;
+  redirectPage: PageType;
+  redirectId?: string;
+  isRead: boolean;
+}
+
 export function Dashboard() {
   const { user, permissions, logout } = useAuth();
-  const { settings } = useApp();
+  const { settings, agendas, informations } = useApp();
   const [currentPage, setCurrentPage] = useState<PageType>('dashboard');
-  const [showProfilePhoto, setShowProfilePhoto] = useState(false);
+  const [readNotifications, setReadNotifications] = useState<Set<string>>(new Set());
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+
+  // Load read notifications from localStorage
+  useEffect(() => {
+    if (user?.id) {
+      const stored = localStorage.getItem(`notifications_read_${user.id}`);
+      if (stored) {
+        setReadNotifications(new Set(JSON.parse(stored)));
+      }
+    }
+  }, [user?.id]);
+
+  // Generate notifications based on user role and block
+  const notifications = useMemo<Notification[]>(() => {
+    if (!user) return [];
+    
+    const notifs: Notification[] = [];
+    
+    // Information notifications - filtered by user's block or ALL
+    const relevantInformations = informations.filter(info => 
+      info.targetBlok === 'ALL' || info.targetBlok === user.blok
+    );
+    
+    relevantInformations.slice(0, 5).forEach(info => {
+      notifs.push({
+        id: `info-${info.id}`,
+        type: 'information',
+        title: info.title,
+        description: info.content.slice(0, 80) + (info.content.length > 80 ? '...' : ''),
+        timestamp: info.createdAt || info.publishedAt,
+        redirectPage: 'information',
+        redirectId: info.id,
+        isRead: readNotifications.has(`info-${info.id}`)
+      });
+    });
+
+    // Agenda notifications - upcoming agendas
+    const upcomingAgendas = agendas.filter(agenda => 
+      (agenda.targetBlok === 'ALL' || agenda.targetBlok === user.blok) &&
+      agenda.status === 'UPCOMING'
+    );
+    
+    upcomingAgendas.slice(0, 3).forEach(agenda => {
+      notifs.push({
+        id: `agenda-${agenda.id}`,
+        type: 'agenda',
+        title: agenda.title,
+        description: `${agenda.startDate}${agenda.startTime ? ` • ${agenda.startTime}` : ''}`,
+        timestamp: agenda.createdAt,
+        redirectPage: 'agenda',
+        redirectId: agenda.id,
+        isRead: readNotifications.has(`agenda-${agenda.id}`)
+      });
+    });
+
+    // Admin notifications - pending users
+    if (permissions?.canApproveUsers) {
+      notifs.push({
+        id: 'pending-users',
+        type: 'user',
+        title: 'Warga Menunggu Persetujuan',
+        description: 'Ada warga baru yang menunggu persetujuan akun',
+        timestamp: new Date().toISOString(),
+        redirectPage: 'users',
+        isRead: readNotifications.has('pending-users')
+      });
+    }
+
+    // Admin/Bendahara notifications - pending payments
+    if (permissions?.canApprovePayment) {
+      notifs.push({
+        id: 'pending-payments',
+        type: 'payment',
+        title: 'Pembayaran Menunggu Verifikasi',
+        description: 'Ada pembayaran yang perlu diverifikasi',
+        timestamp: new Date().toISOString(),
+        redirectPage: 'payment',
+        isRead: readNotifications.has('pending-payments')
+      });
+    }
+
+    // Sort by timestamp (newest first) and unread first
+    return notifs.sort((a, b) => {
+      if (a.isRead !== b.isRead) return a.isRead ? 1 : -1;
+      return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+    });
+  }, [user, informations, agendas, permissions, readNotifications]);
+
+  // Count unread notifications
+  const unreadCount = useMemo(() => {
+    return notifications.filter(n => !n.isRead).length;
+  }, [notifications]);
 
   const getRoleBadge = (role: string) => {
     const roleMap: Record<string, { label: string; className: string }> = {
@@ -122,6 +235,24 @@ export function Dashboard() {
     setCurrentPage(page);
   };
 
+  const handleNotificationClick = (notification: Notification) => {
+    // Mark as read
+    const newReadSet = new Set(readNotifications);
+    newReadSet.add(notification.id);
+    setReadNotifications(newReadSet);
+    localStorage.setItem(`notifications_read_${user?.id}`, JSON.stringify([...newReadSet]));
+    
+    // Close popover and navigate
+    setIsNotificationOpen(false);
+    setCurrentPage(notification.redirectPage);
+  };
+
+  const clearAllNotifications = () => {
+    const allIds = notifications.map(n => n.id);
+    setReadNotifications(new Set(allIds));
+    localStorage.setItem(`notifications_read_${user?.id}`, JSON.stringify(allIds));
+  };
+
   const renderPage = () => {
     switch (currentPage) {
       case 'dashboard':
@@ -160,6 +291,38 @@ export function Dashboard() {
       if (item) return item.label;
     }
     return 'Dashboard';
+  };
+
+  // Format timestamp to relative time
+  const formatRelativeTime = (timestamp: string) => {
+    const now = new Date();
+    const date = new Date(timestamp);
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    if (diffMins < 1) return 'Baru saja';
+    if (diffMins < 60) return `${diffMins} menit lalu`;
+    if (diffHours < 24) return `${diffHours} jam lalu`;
+    if (diffDays < 7) return `${diffDays} hari lalu`;
+    return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+  };
+
+  // Get notification icon
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'information':
+        return <Info className="h-4 w-4 text-cyan-500" />;
+      case 'agenda':
+        return <Calendar className="h-4 w-4 text-blue-500" />;
+      case 'payment':
+        return <CreditCard className="h-4 w-4 text-emerald-500" />;
+      case 'user':
+        return <User className="h-4 w-4 text-amber-500" />;
+      default:
+        return <Bell className="h-4 w-4 text-gray-500" />;
+    }
   };
 
   return (
@@ -257,52 +420,105 @@ export function Dashboard() {
             {user?.blok && (
               <Badge variant="outline">Blok {user.blok}</Badge>
             )}
-            {/* Profile Photo Button */}
-            <button
-              onClick={() => setShowProfilePhoto(true)}
-              className="rounded-full overflow-hidden border-2 border-primary/20 hover:border-primary/50 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50"
-            >
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={user?.photoUrl || undefined} />
-                <AvatarFallback className="text-xs bg-emerald-500 text-white">
-                  {user?.nama?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                </AvatarFallback>
-              </Avatar>
-            </button>
-          </div>
-        </header>
-        
-        {/* Profile Photo Popup Dialog */}
-        <Dialog open={showProfilePhoto} onOpenChange={setShowProfilePhoto}>
-          <DialogContent className="sm:max-w-md p-0 bg-transparent border-0 shadow-none flex items-center justify-center">
-            <div className="relative">
-              {/* Close Button */}
-              <button
-                onClick={() => setShowProfilePhoto(false)}
-                className="absolute -top-2 -right-2 z-10 h-8 w-8 rounded-full bg-black/70 text-white flex items-center justify-center hover:bg-black/90 transition-colors"
-              >
-                <X className="h-4 w-4" />
-              </button>
-              
-              {/* Profile Photo */}
-              <div className="w-72 h-72 md:w-80 md:h-80 rounded-2xl overflow-hidden shadow-2xl bg-muted">
-                {user?.photoUrl ? (
-                  <img
-                    src={user.photoUrl}
-                    alt={user.nama || 'Profile'}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-emerald-500">
-                    <span className="text-6xl font-bold text-white">
-                      {user?.nama?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+            
+            {/* Notification Bell */}
+            <Popover open={isNotificationOpen} onOpenChange={setIsNotificationOpen}>
+              <PopoverTrigger asChild>
+                <button
+                  className="relative rounded-full p-2 hover:bg-muted transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50"
+                >
+                  <Bell className="h-5 w-5 text-muted-foreground" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center font-medium">
+                      {unreadCount > 9 ? '9+' : unreadCount}
                     </span>
+                  )}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-80 p-0">
+                <div className="flex items-center justify-between p-4 border-b">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <BellRing className="h-4 w-4" />
+                    Notifikasi
+                  </h3>
+                  {unreadCount > 0 && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-xs h-auto py-1 px-2"
+                      onClick={clearAllNotifications}
+                    >
+                      Tandai semua dibaca
+                    </Button>
+                  )}
+                </div>
+                
+                <ScrollArea className="h-[300px]">
+                  {notifications.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+                      <Bell className="h-8 w-8 mb-2 opacity-50" />
+                      <p className="text-sm">Tidak ada notifikasi</p>
+                    </div>
+                  ) : (
+                    <div className="divide-y">
+                      {notifications.map((notification) => (
+                        <button
+                          key={notification.id}
+                          onClick={() => handleNotificationClick(notification)}
+                          className={cn(
+                            "w-full text-left p-4 hover:bg-muted/50 transition-colors",
+                            !notification.isRead && "bg-primary/5"
+                          )}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="mt-0.5">
+                              {getNotificationIcon(notification.type)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <p className={cn(
+                                  "text-sm font-medium truncate",
+                                  !notification.isRead && "text-primary"
+                                )}>
+                                  {notification.title}
+                                </p>
+                                {!notification.isRead && (
+                                  <span className="h-2 w-2 rounded-full bg-primary flex-shrink-0" />
+                                )}
+                              </div>
+                              <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
+                                {notification.description}
+                              </p>
+                              <p className="text-[10px] text-muted-foreground mt-1">
+                                {formatRelativeTime(notification.timestamp)}
+                              </p>
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </ScrollArea>
+                
+                {notifications.length > 0 && (
+                  <div className="p-2 border-t">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="w-full text-xs"
+                      onClick={() => {
+                        setIsNotificationOpen(false);
+                        setCurrentPage('information');
+                      }}
+                    >
+                      Lihat Semua Informasi
+                    </Button>
                   </div>
                 )}
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+              </PopoverContent>
+            </Popover>
+          </div>
+        </header>
         
         <main className="flex-1 p-4 lg:p-6 overflow-auto">
           {renderPage()}
