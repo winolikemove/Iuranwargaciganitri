@@ -58,8 +58,9 @@ import { ReviewPage } from './dashboard/review-page';
 import { SettingsPage } from './dashboard/settings-page';
 import { ProfilePage } from './dashboard/profile-page';
 import { OrganizationPage } from './dashboard/organization-page';
+import { FinanceReportPage } from './dashboard/finance-report-page';
 
-export type PageType = 'dashboard' | 'finance' | 'payment' | 'users' | 'agenda' | 'information' | 'gallery' | 'reviews' | 'settings' | 'profile' | 'organization';
+export type PageType = 'dashboard' | 'finance' | 'payment' | 'users' | 'agenda' | 'information' | 'gallery' | 'reviews' | 'settings' | 'profile' | 'organization' | 'finance-report';
 
 export function Dashboard() {
   const { user, permissions, logout } = useAuth();
@@ -81,7 +82,8 @@ export function Dashboard() {
       group: 'Menu Utama',
       items: [
         { id: 'dashboard' as PageType, label: 'Dashboard', icon: LayoutDashboard, show: true },
-        { id: 'finance' as PageType, label: 'Keuangan', icon: Wallet, show: permissions?.canViewFinance },
+        { id: 'finance-report' as PageType, label: 'Laporan Keuangan', icon: Wallet, show: permissions?.canViewFinance },
+        { id: 'finance' as PageType, label: 'Kelola Keuangan', icon: Wallet, show: permissions?.canCreateTransaction },
         { id: 'payment' as PageType, label: 'Pembayaran', icon: CreditCard, show: permissions?.canSubmitPayment || permissions?.canApprovePayment },
       ],
     },
@@ -120,6 +122,8 @@ export function Dashboard() {
         return <DashboardHome onNavigate={handleNavigate} />;
       case 'finance':
         return <FinancePage />;
+      case 'finance-report':
+        return <FinanceReportPage onBack={() => setCurrentPage('dashboard')} />;
       case 'payment':
         return <PaymentPage />;
       case 'users':
