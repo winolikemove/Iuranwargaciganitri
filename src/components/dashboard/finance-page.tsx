@@ -142,6 +142,9 @@ export function FinancePage() {
   const years = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i);
 
   const [formError, setFormError] = useState<string | null>(null);
+  
+  // Can view all bloks (superadmin) - defined early for use in loadData
+  const canViewAllBloks = permissions?.canViewAllUsers || user?.role === 'SUPERADMIN';
 
   useEffect(() => {
     loadData();
@@ -152,9 +155,13 @@ export function FinancePage() {
     setError(null);
     
     try {
+      // Pass filterBlok for superadmin, otherwise backend uses user's blok
+      const blokParam = canViewAllBloks ? filterBlok : undefined;
+      
       const summaryRes = await api.getFinanceSummary(
         parseInt(filterYear),
-        filterMonth !== 'ALL' ? parseInt(filterMonth) : undefined
+        filterMonth !== 'ALL' ? parseInt(filterMonth) : undefined,
+        blokParam
       );
       if (summaryRes.ok && summaryRes.data) {
         setSummary(summaryRes.data);
@@ -165,9 +172,10 @@ export function FinancePage() {
         month: filterMonth !== 'ALL' ? parseInt(filterMonth) : undefined,
         type: filterType !== 'ALL' ? filterType : undefined,
         limit: 100,
+        blok: blokParam,
       });
       if (transRes.ok && transRes.data) {
-        // Filter by blok if not superadmin
+        // Filter by blok if not superadmin (frontend fallback)
         let filteredTrans = transRes.data;
         if (!permissions?.canViewAllUsers && user?.blok) {
           filteredTrans = transRes.data.filter(t => t.blok === user.blok);
@@ -431,9 +439,6 @@ export function FinancePage() {
   // Get saldo awal based on blok
   const saldoAwal = filterBlok === 'A' ? settings?.saldoAwalA : settings?.saldoAwalB;
 
-  // Can view all bloks (superadmin)
-  const canViewAllBloks = permissions?.canViewAllUsers || user?.role === 'SUPERADMIN';
-  
   // Can manage saldo awal
   const canManageSaldo = permissions?.canCreateTransaction;
 

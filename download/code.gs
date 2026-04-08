@@ -1518,14 +1518,19 @@ function getSaldoAwal(blok, year) {
   return record ? Number(record.amount) : 0;
 }
 
-function financeSummary(user, { year, month }) {
+function financeSummary(user, { year, month, blok }) {
   const permCheck = requirePermission(user, 'canViewFinance');
   if (permCheck) return permCheck;
   
   const y = parseInt(year) || new Date().getFullYear();
   const m = month ? parseInt(month) : null;
   
-  let transactions = dbFind('transactions', { blok: user.blok });
+  // Determine which blok to query
+  // Superadmin can view any blok, others can only view their own
+  const canViewAll = hasPermission(user, 'canViewAllUsers');
+  const targetBlok = canViewAll && blok ? blok : user.blok;
+  
+  let transactions = dbFind('transactions', { blok: targetBlok });
   
   transactions = transactions.filter(t => {
     const d = new Date(t.date);
@@ -1542,7 +1547,7 @@ function financeSummary(user, { year, month }) {
     .filter(t => t.type === 'EXPENSE')
     .reduce((sum, t) => sum + Number(t.amount), 0);
   
-  const saldoAwal = getSaldoAwal(user.blok, y);
+  const saldoAwal = getSaldoAwal(targetBlok, y);
   
   const periodLabel = m
     ? `${getMonthName(m)} ${y}`
@@ -1556,6 +1561,7 @@ function financeSummary(user, { year, month }) {
       totalPengeluaran,
       saldoAkhir: saldoAwal + totalPemasukan - totalPengeluaran,
       periodLabel,
+      blok: targetBlok,
     },
   };
 }
@@ -1568,11 +1574,16 @@ function getMonthName(month) {
   return months[month] || '';
 }
 
-function financeTransactions(user, { year, month, type, limit }) {
+function financeTransactions(user, { year, month, type, limit, blok }) {
   const permCheck = requirePermission(user, 'canViewFinance');
   if (permCheck) return permCheck;
   
-  let transactions = dbFind('transactions', { blok: user.blok });
+  // Determine which blok to query
+  // Superadmin can view any blok, others can only view their own
+  const canViewAll = hasPermission(user, 'canViewAllUsers');
+  const targetBlok = canViewAll && blok ? blok : user.blok;
+  
+  let transactions = dbFind('transactions', { blok: targetBlok });
   
   if (year) {
     const y = parseInt(year);

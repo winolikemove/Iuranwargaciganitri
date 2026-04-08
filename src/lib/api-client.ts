@@ -1239,159 +1239,189 @@ class ApiClient {
         break;
         
       // Finance
-      case 'finance.summary':
+      case 'finance.summary': {
         const blok = (payload.blok as string) || (currentDemoUser?.blok) || 'A';
-        const finMonthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-        const finMonthShort = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'];
+        const finMonthNames = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+        const finMonthShort = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'];
         const financeNow = new Date();
         
-        // Generate monthly breakdown for last 6 months
+        // Get year and month from payload or use defaults
+        const filterYear = payload.year ? parseInt(payload.year as string) : financeNow.getFullYear();
+        const filterMonth = payload.month ? parseInt(payload.month as string) : null;
+        
+        // Generate demo values based on filters
+        const baseIncome = blok === 'A' ? 4500000 : 3200000;
+        const baseExpense = blok === 'A' ? 2500000 : 1800000;
+        const baseSaldoAwal = blok === 'A' ? 1500000 : 800000;
+        
+        // Calculate total for the filtered period
+        let totalPemasukan = baseIncome;
+        let totalPengeluaran = baseExpense;
+        
+        // If filtering by specific month, adjust values
+        if (filterMonth) {
+          totalPemasukan = Math.floor(baseIncome / 3 + Math.random() * 500000);
+          totalPengeluaran = Math.floor(baseExpense / 3 + Math.random() * 300000);
+        }
+        
+        // Generate monthly breakdown for the selected year
         const monthlyBreakdown = [];
-        for (let i = 5; i >= 0; i--) {
-          const date = new Date(financeNow.getFullYear(), financeNow.getMonth() - i, 1);
-          const pemasukan = Math.floor(Math.random() * 2000000) + 3000000;
-          const pengeluaran = Math.floor(Math.random() * 1500000) + 1000000;
+        for (let m = 0; m < 12; m++) {
+          const monthNum = m + 1;
+          // Skip future months if viewing current year
+          if (filterYear === financeNow.getFullYear() && monthNum > financeNow.getMonth() + 1) continue;
+          
+          const pemasukan = Math.floor(Math.random() * 2000000) + 1500000;
+          const pengeluaran = Math.floor(Math.random() * 1500000) + 800000;
           monthlyBreakdown.push({
-            month: `${finMonthNames[date.getMonth()]} ${date.getFullYear()}`,
-            monthShort: finMonthShort[date.getMonth()],
+            month: `${finMonthNames[monthNum]} ${filterYear}`,
+            monthShort: finMonthShort[monthNum],
             pemasukan,
             pengeluaran,
             saldo: 0,
           });
         }
         
+        // Generate period label
+        const periodLabel = filterMonth 
+          ? `${finMonthNames[filterMonth]} ${filterYear}`
+          : `Tahun ${filterYear}`;
+        
         result = { 
           ok: true, 
           data: {
-            saldoAwal: blok === 'A' ? 1500000 : 800000,
-            totalPemasukan: blok === 'A' ? 4500000 : 3200000,
-            totalPengeluaran: blok === 'A' ? 2500000 : 1800000,
-            saldoAkhir: blok === 'A' ? 3500000 : 2200000,
-            periodLabel: `${finMonthNames[financeNow.getMonth()]} ${financeNow.getFullYear()}`,
+            saldoAwal: baseSaldoAwal,
+            totalPemasukan,
+            totalPengeluaran,
+            saldoAkhir: baseSaldoAwal + totalPemasukan - totalPengeluaran,
+            periodLabel,
             blok: blok,
             monthlyBreakdown,
           } as T 
         };
         break;
+      }
         
-      case 'finance.transactions':
+      case 'finance.transactions': {
         // Generate demo transactions based on user's block
         const txBlok = (payload.blok as string) || (currentDemoUser?.blok) || 'A';
         const txNow = new Date();
-        const demoTransactions: Transaction[] = [
-          {
-            id: 'tx-1',
+        const currentYear = txNow.getFullYear();
+        const currentMonth = txNow.getMonth();
+        
+        // Generate transactions for multiple months (current year and previous year for testing)
+        const allDemoTransactions: Transaction[] = [];
+        let txId = 1;
+        
+        // Generate transactions for the past 12 months
+        for (let monthOffset = 0; monthOffset < 12; monthOffset++) {
+          const txMonth = currentMonth - monthOffset;
+          const txYear = currentYear + Math.floor(txMonth / 12);
+          const normalizedMonth = ((txMonth % 12) + 12) % 12;
+          
+          // Income transactions for this month
+          allDemoTransactions.push({
+            id: `tx-${txId++}`,
             blok: txBlok,
             type: 'INCOME',
             category: 'Iuran Bulanan',
-            amount: 450000,
+            amount: 450000 + Math.floor(Math.random() * 200000),
             description: 'Iuran bulanan dari warga Blok ' + txBlok,
-            date: new Date(txNow.getFullYear(), txNow.getMonth(), 5).toISOString(),
+            date: new Date(txYear, normalizedMonth, 5).toISOString(),
             createdBy: 'bendahara',
-            createdAt: new Date(txNow.getFullYear(), txNow.getMonth(), 5).toISOString(),
-          },
-          {
-            id: 'tx-2',
+            createdAt: new Date(txYear, normalizedMonth, 5).toISOString(),
+          });
+          
+          allDemoTransactions.push({
+            id: `tx-${txId++}`,
             blok: txBlok,
             type: 'INCOME',
             category: 'Dana Sosial',
-            amount: 200000,
+            amount: 150000 + Math.floor(Math.random() * 100000),
             description: 'Sumbangan dana sosial',
-            date: new Date(txNow.getFullYear(), txNow.getMonth(), 8).toISOString(),
+            date: new Date(txYear, normalizedMonth, 8).toISOString(),
             createdBy: 'admin',
-            createdAt: new Date(txNow.getFullYear(), txNow.getMonth(), 8).toISOString(),
-          },
-          {
-            id: 'tx-3',
+            createdAt: new Date(txYear, normalizedMonth, 8).toISOString(),
+          });
+          
+          // Expense transactions for this month
+          allDemoTransactions.push({
+            id: `tx-${txId++}`,
             blok: txBlok,
             type: 'EXPENSE',
             category: 'Kebersihan',
-            amount: 350000,
+            amount: 300000 + Math.floor(Math.random() * 100000),
             description: 'Pembelian alat kebersihan dan upah petugas',
-            date: new Date(txNow.getFullYear(), txNow.getMonth(), 10).toISOString(),
+            date: new Date(txYear, normalizedMonth, 10).toISOString(),
             createdBy: 'admin',
-            createdAt: new Date(txNow.getFullYear(), txNow.getMonth(), 10).toISOString(),
-          },
-          {
-            id: 'tx-4',
+            createdAt: new Date(txYear, normalizedMonth, 10).toISOString(),
+          });
+          
+          allDemoTransactions.push({
+            id: `tx-${txId++}`,
             blok: txBlok,
             type: 'EXPENSE',
             category: 'Keamanan',
             amount: 500000,
             description: 'Gaji petugas keamanan bulanan',
-            date: new Date(txNow.getFullYear(), txNow.getMonth(), 15).toISOString(),
+            date: new Date(txYear, normalizedMonth, 15).toISOString(),
             createdBy: 'admin',
-            createdAt: new Date(txNow.getFullYear(), txNow.getMonth(), 15).toISOString(),
-          },
-          {
-            id: 'tx-5',
-            blok: txBlok,
-            type: 'INCOME',
-            category: 'Iuran Bulanan',
-            amount: 600000,
-            description: 'Iuran bulanan tambahan',
-            date: new Date(txNow.getFullYear(), txNow.getMonth(), 18).toISOString(),
-            createdBy: 'bendahara',
-            createdAt: new Date(txNow.getFullYear(), txNow.getMonth(), 18).toISOString(),
-          },
-          {
-            id: 'tx-6',
-            blok: txBlok,
-            type: 'EXPENSE',
-            category: 'Perbaikan',
-            amount: 250000,
-            description: 'Perbaikan lampu jalan',
-            date: new Date(txNow.getFullYear(), txNow.getMonth(), 20).toISOString(),
-            createdBy: 'admin',
-            createdAt: new Date(txNow.getFullYear(), txNow.getMonth(), 20).toISOString(),
-          },
-          {
-            id: 'tx-7',
-            blok: txBlok,
-            type: 'INCOME',
-            category: 'Sumbangan',
-            amount: 150000,
-            description: 'Sumbangan warga untuk kegiatan',
-            date: new Date(txNow.getFullYear(), txNow.getMonth() - 1, 5).toISOString(),
-            createdBy: 'admin',
-            createdAt: new Date(txNow.getFullYear(), txNow.getMonth() - 1, 5).toISOString(),
-          },
-          {
-            id: 'tx-8',
-            blok: txBlok,
-            type: 'EXPENSE',
-            category: 'Kegiatan',
-            amount: 400000,
-            description: 'Biaya kerja bakti',
-            date: new Date(txNow.getFullYear(), txNow.getMonth() - 1, 12).toISOString(),
-            createdBy: 'admin',
-            createdAt: new Date(txNow.getFullYear(), txNow.getMonth() - 1, 12).toISOString(),
-          },
-          {
-            id: 'tx-9',
-            blok: txBlok,
-            type: 'INCOME',
-            category: 'Iuran Bulanan',
-            amount: 750000,
-            description: 'Iuran bulanan dari berbagai warga',
-            date: new Date(txNow.getFullYear(), txNow.getMonth() - 1, 15).toISOString(),
-            createdBy: 'bendahara',
-            createdAt: new Date(txNow.getFullYear(), txNow.getMonth() - 1, 15).toISOString(),
-          },
-          {
-            id: 'tx-10',
-            blok: txBlok,
-            type: 'EXPENSE',
-            category: 'Listrik',
-            amount: 180000,
-            description: 'Pembayaran listrik fasilitas umum',
-            date: new Date(txNow.getFullYear(), txNow.getMonth() - 1, 20).toISOString(),
-            createdBy: 'admin',
-            createdAt: new Date(txNow.getFullYear(), txNow.getMonth() - 1, 20).toISOString(),
-          },
-        ];
-        result = { ok: true, data: demoTransactions as T };
+            createdAt: new Date(txYear, normalizedMonth, 15).toISOString(),
+          });
+          
+          if (normalizedMonth % 3 === 0) { // Every 3 months
+            allDemoTransactions.push({
+              id: `tx-${txId++}`,
+              blok: txBlok,
+              type: 'EXPENSE',
+              category: 'Perbaikan',
+              amount: 200000 + Math.floor(Math.random() * 150000),
+              description: 'Perbaikan fasilitas umum',
+              date: new Date(txYear, normalizedMonth, 20).toISOString(),
+              createdBy: 'admin',
+              createdAt: new Date(txYear, normalizedMonth, 20).toISOString(),
+            });
+          }
+        }
+        
+        // Apply filters from payload
+        let filteredTransactions = allDemoTransactions;
+        
+        // Filter by year
+        if (payload.year) {
+          const filterYear = parseInt(payload.year as string);
+          filteredTransactions = filteredTransactions.filter(t => {
+            const txDate = new Date(t.date);
+            return txDate.getFullYear() === filterYear;
+          });
+        }
+        
+        // Filter by month
+        if (payload.month) {
+          const filterMonth = parseInt(payload.month as string);
+          filteredTransactions = filteredTransactions.filter(t => {
+            const txDate = new Date(t.date);
+            return (txDate.getMonth() + 1) === filterMonth;
+          });
+        }
+        
+        // Filter by type
+        if (payload.type) {
+          filteredTransactions = filteredTransactions.filter(t => t.type === payload.type);
+        }
+        
+        // Sort by date descending
+        filteredTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        
+        // Apply limit
+        if (payload.limit) {
+          const limitNum = parseInt(payload.limit as string);
+          filteredTransactions = filteredTransactions.slice(0, limitNum);
+        }
+        
+        result = { ok: true, data: filteredTransactions as T };
         break;
+      }
         
       case 'finance.create':
         result = { ok: true, data: { message: 'Transaksi berhasil dibuat', id: 'txn-' + Date.now() } as T };
@@ -1949,15 +1979,15 @@ class ApiClient {
   
   // ==================== FINANCE ====================
   
-  async getFinanceSummary(year?: number, month?: number): Promise<ApiResponse<FinanceSummary>> {
-    return this.request<FinanceSummary>('finance.summary', { year, month }, {
+  async getFinanceSummary(year?: number, month?: number, blok?: string): Promise<ApiResponse<FinanceSummary>> {
+    return this.request<FinanceSummary>('finance.summary', { year, month, blok }, {
       useCache: true,
-      cacheKey: `finance_summary_${year || 'current'}_${month || 'all'}`,
+      cacheKey: `finance_summary_${year || 'current'}_${month || 'all'}_${blok || 'default'}`,
       cacheTTL: 60 * 1000,
     });
   }
   
-  async getTransactions(filters?: { year?: number; month?: number; type?: string; limit?: number }): Promise<ApiResponse<Transaction[]>> {
+  async getTransactions(filters?: { year?: number; month?: number; type?: string; limit?: number; blok?: string }): Promise<ApiResponse<Transaction[]>> {
     return this.request<Transaction[]>('finance.transactions', filters || {}, {
       useCache: true,
       cacheKey: `transactions_${JSON.stringify(filters || {})}`,
