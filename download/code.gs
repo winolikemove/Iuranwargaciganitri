@@ -24,6 +24,8 @@ const SCHEMAS = {
   passwordResetTokens: ['id', 'userId', 'token', 'expiresAt', 'usedAt', 'createdAt'],
   // NEW: System logs for debugging
   logs: ['id', 'level', 'action', 'message', 'payload', 'error', 'userId', 'ipAddress', 'createdAt'],
+  // NEW: Notification read status per user
+  notificationReads: ['id', 'userId', 'notificationType', 'notificationId', 'readAt', 'createdAt'],
 };
 
 // ==================== STRUKTUR ORGANISASI (NEW v3) ====================
@@ -111,7 +113,7 @@ function doPost(e) {
 }
 
 function doGet() {
-  return respond({ ok: true, data: { name: 'Pradha-Ciganitri API', version: '6.0.0' } });
+  return respond({ ok: true, data: { name: 'Pradha-Ciganitri API', version: '6.1.0' } });
 }
 
 function respond(data) {
@@ -299,6 +301,12 @@ function routeAction(action, payload, user) {
     
     // File
     'file.upload': () => fileUpload(user, payload),
+    
+    // Notifications
+    'notification.list': () => notificationList(user),
+    'notification.markRead': () => notificationMarkRead(user, payload),
+    'notification.markAllRead': () => notificationMarkAllRead(user),
+    'notification.unreadCount': () => notificationUnreadCount(user),
   };
   
   const handler = routes[action];
@@ -2938,6 +2946,297 @@ function listFilesByCategory(category) {
   } catch (e) {
     return { ok: false, error: 'Gagal mengambil daftar file' };
   }
+}
+
+// ==================== NOTIFICATION FUNCTIONS ====================
+/**
+ * Get all notifications for a user
+ * Filters by user's block and role permissions
+ * @param {Object} user - Current user
+ * @returns {Object} - List of notifications
+ */
+function notificationList(user) {
+  if (!user) {
+    return { ok: false, error: 'User tidak ditemukan' };
+  }
+  
+  const notifications = [];
+  const userBlok = user.blok?.toUpperCase() || '';
+  const now = new Date();
+  
+  // Get read status for this user
+  const readStatuses = dbFind('notificationReads', { userId: user.id });
+  const readSet = new Set(readStatuses.map(r => `${r.notificationType}-${r.notificationId}`));
+  
+  // Get permissions
+  const perms = getUserPermissions(user);
+  
+  // ===== INFORMATION NOTIFICATIONS =====
+  let allInfo = dbGetAll('information');
+  const today = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd");
+  
+  // Filter by block and not expired
+  allInfo = allInfo.filter(i => {
+    const targetBlok = (i.targetBlok || '').toUpperCase();
+    const notExpired = !i.expiredAt || i.expiredAt >= today;
+    return (targetBlok === 'ALL' || targetBlok === userBlok) && notExpired;
+  });
+  
+  // Sort by pinned first, then by date
+  allInfo.sort((a, b) => {
+    const aPin = a.isPinned === true || a.isPinned === 'true';
+    const bPin = b.isPinned === true || b.isPinned === 'true';
+    if (aPin && !bPin) return -1;
+    if (!aPin && bPin) return 1;
+    return new Date(b.publishedAt || b.createdAt) - new Date(a.publishedAt || a.createdAt);
+  });
+  
+  // Add recent informations (last 30 days or pinned)
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  allInfo.slice(0, 10).forEach(info => {
+    const infoDate = new Date(info.publishedAt || info.createdAt);
+    const isPinned = info.isPinned === true || info.isPinned === 'true';
+    
+    if (isPinned || infoDate >= thirtyDaysAgo) {
+      notifications.push({
+        id: `info-${info.id}`,
+        type: 'information',
+        title: info.title,
+        description: (info.content || '').slice(0, 100) + ((info.content || '').length > 100 ? '...' : ''),
+        timestamp: info.publishedAt || info.createdAt,
+        redirectPage: 'information',
+        redirectId: info.id,
+        isPinned: isPinned,
+        category: info.category,
+        isRead: readSet.has(`information-${info.id}`)
+      });
+    }
+  });
+  
+  // ===== AGENDA NOTIFICATIONS =====
+  let allAgenda = dbGetAll('agenda');
+  
+  // Filter by block and upcoming/ongoing status
+  allAgenda = allAgenda.filter(a => {
+    const targetBlok = (a.targetBlok || '').toUpperCase();
+    return (targetBlok === 'ALL' || targetBlok === userBlok) && 
+           (a.status === 'UPCOMING' || a.status === 'ONGOING');
+  });
+  
+  // Sort by start date
+  allAgenda.sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+  
+  // Add upcoming agendas (next 30 days)
+  const thirtyDaysLater = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+  allAgenda.slice(0, 5).forEach(agenda => {
+    const startDate = new Date(agenda.startDate);
+    if (startDate <= thirtyDaysLater) {
+      notifications.push({
+        id: `agenda-${agenda.id}`,
+        type: 'agenda',
+        title: agenda.title,
+        description: `${agenda.startDate}${agenda.startTime ? ' • ' + agenda.startTime : ''}${agenda.location ? ' • ' + agenda.location : ''}`,
+        timestamp: agenda.createdAt,
+        redirectPage: 'agenda',
+        redirectId: agenda.id,
+        status: agenda.status,
+        isRead: readSet.has(`agenda-${agenda.id}`)
+      });
+    }
+  });
+  
+  // ===== ADMIN NOTIFICATIONS (Pending Users) =====
+  if (perms.canApproveUsers) {
+    let pendingUsers = dbFind('users', { status: 'PENDING' });
+    
+    // Filter by block if not superadmin
+    if (!perms.canViewAllUsers) {
+      pendingUsers = pendingUsers.filter(u => u.blok === user.blok);
+    }
+    
+    if (pendingUsers.length > 0) {
+      notifications.push({
+        id: 'pending-users',
+        type: 'user',
+        title: 'Warga Menunggu Persetujuan',
+        description: `${pendingUsers.length} warga baru menunggu persetujuan akun`,
+        timestamp: now.toISOString(),
+        redirectPage: 'users',
+        count: pendingUsers.length,
+        isRead: readSet.has('user-pending-users')
+      });
+    }
+  }
+  
+  // ===== BENDAHARA/ADMIN NOTIFICATIONS (Pending Payments) =====
+  if (perms.canApprovePayment) {
+    let pendingPayments = dbFind('payments', { status: 'PENDING' });
+    
+    // Filter by block if not superadmin
+    if (!perms.canViewAllUsers) {
+      pendingPayments = pendingPayments.filter(p => p.blok === user.blok);
+    }
+    
+    if (pendingPayments.length > 0) {
+      notifications.push({
+        id: 'pending-payments',
+        type: 'payment',
+        title: 'Pembayaran Menunggu Verifikasi',
+        description: `${pendingPayments.length} pembayaran perlu diverifikasi`,
+        timestamp: now.toISOString(),
+        redirectPage: 'payment',
+        count: pendingPayments.length,
+        isRead: readSet.has('payment-pending-payments')
+      });
+    }
+  }
+  
+  // ===== PENDING REVIEWS (if can approve) =====
+  if (perms.canApproveReviews) {
+    let pendingReviews = dbFind('reviews', { status: 'PENDING' });
+    
+    if (pendingReviews.length > 0) {
+      notifications.push({
+        id: 'pending-reviews',
+        type: 'review',
+        title: 'Testimoni Menunggu Persetujuan',
+        description: `${pendingReviews.length} testimoni perlu disetujui`,
+        timestamp: now.toISOString(),
+        redirectPage: 'reviews',
+        count: pendingReviews.length,
+        isRead: readSet.has('review-pending-reviews')
+      });
+    }
+  }
+  
+  // Sort: unread first, then by timestamp (newest first)
+  notifications.sort((a, b) => {
+    if (a.isRead !== b.isRead) return a.isRead ? 1 : -1;
+    return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+  });
+  
+  return { 
+    ok: true, 
+    data: {
+      notifications,
+      unreadCount: notifications.filter(n => !n.isRead).length,
+      lastUpdated: now.toISOString()
+    } 
+  };
+}
+
+/**
+ * Mark a notification as read
+ * @param {Object} user - Current user
+ * @param {Object} payload - { notificationType, notificationId }
+ * @returns {Object} - Success/error response
+ */
+function notificationMarkRead(user, { notificationType, notificationId }) {
+  if (!user) {
+    return { ok: false, error: 'User tidak ditemukan' };
+  }
+  
+  if (!notificationType || !notificationId) {
+    return { ok: false, error: 'notificationType dan notificationId wajib diisi' };
+  }
+  
+  // Check if already marked as read
+  const existing = dbFindOne('notificationReads', { 
+    userId: user.id, 
+    notificationType, 
+    notificationId 
+  });
+  
+  if (existing) {
+    return { ok: true, data: { message: 'Notifikasi sudah ditandai dibaca' } };
+  }
+  
+  // Mark as read
+  dbInsert('notificationReads', {
+    userId: user.id,
+    notificationType,
+    notificationId,
+    readAt: new Date().toISOString()
+  });
+  
+  return { ok: true, data: { message: 'Notifikasi ditandai dibaca' } };
+}
+
+/**
+ * Mark all notifications as read for a user
+ * @param {Object} user - Current user
+ * @returns {Object} - Success/error response
+ */
+function notificationMarkAllRead(user) {
+  if (!user) {
+    return { ok: false, error: 'User tidak ditemukan' };
+  }
+  
+  // Get all notifications first
+  const notifResult = notificationList(user);
+  if (!notifResult.ok) {
+    return notifResult;
+  }
+  
+  const notifications = notifResult.data.notifications;
+  let markedCount = 0;
+  
+  // Mark each unread notification as read
+  for (const notif of notifications) {
+    if (!notif.isRead) {
+      const parts = notif.id.split('-');
+      const notificationType = parts[0];
+      const notificationId = parts.slice(1).join('-');
+      
+      // Check if already exists
+      const existing = dbFindOne('notificationReads', {
+        userId: user.id,
+        notificationType,
+        notificationId
+      });
+      
+      if (!existing) {
+        dbInsert('notificationReads', {
+          userId: user.id,
+          notificationType,
+          notificationId,
+          readAt: new Date().toISOString()
+        });
+        markedCount++;
+      }
+    }
+  }
+  
+  return { 
+    ok: true, 
+    data: { 
+      message: `${markedCount} notifikasi ditandai dibaca`,
+      count: markedCount
+    } 
+  };
+}
+
+/**
+ * Get unread notification count
+ * @param {Object} user - Current user
+ * @returns {Object} - Unread count
+ */
+function notificationUnreadCount(user) {
+  if (!user) {
+    return { ok: false, error: 'User tidak ditemukan' };
+  }
+  
+  const notifResult = notificationList(user);
+  if (!notifResult.ok) {
+    return notifResult;
+  }
+  
+  return { 
+    ok: true, 
+    data: { 
+      unreadCount: notifResult.data.unreadCount 
+    } 
+  };
 }
 
 // ==================== SETUP FUNCTIONS ====================

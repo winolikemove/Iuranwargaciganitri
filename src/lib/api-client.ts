@@ -1639,6 +1639,100 @@ class ApiClient {
         result = { ok: false, error: 'Gunakan method uploadFile untuk upload file' };
         break;
         
+      // Notifications
+      case 'notification.list':
+        // Generate demo notifications based on current user
+        const notifUser = currentDemoUser || this.demoData.demoUsers.superadmin;
+        const notifUserBlok = notifUser.blok?.toUpperCase() || 'A';
+        const notifNow = new Date();
+        const demoNotifications = [];
+        
+        // Information notifications
+        this.demoData.informations.forEach(info => {
+          const targetBlok = (info.targetBlok || 'all').toUpperCase();
+          if (targetBlok === 'ALL' || targetBlok === notifUserBlok) {
+            demoNotifications.push({
+              id: `info-${info.id}`,
+              type: 'information' as const,
+              title: info.title,
+              description: (info.content || '').slice(0, 80) + ((info.content || '').length > 80 ? '...' : ''),
+              timestamp: info.publishedAt || info.createdAt || notifNow.toISOString(),
+              redirectPage: 'information',
+              redirectId: info.id,
+              isRead: false,
+              isPinned: info.isPinned,
+              category: info.category,
+            });
+          }
+        });
+        
+        // Agenda notifications
+        this.demoData.agendas.forEach(agenda => {
+          const targetBlok = (agenda.targetBlok || 'all').toUpperCase();
+          if ((targetBlok === 'ALL' || targetBlok === notifUserBlok) && agenda.status === 'UPCOMING') {
+            demoNotifications.push({
+              id: `agenda-${agenda.id}`,
+              type: 'agenda' as const,
+              title: agenda.title,
+              description: `${agenda.startDate}${agenda.startTime ? ' • ' + agenda.startTime : ''}`,
+              timestamp: agenda.createdAt || notifNow.toISOString(),
+              redirectPage: 'agenda',
+              redirectId: agenda.id,
+              isRead: false,
+            });
+          }
+        });
+        
+        // Admin notifications
+        const notifPerms = this.demoData.superadminPermissions;
+        if (['SUPERADMIN', 'ADMIN'].includes(notifUser.role)) {
+          demoNotifications.push({
+            id: 'pending-users',
+            type: 'user' as const,
+            title: 'Warga Menunggu Persetujuan',
+            description: '2 warga baru menunggu persetujuan akun',
+            timestamp: notifNow.toISOString(),
+            redirectPage: 'users',
+            isRead: false,
+            count: 2,
+          });
+        }
+        
+        if (['SUPERADMIN', 'ADMIN', 'BENDAHARA'].includes(notifUser.role)) {
+          demoNotifications.push({
+            id: 'pending-payments',
+            type: 'payment' as const,
+            title: 'Pembayaran Menunggu Verifikasi',
+            description: '3 pembayaran perlu diverifikasi',
+            timestamp: notifNow.toISOString(),
+            redirectPage: 'payment',
+            isRead: false,
+            count: 3,
+          });
+        }
+        
+        result = { 
+          ok: true, 
+          data: {
+            notifications: demoNotifications,
+            unreadCount: demoNotifications.filter(n => !n.isRead).length,
+            lastUpdated: notifNow.toISOString()
+          } as T 
+        };
+        break;
+        
+      case 'notification.markRead':
+        result = { ok: true, data: { message: 'Notifikasi ditandai dibaca' } as T };
+        break;
+        
+      case 'notification.markAllRead':
+        result = { ok: true, data: { message: 'Semua notifikasi ditandai dibaca', count: 5 } as T };
+        break;
+        
+      case 'notification.unreadCount':
+        result = { ok: true, data: { unreadCount: 5 } as T };
+        break;
+        
       default:
         result = { ok: false, error: `Unknown action: ${action}` };
     }
@@ -2211,6 +2305,65 @@ class ApiClient {
         data: { url: objectUrl },
       };
     }
+  }
+  
+  // ==================== NOTIFICATIONS ====================
+  
+  /**
+   * Get all notifications for current user
+   * Returns notifications filtered by user's block and role
+   */
+  async getNotifications(): Promise<ApiResponse<{
+    notifications: Array<{
+      id: string;
+      type: 'information' | 'agenda' | 'payment' | 'user' | 'review';
+      title: string;
+      description: string;
+      timestamp: string;
+      redirectPage: string;
+      redirectId?: string;
+      isRead: boolean;
+      isPinned?: boolean;
+      category?: string;
+      count?: number;
+    }>;
+    unreadCount: number;
+    lastUpdated: string;
+  }>> {
+    return this.request('notification.list', {}, {
+      useCache: true,
+      cacheKey: 'notifications',
+      cacheTTL: 30 * 1000, // 30 seconds - notifications should be fresh
+    });
+  }
+  
+  /**
+   * Mark a notification as read
+   * @param notificationType - Type of notification (information, agenda, payment, user, review)
+   * @param notificationId - ID of the notification item
+   */
+  async markNotificationRead(notificationType: string, notificationId: string): Promise<ApiResponse<{ message: string }>> {
+    CacheManager.remove('notifications');
+    return this.request('notification.markRead', { notificationType, notificationId });
+  }
+  
+  /**
+   * Mark all notifications as read for current user
+   */
+  async markAllNotificationsRead(): Promise<ApiResponse<{ message: string; count: number }>> {
+    CacheManager.remove('notifications');
+    return this.request('notification.markAllRead', {});
+  }
+  
+  /**
+   * Get unread notification count only
+   */
+  async getUnreadNotificationCount(): Promise<ApiResponse<{ unreadCount: number }>> {
+    return this.request('notification.unreadCount', {}, {
+      useCache: true,
+      cacheKey: 'notification_unread_count',
+      cacheTTL: 30 * 1000,
+    });
   }
 }
 
