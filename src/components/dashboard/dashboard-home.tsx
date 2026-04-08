@@ -242,12 +242,12 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
       
       {!isLoading && (
         <>
-          {/* Bento Grid Layout - Top Row */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Bento Grid Layout - Main */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             
             {/* Welcome Card - Large */}
             <Card
-              className="md:col-span-2 lg:col-span-2 cursor-pointer hover:shadow-md transition-shadow relative overflow-hidden group min-h-[280px]"
+              className="col-span-2 cursor-pointer hover:shadow-md transition-shadow relative overflow-hidden group min-h-[280px]"
               onClick={() => navigateTo('profile')}
             >
               {/* Background Image with Higher Visibility */}
@@ -304,9 +304,9 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
               </CardContent>
             </Card>
 
-            {/* Finance Summary Card */}
+            {/* Finance Summary Card - Aligned with Gallery */}
             <Card 
-              className="cursor-pointer hover:shadow-md transition-shadow"
+              className="col-span-1 cursor-pointer hover:shadow-md transition-shadow"
               onClick={() => navigateTo('finance-report')}
             >
               <CardHeader className="pb-2">
@@ -316,9 +316,9 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-2xl font-bold">{formatCurrency(userFinance?.saldoAkhir || 0)}</p>
+                <p className="text-xl font-bold">{formatCurrency(userFinance?.saldoAkhir || 0)}</p>
                 <p className="text-xs text-muted-foreground">{userFinance?.periodLabel}</p>
-                <div className="flex items-center gap-4 mt-3 text-sm">
+                <div className="flex items-center gap-3 mt-3 text-sm">
                   <span className="text-emerald-600 flex items-center gap-1">
                     <TrendingUp className="h-3 w-3" />
                     {formatCurrency(userFinance?.totalPemasukan || 0)}
@@ -341,32 +341,25 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
                 </Button>
               </CardContent>
             </Card>
-          </div>
 
-          {/* Bento Grid - Feature Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {/* Iuran Bulanan - Large on mobile */}
+            {/* Iuran Bulanan - Small Card */}
             <Card 
-              className="col-span-2 md:col-span-1 cursor-pointer hover:shadow-md transition-shadow bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-950/30 dark:to-emerald-900/20 border-emerald-200/50 dark:border-emerald-800/30"
+              className="col-span-1 cursor-pointer hover:shadow-md transition-shadow bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-950/30 dark:to-emerald-900/20 border-emerald-200/50 dark:border-emerald-800/30"
               onClick={() => navigateTo('payment')}
             >
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-900/50">
-                    <CreditCard className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Iuran Bulanan</p>
-                    <p className="text-xl font-bold text-emerald-700 dark:text-emerald-400">{formatCurrency(settings?.monthlyFee || 0)}</p>
-                  </div>
+              <CardContent className="pt-4">
+                <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-900/50 w-fit mb-2">
+                  <CreditCard className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                 </div>
+                <p className="text-sm text-muted-foreground">Iuran Bulanan</p>
+                <p className="text-lg font-bold text-emerald-700 dark:text-emerald-400">{formatCurrency(settings?.monthlyFee || 0)}</p>
                 {permissions?.canSubmitPayment && (
-                  <Button size="sm" className="w-full bg-emerald-600 hover:bg-emerald-700" onClick={(e) => {
+                  <Button size="sm" className="w-full mt-2 bg-emerald-600 hover:bg-emerald-700" onClick={(e) => {
                     e.stopPropagation();
                     navigateTo('payment');
                   }}>
                     <Plus className="h-4 w-4 mr-1" />
-                    Bayar Sekarang
+                    Bayar
                   </Button>
                 )}
               </CardContent>
@@ -378,165 +371,164 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
                 className="col-span-1 cursor-pointer hover:shadow-md transition-shadow bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/30 dark:to-blue-900/20 border-blue-200/50 dark:border-blue-800/30"
                 onClick={() => navigateTo('agenda')}
               >
-                <CardContent className="pt-6 text-center">
+                <CardContent className="pt-4 text-center">
                   <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/50 w-fit mx-auto mb-2">
                     <Calendar className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                   </div>
-                  <p className="text-3xl font-bold text-blue-700 dark:text-blue-400">{agendas.length}</p>
+                  <p className="text-2xl font-bold text-blue-700 dark:text-blue-400">{agendas.length}</p>
                   <p className="text-xs text-muted-foreground">Agenda</p>
                 </CardContent>
               </Card>
             )}
 
-            {/* Gallery */}
+            {/* Gallery - Aligned with Saldo Blok */}
             {settings?.enableGallery && (
               <Card 
                 className="col-span-1 cursor-pointer hover:shadow-md transition-shadow bg-gradient-to-br from-purple-50 to-purple-100/50 dark:from-purple-950/30 dark:to-purple-900/20 border-purple-200/50 dark:border-purple-800/30"
                 onClick={() => navigateTo('gallery')}
               >
-                <CardContent className="pt-6 text-center">
+                <CardContent className="pt-4 text-center">
                   <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/50 w-fit mx-auto mb-2">
                     <ImageIcon className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                   </div>
-                  <p className="text-3xl font-bold text-purple-700 dark:text-purple-400">{galleries.length}</p>
+                  <p className="text-2xl font-bold text-purple-700 dark:text-purple-400">{galleries.length}</p>
                   <p className="text-xs text-muted-foreground">Galeri</p>
                 </CardContent>
               </Card>
             )}
-          </div>
 
-          {/* Finance Report Section - Prominent */}
-          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigateTo('finance-report')}>
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <PieChart className="h-5 w-5" />
-                    Resume Keuangan Blok {user?.blok}
-                  </CardTitle>
-                  <CardDescription>Transparansi keuangan untuk warga</CardDescription>
-                </div>
-                <Button variant="outline" size="sm" onClick={(e) => {
-                  e.stopPropagation();
-                  navigateTo('finance-report');
-                }}>
-                  <FileText className="h-4 w-4 mr-1" />
-                  Laporan Lengkap
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Line Chart */}
-                <div className="md:col-span-2">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
-                      <span className="text-sm text-muted-foreground">Pemasukan</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-rose-500"></div>
-                      <span className="text-sm text-muted-foreground">Pengeluaran</span>
-                    </div>
+            {/* Finance Report Section - Aligned with Gallery right edge */}
+            <Card 
+              className="col-span-2 cursor-pointer hover:shadow-md transition-shadow"
+              onClick={() => navigateTo('finance-report')}
+            >
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <PieChart className="h-4 w-4" />
+                      Resume Keuangan Blok {user?.blok}
+                    </CardTitle>
+                    <CardDescription className="text-xs">Transparansi keuangan untuk warga</CardDescription>
                   </div>
-                  
-                  {/* Simple Line Chart */}
-                  <div className="relative h-40">
-                    <svg 
-                      viewBox="0 0 100 50" 
-                      preserveAspectRatio="none"
-                      className="w-full h-full"
-                    >
-                      {/* Grid lines */}
-                      <line x1="5" y1="12.5" x2="95" y2="12.5" stroke="currentColor" strokeOpacity="0.1" />
-                      <line x1="5" y1="25" x2="95" y2="25" stroke="currentColor" strokeOpacity="0.1" />
-                      <line x1="5" y1="37.5" x2="95" y2="37.5" stroke="currentColor" strokeOpacity="0.1" />
-                      
-                      {/* Pemasukan Line */}
-                      <path
-                        d={generateLinePath(monthlyData.map(d => d.pemasukan))}
-                        fill="none"
-                        stroke="#10b981"
-                        strokeWidth="0.8"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                      
-                      {/* Pengeluaran Line */}
-                      <path
-                        d={generateLinePath(monthlyData.map(d => d.pengeluaran))}
-                        fill="none"
-                        stroke="#f43f5e"
-                        strokeWidth="0.8"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
+                  <Button variant="outline" size="sm" onClick={(e) => {
+                    e.stopPropagation();
+                    navigateTo('finance-report');
+                  }}>
+                    <FileText className="h-4 w-4 mr-1" />
+                    Laporan
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col md:flex-row gap-4">
+                  {/* Line Chart */}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-4 mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                        <span className="text-xs text-muted-foreground">Pemasukan</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-rose-500"></div>
+                        <span className="text-xs text-muted-foreground">Pengeluaran</span>
+                      </div>
+                    </div>
                     
-                    {/* X Axis Labels */}
-                    <div className="absolute bottom-0 left-0 right-0 flex justify-between px-2 text-xs text-muted-foreground">
-                      {monthlyData.slice(-6).map((d, i) => (
-                        <span key={i}>{d.monthShort}</span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Pie Chart & Summary */}
-                <div className="flex flex-col items-center justify-center">
-                  {/* Simple Pie Chart */}
-                  <div className="relative w-32 h-32 mb-4">
-                    <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
-                      <circle
-                        cx="50"
-                        cy="50"
-                        r="40"
-                        fill="none"
-                        stroke="#10b981"
-                        strokeWidth="20"
-                        strokeDasharray={`${pieData.pemasukanPercent * 2.51} 251`}
-                        className="opacity-80"
-                      />
-                      <circle
-                        cx="50"
-                        cy="50"
-                        r="40"
-                        fill="none"
-                        stroke="#f43f5e"
-                        strokeWidth="20"
-                        strokeDasharray={`${pieData.pengeluaranPercent * 2.51} 251`}
-                        strokeDashoffset={`-${pieData.pemasukanPercent * 2.51}`}
-                        className="opacity-80"
-                      />
-                    </svg>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="text-center">
-                        <p className="text-xs text-muted-foreground">Saldo</p>
-                        <p className="text-sm font-bold">{formatCurrency(userFinance?.saldoAkhir || 0).replace('Rp', '')}</p>
+                    {/* Simple Line Chart */}
+                    <div className="relative h-28">
+                      <svg 
+                        viewBox="0 0 100 50" 
+                        preserveAspectRatio="none"
+                        className="w-full h-full"
+                      >
+                        {/* Grid lines */}
+                        <line x1="5" y1="12.5" x2="95" y2="12.5" stroke="currentColor" strokeOpacity="0.1" />
+                        <line x1="5" y1="25" x2="95" y2="25" stroke="currentColor" strokeOpacity="0.1" />
+                        <line x1="5" y1="37.5" x2="95" y2="37.5" stroke="currentColor" strokeOpacity="0.1" />
+                        
+                        {/* Pemasukan Line */}
+                        <path
+                          d={generateLinePath(monthlyData.map(d => d.pemasukan))}
+                          fill="none"
+                          stroke="#10b981"
+                          strokeWidth="0.8"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        
+                        {/* Pengeluaran Line */}
+                        <path
+                          d={generateLinePath(monthlyData.map(d => d.pengeluaran))}
+                          fill="none"
+                          stroke="#f43f5e"
+                          strokeWidth="0.8"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                      
+                      {/* X Axis Labels */}
+                      <div className="absolute bottom-0 left-0 right-0 flex justify-between px-2 text-[10px] text-muted-foreground">
+                        {monthlyData.slice(-6).map((d, i) => (
+                          <span key={i}>{d.monthShort}</span>
+                        ))}
                       </div>
                     </div>
                   </div>
-                  
-                  <div className="text-center space-y-1 w-full">
-                    <div className="flex items-center justify-between px-2">
-                      <span className="text-xs text-muted-foreground flex items-center gap-1">
-                        <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                        Pemasukan
-                      </span>
-                      <span className="text-sm font-medium text-emerald-600">{pieData.pemasukanPercent.toFixed(0)}%</span>
+
+                  {/* Pie Chart & Summary */}
+                  <div className="flex items-center gap-4">
+                    {/* Simple Pie Chart */}
+                    <div className="relative w-20 h-20 flex-shrink-0">
+                      <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
+                        <circle
+                          cx="50"
+                          cy="50"
+                          r="40"
+                          fill="none"
+                          stroke="#10b981"
+                          strokeWidth="20"
+                          strokeDasharray={`${pieData.pemasukanPercent * 2.51} 251`}
+                          className="opacity-80"
+                        />
+                        <circle
+                          cx="50"
+                          cy="50"
+                          r="40"
+                          fill="none"
+                          stroke="#f43f5e"
+                          strokeWidth="20"
+                          strokeDasharray={`${pieData.pengeluaranPercent * 2.51} 251`}
+                          strokeDashoffset={`-${pieData.pemasukanPercent * 2.51}`}
+                          className="opacity-80"
+                        />
+                      </svg>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="text-center">
+                          <p className="text-[10px] text-muted-foreground">Saldo</p>
+                          <p className="text-xs font-bold">{formatCurrency(userFinance?.saldoAkhir || 0).replace('Rp', '').trim().slice(0, 8)}...</p>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between px-2">
-                      <span className="text-xs text-muted-foreground flex items-center gap-1">
+                    
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                        <span className="text-xs text-muted-foreground">Pemasukan</span>
+                        <span className="text-xs font-medium text-emerald-600">{pieData.pemasukanPercent.toFixed(0)}%</span>
+                      </div>
+                      <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-rose-500"></div>
-                        Pengeluaran
-                      </span>
-                      <span className="text-sm font-medium text-rose-600">{pieData.pengeluaranPercent.toFixed(0)}%</span>
+                        <span className="text-xs text-muted-foreground">Pengeluaran</span>
+                        <span className="text-xs font-medium text-rose-600">{pieData.pengeluaranPercent.toFixed(0)}%</span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
 
           {/* Quick Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

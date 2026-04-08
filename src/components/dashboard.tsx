@@ -15,6 +15,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
+  Dialog,
+  DialogContent,
+} from '@/components/ui/dialog';
+import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
@@ -46,6 +50,7 @@ import {
   User,
   Building2,
   Home,
+  X,
 } from 'lucide-react';
 import { DashboardHome } from './dashboard/dashboard-home';
 import { FinancePage } from './dashboard/finance-page';
@@ -66,6 +71,7 @@ export function Dashboard() {
   const { user, permissions, logout } = useAuth();
   const { settings } = useApp();
   const [currentPage, setCurrentPage] = useState<PageType>('dashboard');
+  const [showProfilePhoto, setShowProfilePhoto] = useState(false);
 
   const getRoleBadge = (role: string) => {
     const roleMap: Record<string, { label: string; className: string }> = {
@@ -246,13 +252,57 @@ export function Dashboard() {
               {getCurrentPageLabel()}
             </h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <Badge className={roleBadge.className}>{roleBadge.label}</Badge>
             {user?.blok && (
               <Badge variant="outline">Blok {user.blok}</Badge>
             )}
+            {/* Profile Photo Button */}
+            <button
+              onClick={() => setShowProfilePhoto(true)}
+              className="rounded-full overflow-hidden border-2 border-primary/20 hover:border-primary/50 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50"
+            >
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={user?.photoUrl || undefined} />
+                <AvatarFallback className="text-xs bg-emerald-500 text-white">
+                  {user?.nama?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                </AvatarFallback>
+              </Avatar>
+            </button>
           </div>
         </header>
+        
+        {/* Profile Photo Popup Dialog */}
+        <Dialog open={showProfilePhoto} onOpenChange={setShowProfilePhoto}>
+          <DialogContent className="sm:max-w-md p-0 bg-transparent border-0 shadow-none flex items-center justify-center">
+            <div className="relative">
+              {/* Close Button */}
+              <button
+                onClick={() => setShowProfilePhoto(false)}
+                className="absolute -top-2 -right-2 z-10 h-8 w-8 rounded-full bg-black/70 text-white flex items-center justify-center hover:bg-black/90 transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              
+              {/* Profile Photo */}
+              <div className="w-72 h-72 md:w-80 md:h-80 rounded-2xl overflow-hidden shadow-2xl bg-muted">
+                {user?.photoUrl ? (
+                  <img
+                    src={user.photoUrl}
+                    alt={user.nama || 'Profile'}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-emerald-500">
+                    <span className="text-6xl font-bold text-white">
+                      {user?.nama?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
         
         <main className="flex-1 p-4 lg:p-6 overflow-auto">
           {renderPage()}
