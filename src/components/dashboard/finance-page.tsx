@@ -114,7 +114,7 @@ export function FinancePage() {
   // Saldo Awal Dialog
   const [showSaldoDialog, setShowSaldoDialog] = useState(false);
   const [saldoFormData, setSaldoFormData] = useState({
-    blok: 'A',
+    blok: user?.blok || 'A',
     year: new Date().getFullYear(),
     amount: '',
   });
@@ -439,8 +439,14 @@ export function FinancePage() {
   // Get saldo awal based on blok
   const saldoAwal = filterBlok === 'A' ? settings?.saldoAwalA : settings?.saldoAwalB;
 
-  // Can manage saldo awal
-  const canManageSaldo = permissions?.canCreateTransaction;
+  // Can manage saldo awal - SUPERADMIN can manage both bloks, others only their own
+  const isSuperAdmin = user?.role === 'SUPERADMIN';
+  const canManageSaldo = permissions?.canCreateTransaction && (
+    isSuperAdmin || // SUPERADMIN can manage any blok
+    user?.blok === filterBlok // Others can only manage their own blok
+  );
+  // For the saldo dialog, determine which bloks user can select
+  const canSelectBlok = isSuperAdmin; // Only SUPERADMIN can select different blok
 
   if (!permissions?.canViewFinance) {
     return (
@@ -566,25 +572,42 @@ export function FinancePage() {
                     <DialogHeader>
                       <DialogTitle>Atur Saldo Awal</DialogTitle>
                       <DialogDescription>
-                        Tentukan saldo awal untuk blok dan tahun tertentu
+                        {isSuperAdmin 
+                          ? 'Tentukan saldo awal untuk blok dan tahun tertentu'
+                          : `Atur saldo awal untuk Blok ${user?.blok}`
+                        }
                       </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleSaldoSubmit} className="space-y-4">
-                      <div className="space-y-2">
-                        <Label>Blok</Label>
-                        <Select
-                          value={saldoFormData.blok}
-                          onValueChange={(value) => setSaldoFormData({ ...saldoFormData, blok: value })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="A">Blok A</SelectItem>
-                            <SelectItem value="B">Blok B</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
+                      {canSelectBlok ? (
+                        <div className="space-y-2">
+                          <Label>Blok</Label>
+                          <Select
+                            value={saldoFormData.blok}
+                            onValueChange={(value) => setSaldoFormData({ ...saldoFormData, blok: value })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="A">Blok A</SelectItem>
+                              <SelectItem value="B">Blok B</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <Label>Blok</Label>
+                          <Input 
+                            value={`Blok ${user?.blok}`} 
+                            disabled 
+                            className="bg-muted"
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Anda hanya dapat mengatur saldo untuk blok Anda sendiri
+                          </p>
+                        </div>
+                      )}
                       
                       <div className="space-y-2">
                         <Label>Tahun</Label>

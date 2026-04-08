@@ -39,10 +39,21 @@ const defaultSettings: AppSettings = {
   enableInformation: true,
   enablePublicFinance: true,
   enableReviews: true,
-  incomeCategories: ['Iuran', 'Sumbangan', 'Lainnya'],
-  expenseCategories: ['Kebersihan', 'Keamanan', 'Lainnya'],
-  informationCategories: ['Pengumuman', 'Kegiatan', 'Lainnya'],
-  bloks: ['A', 'B', 'C', 'D'],
+  incomeCategories: ['Iuran Bulanan', 'Dana Sosial', 'Lain-lain'],
+  expenseCategories: ['Kebersihan', 'Keamanan', 'Perbaikan', 'Listrik', 'Kegiatan', 'Lainnya'],
+  informationCategories: ['Pengumuman', 'Berita', 'Info Penting'],
+  bloks: ['A', 'B'],
+  // Categories per Blok
+  categoriesA: {
+    income: ['Iuran Bulanan', 'Dana Sosial', 'Sumbangan', 'Lainnya'],
+    expense: ['Kebersihan', 'Keamanan', 'Perbaikan', 'Listrik', 'Kegiatan', 'Lainnya'],
+    information: ['Pengumuman', 'Berita', 'Info Penting'],
+  },
+  categoriesB: {
+    income: ['Iuran Bulanan', 'Dana Sosial', 'Sumbangan', 'Lainnya'],
+    expense: ['Kebersihan', 'Keamanan', 'Perbaikan', 'Listrik', 'Kegiatan', 'Lainnya'],
+    information: ['Pengumuman', 'Berita', 'Info Penting'],
+  },
 };
 
 // Dummy data untuk struktur organisasi (fallback jika API belum punya data)

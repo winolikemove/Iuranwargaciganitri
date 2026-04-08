@@ -305,10 +305,7 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
             </Card>
 
             {/* Finance Summary Card */}
-            <Card 
-              className="cursor-pointer hover:shadow-md transition-shadow"
-              onClick={() => navigateTo('finance-report')}
-            >
+            <Card>
               <CardHeader className="pb-2">
                 <CardDescription className="flex items-center gap-2">
                   <Wallet className="h-4 w-4" />
@@ -329,13 +326,10 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
                   </span>
                 </div>
                 <Button 
-                  variant="link" 
+                  variant="default" 
                   size="sm" 
-                  className="p-0 h-auto mt-2 text-primary"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigateTo('finance-report');
-                  }}
+                  className="w-full mt-3"
+                  onClick={() => navigateTo('finance-report')}
                 >
                   Lihat Laporan <ChevronRight className="h-4 w-4 ml-1" />
                 </Button>
@@ -418,10 +412,7 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
           </div>
 
           {/* Finance Report Section */}
-          <Card 
-            className="cursor-pointer hover:shadow-md transition-shadow overflow-hidden"
-            onClick={() => navigateTo('finance-report')}
-          >
+          <Card className="overflow-hidden">
             <CardHeader className="pb-2">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <div>
@@ -431,12 +422,14 @@ export function DashboardHome({ onNavigate }: DashboardHomeProps) {
                   </CardTitle>
                   <CardDescription>Transparansi keuangan untuk warga</CardDescription>
                 </div>
-                <Button variant="outline" size="sm" onClick={(e) => {
-                  e.stopPropagation();
-                  navigateTo('finance-report');
-                }}>
+                <Button 
+                  variant="default" 
+                  size="sm" 
+                  className="min-w-[140px]"
+                  onClick={() => navigateTo('finance-report')}
+                >
                   <FileText className="h-4 w-4 mr-1" />
-                  Laporan Lengkap
+                  Lihat Laporan
                 </Button>
               </div>
             </CardHeader>
