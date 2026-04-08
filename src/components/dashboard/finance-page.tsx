@@ -65,7 +65,7 @@ import {
   CreditCard,
   Save,
 } from 'lucide-react';
-import { FinanceChart, generateMonthlyFinanceData } from '@/components/ui/finance-chart';
+import { FinanceChart } from '@/components/ui/finance-chart';
 import { useToast } from '@/hooks/use-toast';
 import type { Transaction, FinanceSummary, MonthlyFinance } from '@/types';
 
@@ -119,8 +119,15 @@ export function FinancePage() {
     amount: '',
   });
 
-  // Generate monthly finance data for chart
-  const monthlyData = useMemo(() => generateMonthlyFinanceData(6), []);
+  // Get monthly finance data for chart from API response
+  const monthlyData = useMemo(() => {
+    // If summary has monthlyBreakdown, use it
+    if (summary?.monthlyBreakdown && summary.monthlyBreakdown.length > 0) {
+      return summary.monthlyBreakdown;
+    }
+    // Return empty array if no data
+    return [];
+  }, [summary?.monthlyBreakdown]);
 
   const months = [
     { value: 'ALL', label: 'Semua Bulan' },
@@ -546,7 +553,7 @@ export function FinancePage() {
       <FinanceChart 
         data={monthlyData} 
         title={`Grafik Keuangan Blok ${filterBlok}`}
-        description="Pemasukan vs Pengeluaran 6 bulan terakhir"
+        description={`Pemasukan vs Pengeluaran Tahun ${filterYear}`}
         formatCurrency={formatCurrency}
       />
 

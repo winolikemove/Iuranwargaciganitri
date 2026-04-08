@@ -160,18 +160,32 @@ export function FinanceChart({
               strokeLinejoin="round"
             />
 
+            {/* Interactive hover areas - larger hit zones for better UX */}
+            {chartData.points.map((p, i) => (
+              <rect
+                key={`hover-zone-${i}`}
+                x={p.x - 5}
+                y={0}
+                width={10}
+                height={100}
+                fill="transparent"
+                className="cursor-pointer"
+                onMouseEnter={() => setActiveData(p.data)}
+                onMouseLeave={() => setActiveData(null)}
+              />
+            ))}
+
             {/* Data Points - Pemasukan */}
             {chartData.points.map((p, i) => (
               <circle
                 key={`pemasukan-${i}`}
                 cx={p.x}
                 cy={p.yPemasukan}
-                r={activeData?.month === p.data.month ? 1.5 : 1}
+                r={activeData?.month === p.data.month ? 2 : 1.2}
                 fill="#10b981"
                 stroke="white"
-                strokeWidth="0.3"
-                className="cursor-pointer"
-                onMouseEnter={() => setActiveData(p.data)}
+                strokeWidth="0.4"
+                className="pointer-events-none"
               />
             ))}
 
@@ -181,12 +195,11 @@ export function FinanceChart({
                 key={`pengeluaran-${i}`}
                 cx={p.x}
                 cy={p.yPengeluaran}
-                r={activeData?.month === p.data.month ? 1.5 : 1}
+                r={activeData?.month === p.data.month ? 2 : 1.2}
                 fill="#ef4444"
                 stroke="white"
-                strokeWidth="0.3"
-                className="cursor-pointer"
-                onMouseEnter={() => setActiveData(p.data)}
+                strokeWidth="0.4"
+                className="pointer-events-none"
               />
             ))}
 

@@ -24,6 +24,7 @@ import {
   Calendar,
   ChevronLeft,
   ArrowUpDown,
+  Building2,
 } from 'lucide-react';
 import { api } from '@/lib/api-client';
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -35,20 +36,31 @@ interface FinanceReportPageProps {
 }
 
 export function FinanceReportPage({ onBack }: FinanceReportPageProps) {
-  const { user } = useAuth();
+  const { user, permissions } = useAuth();
   const { settings } = useApp();
   const [financeData, setFinanceData] = useState<FinanceSummary | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedMonths, setSelectedMonths] = useState<string>('6');
+  const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString());
+  const [selectedMonths, setSelectedMonths] = useState<string>('12');
   const { toast } = useToast();
+
+  // Can view all bloks (superadmin)
+  const canViewAllBloks = permissions?.canViewAllUsers || user?.role === 'SUPERADMIN';
+  const [filterBlok, setFilterBlok] = useState<string>(user?.blok || 'A');
+
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i);
 
   const loadFinanceData = useCallback(async () => {
     setIsLoading(true);
     try {
+      const blokParam = canViewAllBloks ? filterBlok : undefined;
+      const yearParam = parseInt(selectedYear);
+      
       const [financeRes, transRes] = await Promise.all([
-        api.getFinanceSummary(),
-        api.getTransactions({ limit: 100 }),
+        api.getFinanceSummary(yearParam, undefined, blokParam),
+        api.getTransactions({ year: yearParam, limit: 500, blok: blokParam }),
       ]);
 
       if (financeRes.ok && financeRes.data) {
@@ -56,11 +68,12 @@ export function FinanceReportPage({ onBack }: FinanceReportPageProps) {
       }
 
       if (transRes.ok && transRes.data) {
-        // Filter transactions by user's block
-        const userTransactions = transRes.data.filter(
-          (t: Transaction) => t.blok === user?.blok
-        );
-        setTransactions(userTransactions);
+        // Filter transactions by user's block if not superadmin
+        let filteredTrans = transRes.data;
+        if (!canViewAllBloks && user?.blok) {
+          filteredTrans = transRes.data.filter((t: Transaction) => t.blok === user.blok);
+        }
+        setTransactions(filteredTrans);
       }
     } catch (error) {
       console.error('Error loading finance data:', error);
@@ -72,7 +85,7 @@ export function FinanceReportPage({ onBack }: FinanceReportPageProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [user?.blok, toast]);
+  }, [user?.blok, toast, canViewAllBloks, filterBlok, selectedYear]);
 
   useEffect(() => {
     loadFinanceData();
@@ -394,6 +407,35 @@ export function FinanceReportPage({ onBack }: FinanceReportPageProps) {
 
   return (
     <div className="space-y-6">
+      {/* Blok Selector (for superadmin) */}
+      {canViewAllBloks && (
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-3">
+                <Building2 className="h-5 w-5 text-muted-foreground" />
+                <div>
+                  <p className="font-medium">Lihat Laporan Keuangan Blok</p>
+                  <p className="text-sm text-muted-foreground">Pilih blok untuk melihat data keuangan</p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                {settings?.bloks?.map((blok) => (
+                  <Button
+                    key={blok}
+                    variant={filterBlok === blok ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setFilterBlok(blok)}
+                  >
+                    Blok {blok}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -405,16 +447,27 @@ export function FinanceReportPage({ onBack }: FinanceReportPageProps) {
           )}
           <div>
             <h1 className="text-2xl font-bold">Laporan Keuangan</h1>
-            <p className="text-muted-foreground">Blok {user?.blok} - Transparansi untuk warga</p>
+            <p className="text-muted-foreground">Blok {filterBlok} - Transparansi untuk warga</p>
           </div>
         </div>
 
         {/* Filter & Export */}
         <div className="flex flex-wrap items-center gap-3">
-          <Select value={selectedMonths} onValueChange={setSelectedMonths}>
-            <SelectTrigger className="w-[180px]">
+          <Select value={selectedYear} onValueChange={setSelectedYear}>
+            <SelectTrigger className="w-[120px]">
               <Calendar className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="Pilih periode" />
+              <SelectValue placeholder="Tahun" />
+            </SelectTrigger>
+            <SelectContent>
+              {years.map((year) => (
+                <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={selectedMonths} onValueChange={setSelectedMonths}>
+            <SelectTrigger className="w-[120px]">
+              <SelectValue placeholder="Periode" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="1">1 Bulan</SelectItem>

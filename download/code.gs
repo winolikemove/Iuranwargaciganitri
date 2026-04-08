@@ -1524,6 +1524,7 @@ function financeSummary(user, { year, month, blok }) {
   
   const y = parseInt(year) || new Date().getFullYear();
   const m = month ? parseInt(month) : null;
+  const now = new Date();
   
   // Determine which blok to query
   // Superadmin can view any blok, others can only view their own
@@ -1553,6 +1554,47 @@ function financeSummary(user, { year, month, blok }) {
     ? `${getMonthName(m)} ${y}`
     : `Tahun ${y}`;
   
+  // Generate monthly breakdown for the selected year
+  const monthNames = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+  const monthShort = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'];
+  
+  // Get all transactions for the year (not filtered by month)
+  const yearTransactions = dbFind('transactions', { blok: targetBlok }).filter(t => {
+    const d = new Date(t.date);
+    return d.getFullYear() === y;
+  });
+  
+  const monthlyBreakdown = [];
+  let runningSaldo = saldoAwal;
+  
+  for (let monthNum = 1; monthNum <= 12; monthNum++) {
+    // Skip future months if viewing current year
+    if (y === now.getFullYear() && monthNum > now.getMonth() + 1) continue;
+    
+    const monthTransactions = yearTransactions.filter(t => {
+      const d = new Date(t.date);
+      return (d.getMonth() + 1) === monthNum;
+    });
+    
+    const pemasukan = monthTransactions
+      .filter(t => t.type === 'INCOME')
+      .reduce((sum, t) => sum + Number(t.amount), 0);
+    
+    const pengeluaran = monthTransactions
+      .filter(t => t.type === 'EXPENSE')
+      .reduce((sum, t) => sum + Number(t.amount), 0);
+    
+    runningSaldo = runningSaldo + pemasukan - pengeluaran;
+    
+    monthlyBreakdown.push({
+      month: `${monthNames[monthNum]} ${y}`,
+      monthShort: monthShort[monthNum],
+      pemasukan,
+      pengeluaran,
+      saldo: runningSaldo,
+    });
+  }
+  
   return {
     ok: true,
     data: {
@@ -1562,6 +1604,7 @@ function financeSummary(user, { year, month, blok }) {
       saldoAkhir: saldoAwal + totalPemasukan - totalPengeluaran,
       periodLabel,
       blok: targetBlok,
+      monthlyBreakdown,
     },
   };
 }
@@ -1709,6 +1752,12 @@ function financeSetSaldoAwal(user, { blok, year, amount }) {
   
   if (!['A', 'B'].includes(blok)) {
     return { ok: false, error: 'Blok tidak valid' };
+  }
+  
+  // Only SUPERADMIN can set saldo for any blok, others only for their own blok
+  const isSuperAdmin = user.role === 'SUPERADMIN';
+  if (!isSuperAdmin && user.blok !== blok) {
+    return { ok: false, error: 'Anda hanya dapat mengatur saldo untuk blok Anda sendiri' };
   }
   
   const amountNum = Math.floor(Number(amount));
